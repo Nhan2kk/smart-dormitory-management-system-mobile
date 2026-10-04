@@ -1,32 +1,30 @@
-# Smart Dormitory Demo (iOS)
+﻿# KTX DN Mobile
 
-Ứng dụng Expo + TypeScript nhỏ để thử quy trình phát triển trên Windows và build iOS qua EAS. App có trang chủ và màn hình nội quy mẫu. Dữ liệu hiện là minh họa, chưa gọi backend.
+Ứng dụng Expo SDK 57 cho sinh viên. Luồng hiện có: màn hình chào → đăng nhập qua backend → dashboard. Các nội dung dịch vụ và thông báo trên dashboard hiện là UI minh họa.
 
-## Chạy thử trên iPhone
+## Cấu trúc
 
-Yêu cầu Node.js và npm. Project dùng Expo SDK 57; Expo Go trên iPhone cũng phải hỗ trợ SDK 57. Expo CLI trên Windows và Expo Go trên iPhone phải đăng nhập **cùng một tài khoản Expo**. Sau đó chạy trong thư mục này:
-
-```powershell
-npm install
-npx expo login
-npx expo whoami
-npm run start
+```
+assets/                 Ảnh dùng trong ứng dụng
+src/app/                Route và layout của Expo Router
+  (tabs)/               Dashboard và thanh điều hướng 5 mục
+src/features/auth/      API, trạng thái phiên và lưu refresh token
+src/features/dashboard/ Giao diện dashboard và màn hình phụ
+src/shared/             API client, màu dùng chung
 ```
 
-Trong Expo Go, chạm biểu tượng tài khoản ở góc trên bên phải và đăng nhập bằng tài khoản mà `npx expo whoami` hiển thị. Dùng Camera của iPhone quét QR. Nếu Expo Go đang hiện lỗi tài khoản, bấm **Try again** sau khi đăng nhập. Máy tính và điện thoại cần kết nối mạng phù hợp. Nếu không kết nối được qua LAN, chạy `npx expo start --tunnel`.
+Route chỉ nối màn hình với điều hướng. Mã nghiệp vụ đặt trong `features`; phần dùng chung đặt trong `shared`. Khi thêm tính năng, tạo thư mục riêng trong `features`, đặt kiểu dữ liệu, API và UI của tính năng ở đó.
 
-## Tạo bản iOS để thử qua TestFlight
+## Chạy ứng dụng
 
-Bạn cần tài khoản Expo và tư cách thành viên Apple Developer Program để ký và phân phối bản iOS. Trước tiên, đổi `ios.bundleIdentifier` trong `app.json` thành định danh riêng của bạn và tạo app tương ứng trong App Store Connect. Sau đó cài EAS CLI, đăng nhập, liên kết project và build:
+1. `npm install`
+2. Tạo `.env` theo `.env.example`; `EXPO_PUBLIC_API_URL` mặc định dùng cùng backend với web: `https://sdms-server.duckdns.org/api/sdms/v1`.
+3. `npx expo start --clear`
 
-```powershell
-npm install --global eas-cli
-eas login
-eas build:configure
-eas build --platform ios --profile production
-eas submit --platform ios --latest
-```
+Với backend đã triển khai trên HTTPS, app có thể gọi cùng URL trên emulator và điện thoại thật khi có Internet. Nếu chuyển sang backend local, Android emulator dùng `http://10.0.2.2:8080/api/sdms/v1`; điện thoại thật dùng IP LAN của máy chạy backend. URL `EXPO_PUBLIC_*` được đóng vào app nên không đặt bí mật ở đây.
 
-EAS build trên cloud nên có thể thực hiện các lệnh này từ Windows. Sau khi bản build xuất hiện trong App Store Connect, bật thử nghiệm TestFlight và mời người thử theo hướng dẫn của Apple.
+Đăng nhập gửi `username` (MSSV) và `password` đến `POST /auth/login`. App chỉ nhận vai trò `STUDENT`, lưu refresh token trong `expo-secure-store`, làm mới phiên khi mở lại app, và gọi `POST /auth/logout` khi đăng xuất. Màn hình đăng ký tài khoản chưa có vì backend hiện dùng tài khoản sinh viên được cấp sẵn.
 
-Trước khi phát hành rộng rãi, thay icon Expo mẫu và tên app theo sản phẩm, kết nối API và thay nội quy minh họa bằng dữ liệu chính thức. App Store cần trải qua quy trình xét duyệt của Apple.
+## Kiểm tra
+
+`npm run typecheck` và `npm run lint`.

@@ -1,16 +1,16 @@
 {
-  "cli": {
-    "version": ">= 16.0.0"
-  },
-  "build": {
-    "preview": {
-      "distribution": "internal"
+    "cli": {
+        "version": ">= 16.0.0"
     },
-    "production": {
-      "autoIncrement": true
+    "build": {
+        "preview": {
+            "distribution": "internal"
+        },
+        "production": {
+            "autoIncrement": true
+        }
+    },
+    "submit": {
+        "production": {}
     }
-  },
-  "submit": {
-    "production": {}
-  }
 }
