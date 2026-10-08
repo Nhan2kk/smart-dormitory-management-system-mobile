@@ -1,10 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ApiError, errorMessage, isNotFound } from "../../shared/api";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
+import type { TranslationKey } from "../../shared/i18n/types";
 import { Photos } from "../../shared/images";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import {
@@ -13,6 +15,7 @@ import {
   Button,
   Callout,
   Card,
+  EmptyState,
   FooterBar,
   Glass,
   IconName,
@@ -28,131 +31,370 @@ import {
   Touchable,
   useToast,
 } from "../../shared/ui";
-import { DebtRepository } from "../debts/debts.mock";
-import { BedMap } from "./components/BedMap";
-import { applicationTone, PricingPeriod, RegistrationRepository, roomStatusTone } from "./registration.mock";
+import { useAuth } from "../auth/AuthProvider";
+import { BedMap, bedLabel } from "./components/BedMap";
+import {
+  ACTIVE_STATUSES,
+  applicationTone,
+  BuildingDto,
+  Floor,
+  floorAvailability,
+  groupFloors,
+  isInScope,
+  PERIOD_MONTHS,
+  primaryAudience,
+  PricingPeriod,
+  Registration,
+  registrationApi,
+  roomStatusTone,
+  StudentCampaign,
+  StudentCampaignState,
+} from "./registrationApi";
 
 type Phase = "overview" | "wizard" | "held";
-const HOLD_SECONDS = 24 * 3600;
+type Api = ReturnType<typeof registrationApi>;
+type DebtBlock = { message: string; actionPath?: string };
+
+const DEBT_CODE = "DORM_DEBT_UNSETTLED";
+
+/** Mở màn thanh toán QR cho đơn đăng ký; xác nhận chuyển khoản sẽ gọi API thanh toán đơn. */
+function openPayment(registration: Registration, title: string) {
+  router.push({
+    pathname: "/debts/pay/[id]",
+    params: { id: registration.id, registrationId: registration.id, amount: String(registration.totalAmount), title: `${title} · ${registration.roomCode} · ${bedLabel(registration.bedCode)}` },
+  });
+}
 
 export function RegisterDormScreen() {
   const { t } = useI18n();
+  const { request } = useAuth();
+  const api = useMemo(() => registrationApi(request), [request]);
   const [phase, setPhase] = useState<Phase>("overview");
-  const [held, setHeld] = useState<{ building: string; room: string; bed: string; total: number } | null>(null);
-  if (phase === "overview") return <Overview onStart={() => setPhase("wizard")} />;
-  if (phase === "held" && held) return <Held {...held} onCancelled={() => setPhase("overview")} />;
+  const [campaignState, setCampaignState] = useState<StudentCampaignState | null>(null);
+  const [registration, setRegistration] = useState<Registration | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [debt, setDebt] = useState<DebtBlock | null>(null);
+
+  const load = useCallback(async () => {
+    setLoadError(null);
+    try {
+      const [state, mine] = await Promise.all([
+        api.currentCampaign(),
+        api.mine().catch((error: unknown) => {
+          if (isNotFound(error)) return null;
+          throw error;
+        }),
+      ]);
+      setCampaignState(state);
+      setRegistration(mine);
+    } catch (error) {
+      setLoadError(errorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }, [api]);
+
+  // Tải lại mỗi khi quay lại màn hình (vd. sau khi thanh toán xong ở màn QR).
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  // Trạng thái đợt do BE tính theo giờ máy chủ: hỏi lại khi tới mốc mở/đóng đăng ký.
+  const boundary = campaignState?.campaign ? (campaignState.state === "OPEN" ? campaignState.campaign.registrationEnd : campaignState.state === "UPCOMING" ? campaignState.campaign.registrationStart : null) : null;
+  useEffect(() => {
+    if (!boundary) return;
+    const delay = Math.min(Math.max(new Date(boundary).getTime() - Date.now(), 0) + 1000, 2 ** 31 - 1);
+    const timer = setTimeout(() => {
+      api.currentCampaign().then(setCampaignState).catch(() => undefined);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [boundary, api]);
+
+  // Đơn đã thanh toán/huỷ/hết hạn thì màn giữ chỗ tự rơi về Tổng quan.
+  if (phase === "held" && registration?.status === "pending_payment")
+    return <Held api={api} registration={registration} onChanged={setRegistration} />;
+  if (phase === "wizard" && campaignState?.state === "OPEN" && campaignState.campaign)
+    return (
+      <Wizard
+        api={api}
+        campaign={campaignState.campaign}
+        title={t("registration.title")}
+        onExit={() => setPhase("overview")}
+        onCampaign={setCampaignState}
+        onDebt={(block) => {
+          setDebt(block);
+          setPhase("overview");
+        }}
+        onCreated={(created, payNow) => {
+          setRegistration(created);
+          setPhase("held");
+          if (payNow) openPayment(created, t("debts.billType.registration"));
+        }}
+      />
+    );
   return (
-    <Wizard
-      onExit={() => setPhase("overview")}
-      onSubmitted={(value) => {
-        setHeld(value);
-        setPhase("held");
+    <Overview
+      loading={loading}
+      loadError={loadError}
+      campaignState={campaignState}
+      registration={registration}
+      debt={debt}
+      onRetry={() => {
+        setLoading(true);
+        load();
       }}
-      title={t("registration.title")}
+      onStart={() => {
+        setDebt(null);
+        setPhase("wizard");
+      }}
+      onHeld={() => setPhase("held")}
     />
   );
 }
 
-/** Tổng quan: đợt đăng ký đang mở, cảnh báo công nợ, đơn đã gửi. */
-function Overview({ onStart }: { onStart: () => void }) {
-  const { t, l } = useI18n();
+/** Tổng quan: đợt đăng ký hiện tại, cảnh báo công nợ, đơn đã gửi. */
+function Overview({
+  loading,
+  loadError,
+  campaignState,
+  registration,
+  debt,
+  onRetry,
+  onStart,
+  onHeld,
+}: {
+  loading: boolean;
+  loadError: string | null;
+  campaignState: StudentCampaignState | null;
+  registration: Registration | null;
+  debt: DebtBlock | null;
+  onRetry: () => void;
+  onStart: () => void;
+  onHeld: () => void;
+}) {
+  const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const campaign = RegistrationRepository.campaign;
+  const campaign = campaignState?.campaign ?? null;
+  const state = campaignState?.state ?? "NONE";
+  const audience = campaign ? primaryAudience(campaign) : null;
+  const active = registration && ACTIVE_STATUSES.includes(registration.status) ? registration : null;
+  const range = (from?: string | null, to?: string | null) => (from && to ? `${Formatter.shortDate(from)} – ${Formatter.date(to)}` : "—");
+  const tag: { icon: IconName; key: TranslationKey } =
+    state === "OPEN" ? { icon: "megaphone", key: "registration.openCampaign" } : state === "UPCOMING" ? { icon: "time-outline", key: "registration.upcomingCampaign" } : { icon: "information-circle-outline", key: "registration.noCampaign" };
+
+  const footer = active ? (
+    active.status === "pending_payment" ? (
+      <Button label={t("registration.continuePayment")} icon="qr-code-outline" onPress={onHeld} style={{ flex: 1 }} />
+    ) : (
+      <Button label={t("registration.goCheckIn")} icon="key-outline" onPress={() => router.push("/check-in")} style={{ flex: 1 }} />
+    )
+  ) : (
+    <Button label={state === "OPEN" ? t("registration.newApplication") : t("registration.notOpen")} icon="add" disabled={state !== "OPEN" || loading} onPress={onStart} style={{ flex: 1 }} />
+  );
+
   return (
-    <Screen
-      padded={false}
-      edges={[]}
-      footer={
-        <FooterBar>
-          <Button label={t("registration.newApplication")} icon="add" onPress={onStart} style={{ flex: 1 }} />
-        </FooterBar>
-      }
-    >
+    <Screen padded={false} edges={[]} footer={<FooterBar>{footer}</FooterBar>}>
       <LightStatusBar />
       <PhotoBackground source={Photos.dormVietnam()} shade style={[styles.cover, { paddingTop: insets.top }]}>
         <AppHeader title={t("registration.title")} onPhoto />
         <Glass variant="photo" style={styles.campaign}>
-          <View style={styles.campaignTag}>
-            <Ionicons name="megaphone" size={16} color={colors.primaryLight} />
-            <Text style={styles.campaignTagText}>{t("registration.openCampaign")}</Text>
-          </View>
-          <Text style={styles.campaignName}>{l(campaign.name)}</Text>
-          <View style={styles.campaignGrid}>
-            <CampaignCell icon="people-outline" label={t("registration.audience")} value={l(campaign.audience)} />
-            <CampaignCell icon="calendar-outline" label={t("registration.period")} value={campaign.registration} />
-            <CampaignCell icon="key-outline" label={t("registration.checkIn")} value={campaign.checkIn} />
-          </View>
+          {loading && !campaignState ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <>
+              <View style={styles.campaignTag}>
+                <Ionicons name={tag.icon} size={16} color={colors.primaryLight} />
+                <Text style={styles.campaignTagText}>{t(tag.key)}</Text>
+              </View>
+              <Text style={styles.campaignName}>{campaign?.name ?? t("registration.noCampaign")}</Text>
+              {campaign && (
+                <View style={styles.campaignGrid}>
+                  <CampaignCell icon="people-outline" label={t("registration.audience")} value={!audience || audience.audienceCode.toUpperCase() === "ALL" ? t("registration.allStudents") : audience.audienceCode} />
+                  <CampaignCell icon="calendar-outline" label={t("registration.period")} value={range(audience?.registrationStart ?? campaign.registrationStart, audience?.registrationEnd ?? campaign.registrationEnd)} />
+                  <CampaignCell icon="key-outline" label={t("registration.checkIn")} value={range(audience?.checkInStart, audience?.checkInEnd)} />
+                </View>
+              )}
+              {state !== "OPEN" && <Text style={styles.campaignMessage}>{campaignState?.message ?? t("registration.noCampaignBody")}</Text>}
+            </>
+          )}
         </Glass>
       </PhotoBackground>
 
       <View style={styles.body}>
-        {DebtRepository.hasOverdue() && (
+        {loadError && (
+          <View style={{ marginTop: spacing.xl }}>
+            <Callout tone="danger" icon="cloud-offline-outline" title={t("registration.loadFailed")} action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={onRetry} />}>
+              {loadError}
+            </Callout>
+          </View>
+        )}
+        {debt && (
           <View style={{ marginTop: spacing.xl }}>
             <Callout tone="danger" icon="alert-circle" title={t("registration.debtWarningTitle")} action={<Button label={t("registration.payDebt")} size="md" variant="danger" onPress={() => router.push("/debts")} />}>
-              {t("registration.debtWarning")}
+              {debt.message || t("registration.debtWarning")}
             </Callout>
           </View>
         )}
         <SectionHeader title={t("registration.instructions")} />
         <Callout tone="info" icon="document-text-outline">
-          {l(campaign.instructions)}
+          {campaign?.checkInInstructions?.trim() || t("registration.defaultInstructions")}
         </Callout>
         <SectionHeader title={t("registration.myApplications")} />
-        <View style={{ gap: spacing.md }}>
-          {RegistrationRepository.applications.map((application) => (
-            <Card key={application.id} style={styles.app}>
+        {registration ? (
+          <Touchable
+            disabled={!active}
+            onPress={() => (registration.status === "pending_payment" ? onHeld() : router.push("/check-in"))}
+            accessibilityRole="button"
+            accessibilityLabel={`${registration.id}, ${t(`registration.appStatus.${registration.status}`)}`}
+            pressScale={0.98}
+          >
+            <Card style={styles.app}>
               <View style={{ flex: 1, gap: 4 }}>
-                <Text style={styles.caption}>{application.id}</Text>
-                <Text style={styles.appTitle}>{l(application.campaign)}</Text>
+                <Text style={styles.caption}>{registration.id}</Text>
+                <Text style={styles.appTitle}>
+                  {registration.buildingName} · {registration.floorName}
+                </Text>
                 <Text style={styles.caption}>
-                  {application.place} · {Formatter.currency(application.amount)}
+                  {registration.roomCode} · {bedLabel(registration.bedCode)} · {Formatter.currency(registration.totalAmount)}
                 </Text>
               </View>
-              <StatusBadge label={t(`registration.appStatus.${application.status}`)} tone={applicationTone[application.status]} />
+              <StatusBadge label={t(`registration.appStatus.${registration.status}`)} tone={applicationTone[registration.status] ?? "neutral"} />
             </Card>
-          ))}
-        </View>
+          </Touchable>
+        ) : (
+          !loading && <Text style={styles.caption}>{t("registration.noApplications")}</Text>
+        )}
       </View>
     </Screen>
   );
 }
 
-function Wizard({ onExit, onSubmitted, title }: { onExit: () => void; onSubmitted: (value: { building: string; room: string; bed: string; total: number }) => void; title: string }) {
-  const { t, l } = useI18n();
+function Wizard({
+  api,
+  campaign,
+  title,
+  onExit,
+  onCampaign,
+  onDebt,
+  onCreated,
+}: {
+  api: Api;
+  campaign: StudentCampaign;
+  title: string;
+  onExit: () => void;
+  onCampaign: (state: StudentCampaignState) => void;
+  onDebt: (block: DebtBlock) => void;
+  onCreated: (registration: Registration, payNow: boolean) => void;
+}) {
+  const { t } = useI18n();
   const { notify } = useToast();
   const { colors, shadow } = useTheme();
   const styles = useStyles();
-  const buildings = RegistrationRepository.buildings();
   const steps = [t("registration.steps.building"), t("registration.steps.floor"), t("registration.steps.room"), t("registration.steps.bed"), t("registration.steps.confirm")];
   const [step, setStep] = useState(0);
+  const [buildings, setBuildings] = useState<BuildingDto[] | null>(null);
+  const [floors, setFloors] = useState<Floor[] | null>(null);
   const [buildingId, setBuildingId] = useState<string | null>(null);
-  const [floorNo, setFloorNo] = useState<number | null>(null);
-  const [roomCode, setRoomCode] = useState<string | null>(null);
-  const [bedCode, setBedCode] = useState<string | null>(null);
-  const [period, setPeriod] = useState<PricingPeriod>("sixMonths");
+  const [floorId, setFloorId] = useState<string | null>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [bedId, setBedId] = useState<string | null>(null);
+  const [period, setPeriod] = useState<PricingPeriod>("6months");
   const [payment, setPayment] = useState<"now" | "later">("now");
   const [submitting, setSubmitting] = useState(false);
 
-  const building = buildings.find((item) => item.id === buildingId) ?? null;
-  const floor = building?.floors.find((item) => item.number === floorNo) ?? null;
-  const room = floor?.rooms.find((item) => item.code === roomCode) ?? null;
-  const months = RegistrationRepository.months[period];
+  useEffect(() => {
+    let alive = true;
+    api
+      .buildings()
+      .then((items) => alive && setBuildings(items.filter((item) => isInScope(campaign, item.id))))
+      .catch((error: unknown) => {
+        if (!alive) return;
+        setBuildings([]);
+        notify(errorMessage(error), "danger");
+      });
+    return () => {
+      alive = false;
+    };
+  }, [api, campaign, notify]);
+
+  const loadFloors = useCallback(
+    async (id: string) => {
+      const [floorItems, roomItems] = await Promise.all([api.floors(id), api.rooms(id)]);
+      return groupFloors(floorItems, roomItems);
+    },
+    [api],
+  );
+
+  useEffect(() => {
+    if (!buildingId) return;
+    let alive = true;
+    loadFloors(buildingId)
+      .then((items) => alive && setFloors(items))
+      .catch((error: unknown) => {
+        if (!alive) return;
+        setFloors([]);
+        notify(errorMessage(error), "danger");
+      });
+    return () => {
+      alive = false;
+    };
+  }, [buildingId, loadFloors, notify]);
+
+  const building = buildings?.find((item) => item.id === buildingId) ?? null;
+  const floor = floors?.find((item) => item.id === floorId) ?? null;
+  const room = floor?.rooms.find((item) => item.id === roomId) ?? null;
+  const bed = room?.beds.find((item) => item.id === bedId) ?? null;
+  const months = PERIOD_MONTHS[period];
   const total = room ? room.price * months : 0;
-  const canNext = [!!building, !!floor, !!room, !!bedCode, true][step];
-  const bldg = t("common.building");
+  const canNext = [!!building, !!floor, !!room, !!bed, true][step];
+  const floorTitle = (item: Floor) => (item.number !== null ? `${t("common.floor")} ${item.number}` : item.name);
 
   const back = () => (step === 0 ? onExit() : setStep(step - 1));
-  const next = () => {
-    if (step < steps.length - 1) return setStep(step + 1);
-    setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
-      notify(payment === "now" ? t("registration.held") : t("registration.heldLater"));
-      if (building && room && bedCode) onSubmitted({ building: `${bldg} ${building.id}`, room: room.code, bed: bedCode, total });
-    }, 800);
+
+  /** Giường vừa bị người khác giữ/đợt hết chỉ tiêu: tải lại sơ đồ và quay lại bước chọn giường. */
+  const refreshBeds = async () => {
+    if (!buildingId) return;
+    try {
+      setFloors(await loadFloors(buildingId));
+    } catch {
+      // giữ dữ liệu cũ nếu tải lại thất bại
+    }
+    setBedId(null);
+    setStep(3);
   };
+
+  const submit = async () => {
+    if (!building || !floor || !room || !bed) return;
+    setSubmitting(true);
+    try {
+      // Hỏi lại đợt hiện tại ngay trước khi đặt giường để không dùng campaignId của đợt đã đóng/huỷ.
+      const fresh = await api.currentCampaign();
+      onCampaign(fresh);
+      if (fresh.state !== "OPEN" || !fresh.campaign) return notify(t("registration.staleCampaign"), "warning");
+      if (!isInScope(fresh.campaign, building.id)) return notify(t("registration.outOfScope"), "warning");
+      const created = await api.create({ campaignId: fresh.campaign.id, buildingId: building.id, floorId: floor.id, roomId: room.id, bedId: bed.id, pricingPeriod: period });
+      notify(payment === "now" ? t("registration.held") : t("registration.heldLater"));
+      onCreated(created, payment === "now");
+    } catch (error) {
+      if (error instanceof ApiError && error.code === DEBT_CODE) return onDebt({ message: error.message, actionPath: error.actionPath });
+      notify(errorMessage(error), "danger");
+      if (error instanceof ApiError && error.status === 409) {
+        await refreshBeds();
+        notify(t("registration.bedRefreshed"), "warning");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const next = () => (step < steps.length - 1 ? setStep(step + 1) : submit());
+
+  const loader = <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xxl }} />;
 
   return (
     <Screen
@@ -182,151 +424,169 @@ function Wizard({ onExit, onSubmitted, title }: { onExit: () => void; onSubmitte
       {step === 0 && (
         <>
           <Text style={styles.stepTitle}>{t("registration.whichBuilding")}</Text>
-          <View style={{ gap: spacing.md }}>
-            {buildings.map((item) => {
-              const selected = item.id === buildingId;
-              const available = RegistrationRepository.availableBeds(item);
-              const sample = item.floors[0].rooms[0];
-              return (
-                <Touchable
-                  key={item.id}
-                  onPress={() => {
-                    setBuildingId(item.id);
-                    setFloorNo(null);
-                    setRoomCode(null);
-                    setBedCode(null);
-                  }}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={`${bldg} ${item.id}, ${t("registration.freeBeds", { count: available })}`}
-                  pressScale={0.98}
-                  style={[styles.buildingShadow, shadow(1)]}
-                >
-                  <PhotoBackground source={Photos.building(item.id)} shade style={[styles.building, selected && styles.buildingSelected]}>
-                    <View style={styles.buildingTop}>
-                      <Glass variant="photo" style={styles.buildingBadge}>
-                        <Text style={styles.buildingBadgeText}>
-                          {bldg} {item.id}
-                        </Text>
-                      </Glass>
-                      <Glass variant="photo" style={styles.buildingBadge}>
-                        <Ionicons name={sample.gender === "male" ? "male" : "female"} size={13} color={colors.white} />
-                        <Text style={styles.buildingBadgeText}>{t(`common.${sample.gender}`)}</Text>
-                      </Glass>
-                    </View>
-                    <Glass variant="photo" strong style={styles.buildingInfo}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.buildingDesc} numberOfLines={1}>
-                          {l(item.description)}
-                        </Text>
-                        <Text style={styles.buildingFree}>{t("registration.freeBeds", { count: available })}</Text>
+          {!buildings ? (
+            loader
+          ) : buildings.length === 0 ? (
+            <EmptyState icon="business-outline" title={t("registration.noBuildings")} />
+          ) : (
+            <View style={{ gap: spacing.md }}>
+              {buildings.map((item, index) => {
+                const selected = item.id === buildingId;
+                const photoKey = item.name.trim().slice(-1).toUpperCase();
+                return (
+                  <Touchable
+                    key={item.id}
+                    onPress={() => {
+                      if (item.id !== buildingId) setFloors(null);
+                      setBuildingId(item.id);
+                      setFloorId(null);
+                      setRoomId(null);
+                      setBedId(null);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={`${item.name}, ${t("registration.floorsCount", { count: item.floors })}`}
+                    pressScale={0.98}
+                    style={[styles.buildingShadow, shadow(1)]}
+                  >
+                    <PhotoBackground source={Photos.building(/[A-Z]/.test(photoKey) ? photoKey : "ABCD"[index % 4])} shade style={[styles.building, selected && styles.buildingSelected]}>
+                      <View style={styles.buildingTop}>
+                        <Glass variant="photo" style={styles.buildingBadge}>
+                          <Text style={styles.buildingBadgeText}>{item.name}</Text>
+                        </Glass>
+                        <Glass variant="photo" style={styles.buildingBadge}>
+                          <Ionicons name="layers-outline" size={13} color={colors.white} />
+                          <Text style={styles.buildingBadgeText}>{t("registration.floorsCount", { count: item.floors })}</Text>
+                        </Glass>
                       </View>
-                      <Text style={styles.buildingPrice}>
-                        {Formatter.compactCurrency(sample.price)}
-                        <Text style={styles.buildingUnit}>{t("common.perMonthShort")}</Text>
-                      </Text>
-                      {selected && <Ionicons name="checkmark-circle" size={26} color={colors.primaryLight} />}
-                    </Glass>
-                  </PhotoBackground>
-                </Touchable>
-              );
-            })}
-          </View>
+                      <Glass variant="photo" strong style={styles.buildingInfo}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.buildingDesc} numberOfLines={1}>
+                            {t("registration.buildingMeta", { rooms: item.rooms, rate: Formatter.decimal(item.occupancyRate) })}
+                          </Text>
+                        </View>
+                        {item.baseRoomPrice != null && (
+                          <Text style={styles.buildingPrice}>
+                            {Formatter.compactCurrency(Number(item.baseRoomPrice))}
+                            <Text style={styles.buildingUnit}>{t("common.perMonthShort")}</Text>
+                          </Text>
+                        )}
+                        {selected && <Ionicons name="checkmark-circle" size={26} color={colors.primaryLight} />}
+                      </Glass>
+                    </PhotoBackground>
+                  </Touchable>
+                );
+              })}
+            </View>
+          )}
         </>
       )}
 
       {step === 1 && building && (
         <>
-          <Text style={styles.stepTitle}>{t("registration.chooseFloor", { building: `${bldg} ${building.id}` })}</Text>
-          <View style={styles.floors}>
-            {building.floors.map((item) => {
-              const available = RegistrationRepository.floorAvailability(item);
-              const capacity = item.rooms.reduce((sum, r) => sum + r.capacity, 0);
-              const selected = item.number === floorNo;
-              return (
-                <Touchable
-                  key={item.number}
-                  disabled={available === 0}
-                  onPress={() => {
-                    setFloorNo(item.number);
-                    setRoomCode(null);
-                    setBedCode(null);
-                  }}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={`${t("common.floor")} ${item.number}, ${t("registration.free", { count: available })}`}
-                  style={[styles.floor, selected && styles.selected]}
-                >
-                  <Text style={styles.caption}>{t("common.floor")}</Text>
-                  <Text style={[styles.floorNum, selected && { color: colors.primary }]}>{item.number}</Text>
-                  <ProgressBar value={available / capacity} tone="success" height={5} />
-                  <Text style={styles.floorFree}>{t("registration.free", { count: available })}</Text>
-                </Touchable>
-              );
-            })}
-          </View>
+          <Text style={styles.stepTitle}>{t("registration.chooseFloor", { building: building.name })}</Text>
+          {!floors ? (
+            loader
+          ) : (
+            <View style={styles.floors}>
+              {floors.map((item) => {
+                const available = floorAvailability(item);
+                const capacity = item.rooms.reduce((sum, r) => sum + r.capacity, 0);
+                const selected = item.id === floorId;
+                return (
+                  <Touchable
+                    key={item.id}
+                    disabled={available === 0}
+                    onPress={() => {
+                      setFloorId(item.id);
+                      setRoomId(null);
+                      setBedId(null);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected, disabled: available === 0 }}
+                    accessibilityLabel={`${floorTitle(item)}, ${t("registration.free", { count: available })}`}
+                    style={[styles.floor, selected && styles.selected, available === 0 && { opacity: 0.55 }]}
+                  >
+                    <Text style={styles.caption}>{t("common.floor")}</Text>
+                    <Text style={[styles.floorNum, selected && { color: colors.primary }]} numberOfLines={1} adjustsFontSizeToFit>
+                      {item.number ?? item.name}
+                    </Text>
+                    <ProgressBar value={capacity ? available / capacity : 0} tone="success" height={5} />
+                    <Text style={styles.floorFree}>{t("registration.free", { count: available })}</Text>
+                  </Touchable>
+                );
+              })}
+            </View>
+          )}
         </>
       )}
 
       {step === 2 && floor && (
         <>
-          <Text style={styles.stepTitle}>{t("registration.chooseRoom", { floor: floor.number })}</Text>
-          <View style={{ gap: spacing.sm }}>
-            {floor.rooms.map((item) => {
-              const selected = item.code === roomCode;
-              const disabled = item.status !== "available" || item.available === 0;
-              return (
-                <Touchable
-                  key={item.code}
-                  disabled={disabled}
-                  onPress={() => {
-                    setRoomCode(item.code);
-                    setBedCode(null);
-                  }}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected, disabled }}
-                  accessibilityLabel={`${t("common.room")} ${item.code}, ${t(`registration.roomStatus.${item.status}`)}`}
-                  style={[styles.room, selected && styles.selected]}
-                >
-                  <View style={[styles.roomIcon, selected && { backgroundColor: colors.primary }]}>
-                    <Text style={[styles.roomIconText, selected && { color: colors.onPrimary }]}>{item.code.slice(-2)}</Text>
-                  </View>
-                  <View style={{ flex: 1, gap: 4 }}>
-                    <Text style={styles.roomCode}>
-                      {t("common.room")} {item.code}
-                    </Text>
-                    <Text style={styles.caption}>{t("registration.roomMeta", { capacity: item.capacity, available: item.available, gender: t(`common.${item.gender}`) })}</Text>
-                  </View>
-                  <View style={{ alignItems: "flex-end", gap: 6 }}>
-                    <StatusBadge label={t(`registration.roomStatus.${item.status}`)} tone={roomStatusTone[item.status]} />
-                    <Text style={styles.roomPrice}>
-                      {Formatter.compactCurrency(item.price)}
-                      {t("common.perMonthShort")}
-                    </Text>
-                  </View>
-                </Touchable>
-              );
-            })}
-          </View>
+          <Text style={styles.stepTitle}>{t("registration.chooseRoom", { floor: floorTitle(floor) })}</Text>
+          {floor.rooms.length === 0 ? (
+            <EmptyState icon="grid-outline" title={t("registration.noRooms")} />
+          ) : (
+            <View style={{ gap: spacing.sm }}>
+              {floor.rooms.map((item) => {
+                const selected = item.id === roomId;
+                const disabled = item.status !== "available" || item.available === 0;
+                return (
+                  <Touchable
+                    key={item.id}
+                    disabled={disabled}
+                    onPress={() => {
+                      setRoomId(item.id);
+                      setBedId(null);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected, disabled }}
+                    accessibilityLabel={`${t("common.room")} ${item.code}, ${t(`registration.roomStatus.${item.status}`)}`}
+                    style={[styles.room, selected && styles.selected]}
+                  >
+                    <View style={[styles.roomIcon, selected && { backgroundColor: colors.primary }]}>
+                      <Text style={[styles.roomIconText, selected && { color: colors.onPrimary }]}>{item.code.slice(-2)}</Text>
+                    </View>
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <Text style={styles.roomCode}>
+                        {t("common.room")} {item.code}
+                      </Text>
+                      <Text style={styles.caption}>
+                        {t("registration.roomMeta", { capacity: item.capacity, available: item.available })}
+                        {item.type ? ` · ${item.type}` : ""}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: "flex-end", gap: 6 }}>
+                      <StatusBadge label={t(`registration.roomStatus.${item.status}`)} tone={roomStatusTone[item.status]} />
+                      <Text style={styles.roomPrice}>
+                        {Formatter.compactCurrency(item.price)}
+                        {t("common.perMonthShort")}
+                      </Text>
+                    </View>
+                  </Touchable>
+                );
+              })}
+            </View>
+          )}
         </>
       )}
 
       {step === 3 && room && (
         <>
           <Text style={styles.stepTitle}>{t("registration.chooseBed", { room: room.code })}</Text>
-          <BedMap beds={room.beds} value={bedCode} onChange={setBedCode} />
+          {room.beds.length === 0 ? <EmptyState icon="bed-outline" title={t("registration.noBeds")} /> : <BedMap beds={room.beds} value={bedId} onChange={setBedId} />}
         </>
       )}
 
-      {step === 4 && building && floor && room && bedCode && (
+      {step === 4 && building && floor && room && bed && (
         <>
           <Text style={styles.stepTitle}>{t("registration.review")}</Text>
-          <PhotoBackground source={Photos.building(building.id, 800)} style={styles.summaryPhoto}>
+          <PhotoBackground source={Photos.building(building.name.trim().slice(-1).toUpperCase(), 800)} style={styles.summaryPhoto}>
             <Glass variant="photo" strong style={styles.summary}>
-              <SummaryCell label={t("common.building")} value={building.id} />
-              <SummaryCell label={t("common.floor")} value={`${floor.number}`} />
+              <SummaryCell label={t("common.building")} value={building.name.replace(/^(tòa|toà|tòa nhà)\s+/i, "")} />
+              <SummaryCell label={t("common.floor")} value={floor.number !== null ? `${floor.number}` : floor.name} />
               <SummaryCell label={t("common.room")} value={room.code} />
-              <SummaryCell label={t("common.bed")} value={bedCode} />
+              <SummaryCell label={t("common.bed")} value={bedLabel(bed.code)} />
             </Glass>
           </PhotoBackground>
           <Text style={styles.subTitle}>{t("registration.duration")}</Text>
@@ -334,8 +594,8 @@ function Wizard({ onExit, onSubmitted, title }: { onExit: () => void; onSubmitte
             value={period}
             onChange={setPeriod}
             options={[
-              { value: "sixMonths", label: t("registration.sixMonths") },
-              { value: "oneYear", label: t("registration.oneYear") },
+              { value: "6months", label: t("registration.sixMonths") },
+              { value: "1year", label: t("registration.oneYear") },
             ]}
           />
           <Card style={{ marginTop: spacing.md, paddingVertical: spacing.xs }}>
@@ -354,19 +614,50 @@ function Wizard({ onExit, onSubmitted, title }: { onExit: () => void; onSubmitte
   );
 }
 
-/** Đã giữ chỗ: đếm ngược 24 giờ, thanh toán hoặc huỷ đăng ký. */
-function Held({ building, room, bed, total, onCancelled }: { building: string; room: string; bed: string; total: number; onCancelled: () => void }) {
+/** Đã giữ chỗ: đếm ngược tới hạn thanh toán của BE, thanh toán hoặc huỷ đăng ký. */
+function Held({ api, registration, onChanged }: { api: Api; registration: Registration; onChanged: (registration: Registration | null) => void }) {
   const { t } = useI18n();
   const { notify } = useToast();
   const { colors } = useTheme();
   const styles = useStyles();
-  const [seconds, setSeconds] = useState(HOLD_SECONDS);
+  const deadline = registration.paymentDeadline ? new Date(registration.paymentDeadline).getTime() : null;
+  const windowSeconds = deadline ? Math.max(1, Math.round((deadline - new Date(registration.createdAt).getTime()) / 1000)) : 1;
+  const remaining = () => (deadline ? Math.max(0, Math.round((deadline - Date.now()) / 1000)) : 0);
+  const [seconds, setSeconds] = useState(remaining);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    if (!deadline) return;
+    const timer = setInterval(() => setSeconds(Math.max(0, Math.round((deadline - Date.now()) / 1000))), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [deadline]);
+
+  // Hết hạn: hỏi lại BE một lần (BE tự chuyển đơn sang "expired" và nhả giường).
+  const expiredHandled = useRef(false);
+  useEffect(() => {
+    if (!deadline || seconds > 0 || expiredHandled.current) return;
+    expiredHandled.current = true;
+    notify(t("registration.holdExpired"), "warning");
+    api
+      .mine()
+      .then(onChanged)
+      .catch(() => onChanged({ ...registration, status: "expired" }));
+  }, [deadline, seconds, api, onChanged, registration, notify, t]);
+
+  const cancel = async () => {
+    setCancelling(true);
+    try {
+      const cancelled = await api.cancel(registration.id);
+      setConfirmCancel(false);
+      notify(t("registration.cancelled"));
+      onChanged(cancelled);
+    } catch (error) {
+      notify(errorMessage(error), "danger");
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   return (
     <Screen edges={["top", "bottom"]} header={<AppHeader title={t("registration.title")} onBack={() => router.back()} />}>
@@ -374,22 +665,18 @@ function Held({ building, room, bed, total, onCancelled }: { building: string; r
         <Ionicons name="checkmark" size={46} color={colors.white} />
       </View>
       <Text style={styles.successTitle}>{t("registration.heldTitle")}</Text>
-      <Text style={styles.successBody}>{t("registration.heldBody", { bed, room, building })}</Text>
+      <Text style={styles.successBody}>{t("registration.heldBody", { bed: bedLabel(registration.bedCode), room: registration.roomCode, building: registration.buildingName })}</Text>
       <Card style={styles.hold}>
         <Text style={[styles.caption, { textAlign: "center" }]}>{t("registration.holdLeft")}</Text>
         <Text style={styles.holdTime}>{Formatter.countdown(seconds)}</Text>
-        <ProgressBar value={seconds / HOLD_SECONDS} tone="warning" />
-        <InfoRow label={t("registration.amountDue")} value={Formatter.currency(total)} strong divider={false} />
+        <ProgressBar value={seconds / windowSeconds} tone="warning" />
+        <InfoRow label={t("registration.amountDue")} value={Formatter.currency(registration.totalAmount)} strong divider={false} />
       </Card>
       <Callout tone="warning" icon="alert-circle">
-        {t("registration.holdWarning")}
+        {t("registration.holdWarning", { deadline: registration.paymentDeadline ? Formatter.dateTime(registration.paymentDeadline) : "—" })}
       </Callout>
       <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
-        <Button
-          label={t("registration.payNow")}
-          icon="qr-code-outline"
-          onPress={() => router.push({ pathname: "/debts/pay/[id]", params: { id: "DK-2026-5521", amount: String(total), title: `${t("debts.billType.registration")} · ${room} · G${bed}` } })}
-        />
+        <Button label={t("registration.payNow")} icon="qr-code-outline" disabled={seconds === 0} onPress={() => openPayment(registration, t("debts.billType.registration"))} />
         <Button label={t("registration.cancel")} variant="danger" icon="close-circle-outline" onPress={() => setConfirmCancel(true)} />
       </View>
       <BottomSheet
@@ -400,16 +687,7 @@ function Held({ building, room, bed, total, onCancelled }: { building: string; r
         footer={
           <View style={{ flexDirection: "row", gap: spacing.md }}>
             <Button label={t("common.back")} variant="ghost" onPress={() => setConfirmCancel(false)} style={{ flex: 1 }} />
-            <Button
-              label={t("registration.cancel")}
-              variant="dark"
-              onPress={() => {
-                setConfirmCancel(false);
-                notify(t("registration.cancelled"));
-                onCancelled();
-              }}
-              style={{ flex: 1 }}
-            />
+            <Button label={t("registration.cancel")} variant="dark" loading={cancelling} onPress={cancel} style={{ flex: 1 }} />
           </View>
         }
       />
@@ -434,7 +712,9 @@ function SummaryCell({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ flex: 1, alignItems: "center", gap: 2 }}>
       <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={styles.summaryValue}>{value}</Text>
+      <Text style={styles.summaryValue} numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -468,6 +748,7 @@ const useStyles = makeStyles(({ colors, font }) => ({
   campaignTag: { flexDirection: "row", alignItems: "center", gap: 8 },
   campaignTagText: { color: colors.primaryLight, fontWeight: "700", fontSize: 13 },
   campaignName: { color: white, fontSize: 19, fontWeight: "800", lineHeight: 25 },
+  campaignMessage: { color: "rgba(255,255,255,0.85)", fontSize: 13, lineHeight: 19 },
   campaignGrid: { flexDirection: "row", gap: spacing.sm },
   campaignCell: { flex: 1, gap: 3, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: radius.sm, padding: spacing.sm },
   campaignLabel: { color: "rgba(255,255,255,0.7)", fontSize: 11, fontWeight: "600" },
@@ -487,7 +768,6 @@ const useStyles = makeStyles(({ colors, font }) => ({
   buildingBadgeText: { color: white, fontSize: 12, fontWeight: "800" },
   buildingInfo: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radius.md },
   buildingDesc: { color: white, fontSize: 14, fontWeight: "700" },
-  buildingFree: { color: "#5BE49B", fontSize: 12, fontWeight: "700", marginTop: 2 },
   buildingPrice: { color: white, fontSize: 18, fontWeight: "800" },
   buildingUnit: { fontSize: 12, fontWeight: "600" },
   floors: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: spacing.md },

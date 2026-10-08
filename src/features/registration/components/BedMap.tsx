@@ -3,10 +3,15 @@ import { Text, View } from "react-native";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../../shared/theme";
 import { Touchable } from "../../../shared/ui";
-import { Bed, BedStatus } from "../registration.mock";
+import { Bed, BedStatus } from "../registrationApi";
 
-/** Sơ đồ giường tầng trong phòng: mỗi cụm gồm giường tầng 1 và tầng 2. */
-export function BedMap({ beds, value, onChange }: { beds: Bed[]; value: string | null; onChange: (code: string) => void }) {
+/** Mã ngắn ("01") hiển thị kiểu "G01"; mã đầy đủ từ BE ("A101-01") giữ nguyên. */
+export function bedLabel(code: string) {
+  return code.length <= 3 ? `G${code}` : code;
+}
+
+/** Sơ đồ giường trong phòng: mỗi cụm gồm 2 giường (giường tầng 1 và tầng 2 nếu phòng có giường tầng). */
+export function BedMap({ beds, value, onChange }: { beds: Bed[]; value: string | null; onChange: (id: string) => void }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const { t } = useI18n();
@@ -30,27 +35,31 @@ export function BedMap({ beds, value, onChange }: { beds: Bed[]; value: string |
           <View key={index} style={styles.cluster}>
             <Text style={styles.clusterLabel}>{t("registration.cluster", { number: index + 1 })}</Text>
             {[...cluster]
-              .sort((a, b) => b.level - a.level)
+              .sort((a, b) => (b.level ?? 0) - (a.level ?? 0))
               .map((bed) => {
-                const selected = bed.code === value;
+                const selected = bed.id === value;
                 const look = palette[bed.status];
                 const disabled = bed.status !== "available";
                 return (
                   <Touchable
-                    key={bed.code}
+                    key={bed.id}
                     disabled={disabled}
-                    onPress={() => onChange(bed.code)}
+                    onPress={() => onChange(bed.id)}
                     accessibilityRole="radio"
                     accessibilityState={{ selected, disabled }}
-                    accessibilityLabel={t("registration.bedLabel", { code: bed.code, level: bed.level, status: t(`registration.bedStatus.${bed.status}`) })}
+                    accessibilityLabel={t("registration.bedLabel", { code: bed.code, status: t(`registration.bedStatus.${bed.status}`) })}
                     style={[styles.bed, { backgroundColor: look.bg, borderColor: look.border }, selected && styles.bedSelected, disabled && { opacity: 1 }]}
                   >
                     <Ionicons name="bed" size={18} color={selected ? colors.onPrimary : look.fg} />
-                    <View>
-                      <Text style={[styles.bedCode, selected && { color: colors.onPrimary }, disabled && { color: colors.muted }]}>G{bed.code}</Text>
-                      <Text style={[styles.bedLevel, selected && { color: "rgba(255,255,255,0.85)" }]}>
-                        {t("common.floor")} {bed.level}
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.bedCode, selected && { color: colors.onPrimary }, disabled && { color: colors.muted }]} numberOfLines={1}>
+                        {bedLabel(bed.code)}
                       </Text>
+                      {bed.level !== undefined && (
+                        <Text style={[styles.bedLevel, selected && { color: "rgba(255,255,255,0.85)" }]}>
+                          {t("common.floor")} {bed.level}
+                        </Text>
+                      )}
                     </View>
                   </Touchable>
                 );

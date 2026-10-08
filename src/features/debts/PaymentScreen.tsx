@@ -1,24 +1,33 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { errorMessage } from "../../shared/api";
 import { QrCode } from "../../shared/charts/QrCode";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { AppHeader, Button, Card, CircleButton, EmptyState, FooterBar, Screen, Touchable, useToast } from "../../shared/ui";
+import { useAuth } from "../auth/AuthProvider";
+import { registrationApi } from "../registration/registrationApi";
 import { DebtRepository, Payable } from "./debts.mock";
 
 const QR_LIFETIME = 15 * 60;
 
-/** Màn hình thanh toán bằng mã QR chuyển khoản (mock). */
+/**
+ * Màn hình thanh toán bằng mã QR chuyển khoản. Với đơn đăng ký KTX (`registrationId`), xác nhận
+ * chuyển khoản gọi `POST /student/registrations/{id}/payment` — BE hoàn tất đăng ký và tạo biên bản
+ * nhận phòng; các khoản khác vẫn là mock.
+ */
 export function PaymentScreen() {
-  const { id, amount, title } = useLocalSearchParams<{ id: string; amount?: string; title?: string }>();
+  const { id, amount, title, registrationId } = useLocalSearchParams<{ id: string; amount?: string; title?: string; registrationId?: string }>();
   const { notify } = useToast();
   const { t, l } = useI18n();
   const { shadow } = useTheme();
   const styles = useStyles();
+  const { request } = useAuth();
+  const api = useMemo(() => registrationApi(request), [request]);
   // Khoản phát sinh ngay trong app (vd. đăng ký KTX) truyền số tiền qua tham số.
   const item: Payable | undefined = DebtRepository.find(String(id)) ?? (amount && title ? { id: String(id), amount: Number(amount), title: { vi: String(title), en: String(title) } } : undefined);
   const [seconds, setSeconds] = useState(QR_LIFETIME);
@@ -60,9 +69,32 @@ export function PaymentScreen() {
           <ReceiptRow label={t("debts.paidAt")} value={Formatter.dateTime(new Date())} />
           <ReceiptRow label={t("debts.method")} value={`QR · ${account.bank}`} />
         </Card>
-        <Button label={t("common.done")} onPress={() => router.back()} style={{ alignSelf: "stretch", marginTop: spacing.xxl }} />
+        {registrationId ? (
+          <>
+            <Text style={[styles.doneBody, { marginTop: spacing.lg }]}>{t("payment.registrationDone")}</Text>
+            <Button label={t("payment.goCheckIn")} icon="key-outline" onPress={() => router.replace("/check-in")} style={{ alignSelf: "stretch", marginTop: spacing.xl }} />
+            <Button label={t("common.done")} variant="ghost" onPress={() => router.back()} style={{ alignSelf: "stretch", marginTop: spacing.sm }} />
+          </>
+        ) : (
+          <Button label={t("common.done")} onPress={() => router.back()} style={{ alignSelf: "stretch", marginTop: spacing.xxl }} />
+        )}
       </Screen>
     );
+
+  const confirmTransfer = async () => {
+    setPhase("checking");
+    if (!registrationId) {
+      setTimeout(() => setPhase("done"), 1600);
+      return;
+    }
+    try {
+      await api.pay(String(registrationId));
+      setPhase("done");
+    } catch (error) {
+      notify(errorMessage(error), "danger");
+      setPhase("waiting");
+    }
+  };
 
   return (
     <Screen
@@ -75,10 +107,7 @@ export function PaymentScreen() {
             icon="checkmark-done"
             loading={phase === "checking"}
             disabled={seconds === 0}
-            onPress={() => {
-              setPhase("checking");
-              setTimeout(() => setPhase("done"), 1600);
-            }}
+            onPress={confirmTransfer}
             style={{ flex: 1 }}
           />
         </FooterBar>

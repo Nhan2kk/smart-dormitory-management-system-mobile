@@ -5,8 +5,10 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { ApiCallOptions, ApiClient, ApiError, apiCall } from "../../shared/api";
 import { authApi, AuthResponse, AuthUser } from "./authApi";
 
 const STORAGE_KEY = "sdms.refreshToken";
@@ -19,6 +21,8 @@ type AuthContextValue = {
   loading: boolean;
   signIn: (username: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Gọi API kèm access token; tự làm mới token một lần khi nhận 401. */
+  request: ApiClient;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -26,6 +30,12 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<AuthResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const sessionRef = useRef<AuthResponse | null>(null);
+  const refreshing = useRef<Promise<AuthResponse | null> | null>(null);
+
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   useEffect(() => {
     let mounted = true;
@@ -83,6 +93,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await authApi.logout(token, accessToken).catch(() => undefined);
   }, [session]);
 
+  /** Dùng chung một lượt refresh khi nhiều request cùng gặp 401. */
+  const refreshSession = useCallback(async () => {
+    const current = sessionRef.current;
+    if (!current || MOCK_AUTH) return null;
+    refreshing.current ??= authApi
+      .refresh(current.refreshToken)
+      .then(async (next) => {
+        await SecureStore.setItemAsync(STORAGE_KEY, next.refreshToken);
+        sessionRef.current = next;
+        setSession(next);
+        return next;
+      })
+      .catch(async () => {
+        await SecureStore.deleteItemAsync(STORAGE_KEY).catch(() => undefined);
+        sessionRef.current = null;
+        setSession(null);
+        return null;
+      })
+      .finally(() => {
+        refreshing.current = null;
+      });
+    return refreshing.current;
+  }, []);
+
+  const request = useCallback(
+    async <T,>(path: string, options: Omit<ApiCallOptions, "accessToken"> = {}): Promise<T> => {
+      try {
+        return await apiCall<T>(path, { ...options, accessToken: sessionRef.current?.accessToken });
+      } catch (error) {
+        if (!(error instanceof ApiError) || error.status !== 401) throw error;
+        const next = await refreshSession();
+        if (!next) throw error;
+        return apiCall<T>(path, { ...options, accessToken: next.accessToken });
+      }
+    },
+    [refreshSession],
+  ) as ApiClient;
+
   const value = useMemo(
     () => ({
       user: session?.user ?? null,
@@ -90,8 +138,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       signIn,
       signOut,
+      request,
     }),
-    [session, loading, signIn, signOut],
+    [session, loading, signIn, signOut, request],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { ReactNode } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { Formatter } from "../format";
@@ -120,8 +121,8 @@ export function Checkbox({ checked, onChange, label }: { checked: boolean; onCha
   );
 }
 
-/** Ô thêm ảnh minh chứng (mock — chưa mở thư viện ảnh). */
-export function PhotoSlots({ count, onAdd, onRemove, max = 4 }: { count: number; onAdd: () => void; onRemove: (index: number) => void; max?: number }) {
+/** Ô thêm ảnh minh chứng. Truyền `uris` để hiển thị ảnh thật; không truyền thì hiện biểu tượng giữ chỗ. */
+export function PhotoSlots({ count, onAdd, onRemove, max = 4, uris }: { count: number; onAdd: () => void; onRemove: (index: number) => void; max?: number; uris?: string[] }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const { t } = useI18n();
@@ -129,7 +130,7 @@ export function PhotoSlots({ count, onAdd, onRemove, max = 4 }: { count: number;
     <View style={styles.photos}>
       {Array.from({ length: count }, (_, index) => (
         <View key={index} style={styles.photo}>
-          <Ionicons name="image" size={26} color={colors.primary} />
+          {uris?.[index] ? <Image source={{ uri: uris[index] }} style={styles.photoImage} contentFit="cover" /> : <Ionicons name="image" size={26} color={colors.primary} />}
           <Touchable onPress={() => onRemove(index)} accessibilityLabel={t("common.removePhoto", { index: index + 1 })} style={styles.photoRemove}>
             <Ionicons name="close" size={14} color={colors.onInverse} />
           </Touchable>
@@ -171,6 +172,7 @@ const useStyles = makeStyles(({ colors, font }) => ({
   checkLabel: { ...font.body, flex: 1, fontSize: 14, color: colors.ink },
   photos: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
   photo: { width: 76, height: 76, borderRadius: radius.md, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
+  photoImage: { width: "100%", height: "100%", borderRadius: radius.md },
   photoAdd: { backgroundColor: colors.surface, borderWidth: 1.5, borderStyle: "dashed", borderColor: colors.primaryLight, gap: 2 },
   photoAddText: { fontSize: 11, fontWeight: "700", color: colors.primary },
   photoRemove: { position: "absolute", top: -6, right: -6, width: 22, height: 22, borderRadius: 11, backgroundColor: colors.inverse, alignItems: "center", justifyContent: "center" },

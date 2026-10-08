@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { errorMessage, isNotFound } from "../../shared/api";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Photos } from "../../shared/images";
@@ -14,6 +16,7 @@ import {
   Card,
   Checkbox,
   ChipGroup,
+  EmptyState,
   Field,
   FooterBar,
   Glass,
@@ -26,65 +29,177 @@ import {
   Touchable,
   useToast,
 } from "../../shared/ui";
-import { AssetReport, CheckInRepository, HandoverAsset, ISSUE_TYPES, IssueType } from "./check-in.mock";
+import { useAuth } from "../auth/AuthProvider";
+import { bedLabel } from "../registration/components/BedMap";
+import { assetIcon, CheckInRecord, checkInApi, CheckInSubmitResult, EvidencePhoto, HandoverAsset, ISSUE_TYPES, IssueType } from "./checkInApi";
+
+type Draft = { issueType: IssueType; note: string; photos: EvidencePhoto[] };
 
 export function CheckInScreen() {
   const { notify } = useToast();
-  const { t, l } = useI18n();
+  const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useStyles();
-  const info = CheckInRepository.registration;
-  const assets = CheckInRepository.assets;
+  const { request } = useAuth();
+  const api = useMemo(() => checkInApi(request), [request]);
   const steps = [t("checkIn.steps.inspect"), t("checkIn.steps.confirm"), t("checkIn.steps.complete")];
+  const [record, setRecord] = useState<CheckInRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
-  const [reports, setReports] = useState<Record<string, AssetReport>>({});
+  const [result, setResult] = useState<CheckInSubmitResult | null>(null);
+  const [savingAsset, setSavingAsset] = useState<string | null>(null);
   const [editing, setEditing] = useState<HandoverAsset | null>(null);
-  const [draft, setDraft] = useState<AssetReport>({ condition: "issue" });
+  const [draft, setDraft] = useState<Draft>({ issueType: "damaged", note: "", photos: [] });
+  const [savingIssue, setSavingIssue] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const checked = assets.filter((asset) => (reports[asset.id]?.condition ?? "unchecked") !== "unchecked").length;
-  const issues = assets.filter((asset) => reports[asset.id]?.condition === "issue");
+  const load = useCallback(
+    () =>
+      api
+        .mine()
+        .then((value) => {
+          setRecord(value);
+          setLoadError(null);
+        })
+        .catch((error: unknown) => {
+          if (isNotFound(error)) setRecord(null);
+          else setLoadError(errorMessage(error));
+        })
+        .finally(() => setLoading(false)),
+    [api],
+  );
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const retry = () => {
+    setLoading(true);
+    setLoadError(null);
+    load();
+  };
+
+  const assets = record?.assets ?? [];
+  const locked = !!record?.lockedAt;
+  const checked = assets.filter((asset) => asset.status !== "unchecked").length;
+  const issues = assets.filter((asset) => asset.status === "issue");
+
+  const markOk = async (asset: HandoverAsset) => {
+    if (!record || locked || asset.status === "ok") return;
+    setSavingAsset(asset.id);
+    try {
+      setRecord(await api.evaluate(record.id, asset.id, { status: "ok" }));
+    } catch (error) {
+      notify(errorMessage(error), "danger");
+    } finally {
+      setSavingAsset(null);
+    }
+  };
 
   const openIssue = (asset: HandoverAsset) => {
-    setDraft(reports[asset.id]?.condition === "issue" ? reports[asset.id] : { condition: "issue", issueType: "damaged", photos: 0 });
+    if (locked) return;
+    setDraft(
+      asset.status === "issue"
+        ? { issueType: asset.issueType ?? "damaged", note: asset.note ?? "", photos: asset.evidence.map((item) => ({ uri: item.url, id: item.id })) }
+        : { issueType: "damaged", note: "", photos: [] },
+    );
     setEditing(asset);
   };
-  const saveIssue = () => {
-    if (!editing) return;
-    if (!draft.note?.trim()) return notify(t("checkIn.reportRequired"), "warning");
-    setReports((current) => ({ ...current, [editing.id]: draft }));
-    setEditing(null);
-    notify(t("checkIn.reportSaved"));
+
+  const addPhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return notify(t("checkIn.photoPermission"), "warning");
+    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
+    if (picked.canceled || !picked.assets[0]) return;
+    const uri = picked.assets[0].uri;
+    setDraft((current) => ({ ...current, photos: [...current.photos, { uri }] }));
   };
-  const next = () => {
+
+  const saveIssue = async () => {
+    if (!editing || !record) return;
+    if (!draft.note.trim()) return notify(t("checkIn.reportRequired"), "warning");
+    setSavingIssue(true);
+    try {
+      // Upload ảnh mới chọn trước, rồi gửi kèm id minh chứng khi đánh giá tài sản.
+      const photos: EvidencePhoto[] = [];
+      for (const photo of draft.photos) photos.push(photo.id ? photo : { ...photo, id: (await api.upload(photo.uri)).id });
+      setDraft((current) => ({ ...current, photos }));
+      const updated = await api.evaluate(record.id, editing.id, {
+        status: "issue",
+        issueType: draft.issueType,
+        note: draft.note.trim(),
+        evidenceAttachmentIds: photos.map((photo) => photo.id!),
+      });
+      setRecord(updated);
+      setEditing(null);
+      notify(t("checkIn.reportSaved"));
+    } catch (error) {
+      notify(errorMessage(error), "danger");
+    } finally {
+      setSavingIssue(false);
+    }
+  };
+
+  const next = async () => {
+    if (!record) return;
     if (step === 0) {
       if (checked < assets.length) return notify(t("checkIn.requireAll"), "warning");
       return setStep(1);
     }
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      setResult(await api.submit(record.id));
       setStep(2);
       notify(t("checkIn.success"));
-    }, 900);
+    } catch (error) {
+      notify(errorMessage(error), "danger");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const header = <AppHeader title={t("checkIn.title")} onBack={() => router.back()} />;
+
+  if (loading && !record)
+    return (
+      <Screen edges={["top", "bottom"]} header={header}>
+        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xxl }} />
+      </Screen>
+    );
+
+  if (!record)
+    return (
+      <Screen edges={["top", "bottom"]} header={header}>
+        {loadError ? (
+          <EmptyState icon="cloud-offline-outline" title={t("common.notFound")} description={loadError} action={<Button label={t("common.retry")} size="md" variant="secondary" icon="refresh" onPress={retry} />} />
+        ) : (
+          <EmptyState
+            icon="key-outline"
+            title={t("checkIn.emptyTitle")}
+            description={t("checkIn.emptyBody")}
+            action={<Button label={t("checkIn.goRegister")} size="md" icon="clipboard-outline" onPress={() => router.replace("/register-dorm")} />}
+          />
+        )}
+      </Screen>
+    );
 
   if (step === 2)
     return (
-      <Screen edges={["top", "bottom"]} header={<AppHeader title={t("checkIn.title")} onBack={() => router.back()} />}>
+      <Screen edges={["top", "bottom"]} header={header}>
         <View style={styles.doneIcon}>
           <Ionicons name="key" size={40} color={colors.onPrimary} />
         </View>
-        <Text style={styles.doneTitle}>{t("checkIn.welcomeRoom", { room: info.room })}</Text>
+        <Text style={styles.doneTitle}>{t("checkIn.welcomeRoom", { room: record.roomCode })}</Text>
         <Text style={styles.doneBody}>{t("checkIn.lockedBody")}</Text>
-        {issues.length > 0 && (
+        {!!result?.maintenanceRequests.length && (
           <Card style={{ marginTop: spacing.xl, gap: spacing.md }}>
-            <Text style={styles.cardTitle}>{t("checkIn.generated", { count: issues.length })}</Text>
-            {issues.map((asset) => (
-              <View key={asset.id} style={styles.generated}>
+            <Text style={styles.cardTitle}>{t("checkIn.generated", { count: result.maintenanceRequests.length })}</Text>
+            {result.maintenanceRequests.map((item) => (
+              <View key={item.id} style={styles.generated}>
                 <Ionicons name="construct-outline" size={18} color={colors.primary} />
-                <Text style={styles.generatedText}>{l(asset.name)}</Text>
+                <Text style={styles.generatedText}>{item.assetName}</Text>
                 <Text style={styles.caption}>{t("checkIn.pending")}</Text>
               </View>
             ))}
@@ -92,7 +207,7 @@ export function CheckInScreen() {
         )}
         <View style={{ gap: spacing.md, marginTop: spacing.xxl }}>
           <Button label={t("checkIn.viewResidency")} icon="id-card-outline" onPress={() => router.replace("/residency-record")} />
-          {issues.length > 0 && <Button label={t("checkIn.requestTransfer")} variant="secondary" icon="swap-horizontal" onPress={() => router.replace("/request/create/roomTransfer")} />}
+          {!!result?.maintenanceRequests.length && <Button label={t("checkIn.requestTransfer")} variant="secondary" icon="swap-horizontal" onPress={() => router.replace("/request/create/roomTransfer")} />}
           <Button label={t("common.home")} variant="ghost" onPress={() => router.dismissTo("/")} />
         </View>
       </Screen>
@@ -102,7 +217,7 @@ export function CheckInScreen() {
     <Screen
       header={
         <View>
-          <AppHeader title={t("checkIn.title")} subtitle={info.code} onBack={() => (step === 0 ? router.back() : setStep(0))} />
+          <AppHeader title={t("checkIn.title")} subtitle={record.id} onBack={() => (step === 0 ? router.back() : setStep(0))} />
           <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.md }}>
             <StepProgress steps={steps} current={step} />
           </View>
@@ -115,7 +230,7 @@ export function CheckInScreen() {
             label={step === 0 ? t("checkIn.continueCount", { checked, total: assets.length }) : t("checkIn.confirmCheckIn")}
             icon={step === 0 ? "arrow-forward" : "lock-closed"}
             iconPosition={step === 0 ? "right" : "left"}
-            disabled={step === 1 && !agreed}
+            disabled={locked || (step === 1 && !agreed)}
             loading={submitting}
             onPress={next}
             style={{ flex: 2 }}
@@ -128,12 +243,22 @@ export function CheckInScreen() {
           <PhotoBackground source={Photos.bunkBed()} shade style={styles.room}>
             <Glass variant="photo" style={styles.roomGlass}>
               <Text style={styles.roomLabel}>{t("checkIn.receivingRoom")}</Text>
-              <Text style={styles.roomName}>{info.room}</Text>
+              <Text style={styles.roomName}>{record.roomCode}</Text>
               <Text style={styles.roomMeta}>
-                {t("common.building")} {info.building} · {t("common.floor")} {info.floor} · {t("common.bed")} {info.bed.slice(-2)} · {t("common.roomEight")}
+                {record.building} · {record.floor} · {t("common.bed")} {bedLabel(record.bedCode)}
+                {record.roomType ? ` · ${record.roomType}` : ""}
               </Text>
+              {record.expectedCheckInDate && <Text style={styles.roomMeta}>{t("checkIn.expected", { date: Formatter.date(record.expectedCheckInDate) })}</Text>}
             </Glass>
           </PhotoBackground>
+
+          {locked && (
+            <View style={{ marginTop: spacing.lg }}>
+              <Callout tone="warning" icon="lock-closed" title={t("checkIn.lockedTitle")}>
+                {t("checkIn.lockedPending")}
+              </Callout>
+            </View>
+          )}
 
           <Card style={styles.progressCard}>
             <View style={styles.progressHead}>
@@ -142,40 +267,43 @@ export function CheckInScreen() {
                 {checked}/{assets.length}
               </Text>
             </View>
-            <ProgressBar value={checked / assets.length} tone={checked === assets.length ? "success" : "primary"} />
-            <Text style={styles.caption}>{t("checkIn.assetHint")}</Text>
+            <ProgressBar value={assets.length ? checked / assets.length : 1} tone={checked === assets.length ? "success" : "primary"} />
+            <Text style={styles.caption}>{assets.length ? t("checkIn.assetHint") : t("checkIn.noAssets")}</Text>
           </Card>
 
           <View style={{ gap: spacing.md }}>
             {assets.map((asset) => {
-              const report = reports[asset.id];
-              const condition = report?.condition ?? "unchecked";
-              const name = l(asset.name);
+              const condition = asset.status;
+              const name = asset.name;
+              const saving = savingAsset === asset.id;
               return (
                 <Card key={asset.id} style={[{ gap: spacing.md }, condition === "issue" && { borderColor: colors.danger, borderWidth: 1.5 }]}>
                   <View style={styles.assetHead}>
-                    <IconBadge icon={asset.icon} tone={condition === "ok" ? "success" : condition === "issue" ? "danger" : "neutral"} size={44} />
+                    <IconBadge icon={assetIcon(asset)} tone={condition === "ok" ? "success" : condition === "issue" ? "danger" : "neutral"} size={44} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.cardTitle}>{name}</Text>
                       <Text style={styles.caption}>
-                        {asset.code} · {t("checkIn.quantity", { count: asset.quantity })}
+                        {asset.category ? `${asset.category} · ` : ""}
+                        {t("checkIn.quantity", { count: asset.quantity })}
                       </Text>
                     </View>
+                    {saving && <ActivityIndicator color={colors.primary} />}
                   </View>
-                  {condition === "issue" && report && (
-                    <Touchable onPress={() => openIssue(asset)} accessibilityLabel={t("checkIn.editReport", { asset: name })} style={styles.issueNote}>
+                  {condition === "issue" && (
+                    <Touchable onPress={() => openIssue(asset)} disabled={locked} accessibilityLabel={t("checkIn.editReport", { asset: name })} style={styles.issueNote}>
                       <Ionicons name="alert-circle" size={16} color={colors.danger} />
                       <Text style={[styles.issueText, { color: colors.danger }]} numberOfLines={2}>
-                        {report.issueType ? t(`checkIn.issue.${report.issueType}`) : ""}: {report.note}
+                        {asset.issueType ? t(`checkIn.issue.${asset.issueType}`) : ""}: {asset.note}
                       </Text>
                       <Ionicons name="create-outline" size={16} color={colors.danger} />
                     </Touchable>
                   )}
                   <View style={styles.actions}>
                     <Touchable
-                      onPress={() => setReports((current) => ({ ...current, [asset.id]: { condition: "ok" } }))}
+                      onPress={() => markOk(asset)}
+                      disabled={locked || saving}
                       accessibilityRole="radio"
-                      accessibilityState={{ selected: condition === "ok" }}
+                      accessibilityState={{ selected: condition === "ok", disabled: locked }}
                       accessibilityLabel={t("checkIn.markGood", { asset: name })}
                       style={[styles.choice, condition === "ok" && { backgroundColor: colors.success }]}
                     >
@@ -184,8 +312,9 @@ export function CheckInScreen() {
                     </Touchable>
                     <Touchable
                       onPress={() => openIssue(asset)}
+                      disabled={locked || saving}
                       accessibilityRole="radio"
-                      accessibilityState={{ selected: condition === "issue" }}
+                      accessibilityState={{ selected: condition === "issue", disabled: locked }}
                       accessibilityLabel={t("checkIn.markIssue", { asset: name })}
                       style={[styles.choice, condition === "issue" && { backgroundColor: colors.danger }]}
                     >
@@ -207,15 +336,17 @@ export function CheckInScreen() {
             <Card style={styles.meter}>
               <IconBadge icon="flash" tone="primary" size={40} rounded="circle" />
               <Text style={styles.caption}>{t("utilities.electricity")}</Text>
-              <Text style={styles.meterValue}>{Formatter.decimal(info.meters.electricity)} kWh</Text>
+              <Text style={styles.meterValue}>{record.initialElectricity != null ? `${Formatter.decimal(record.initialElectricity)} kWh` : t("checkIn.meterPending")}</Text>
             </Card>
             <Card style={styles.meter}>
               <IconBadge icon="water" tone="info" size={40} rounded="circle" />
               <Text style={styles.caption}>{t("utilities.water")}</Text>
-              <Text style={styles.meterValue}>{Formatter.decimal(info.meters.water)} m³</Text>
+              <Text style={styles.meterValue}>{record.initialWater != null ? `${Formatter.decimal(record.initialWater)} m³` : t("checkIn.meterPending")}</Text>
             </Card>
           </View>
-          <Text style={[styles.caption, { marginTop: spacing.sm }]}>{t("checkIn.meterNote", { date: Formatter.date(info.stayStartDate) })}</Text>
+          {!!(record.stayStartDate ?? record.expectedCheckInDate) && (
+            <Text style={[styles.caption, { marginTop: spacing.sm }]}>{t("checkIn.meterNote", { date: Formatter.date((record.stayStartDate ?? record.expectedCheckInDate) as string) })}</Text>
+          )}
 
           <Text style={styles.sectionTitle}>{t("checkIn.summary")}</Text>
           <Card style={{ gap: spacing.md }}>
@@ -226,8 +357,8 @@ export function CheckInScreen() {
             {issues.map((asset) => (
               <View key={asset.id} style={styles.generated}>
                 <Ionicons name="alert-circle" size={18} color={colors.danger} />
-                <Text style={styles.generatedText}>{l(asset.name)}</Text>
-                <Text style={styles.caption}>{reports[asset.id]?.issueType ? t(`checkIn.issue.${reports[asset.id].issueType!}`) : ""}</Text>
+                <Text style={styles.generatedText}>{asset.name}</Text>
+                <Text style={styles.caption}>{asset.issueType ? t(`checkIn.issue.${asset.issueType}`) : ""}</Text>
               </View>
             ))}
           </Card>
@@ -242,23 +373,30 @@ export function CheckInScreen() {
         </>
       )}
 
-      <BottomSheet visible={!!editing} onClose={() => setEditing(null)} title={t("checkIn.reportTitle")} subtitle={editing ? l(editing.name) : undefined} footer={<Button label={t("checkIn.saveReport")} icon="checkmark" onPress={saveIssue} />}>
+      <BottomSheet
+        visible={!!editing}
+        onClose={() => !savingIssue && setEditing(null)}
+        title={t("checkIn.reportTitle")}
+        subtitle={editing?.name}
+        footer={<Button label={t("checkIn.saveReport")} icon="checkmark" loading={savingIssue} onPress={saveIssue} />}
+      >
         <View style={{ gap: spacing.sm }}>
           <Text style={styles.cardTitle}>{t("checkIn.condition")}</Text>
           <ChipGroup<IssueType>
             scroll={false}
-            value={draft.issueType ?? "damaged"}
+            value={draft.issueType}
             onChange={(value) => setDraft((current) => ({ ...current, issueType: value }))}
             options={ISSUE_TYPES.map((key) => ({ value: key, label: t(`checkIn.issue.${key}`) }))}
           />
         </View>
-        <Field label={t("requestForm.description")} multiline value={draft.note ?? ""} onChangeText={(note) => setDraft((current) => ({ ...current, note }))} placeholder={t("checkIn.reportPlaceholder")} />
+        <Field label={t("requestForm.description")} multiline value={draft.note} onChangeText={(note) => setDraft((current) => ({ ...current, note }))} placeholder={t("checkIn.reportPlaceholder")} />
         <View style={{ gap: spacing.sm }}>
           <Text style={styles.cardTitle}>{t("requestForm.evidence")}</Text>
           <PhotoSlots
-            count={draft.photos ?? 0}
-            onAdd={() => setDraft((current) => ({ ...current, photos: (current.photos ?? 0) + 1 }))}
-            onRemove={() => setDraft((current) => ({ ...current, photos: Math.max(0, (current.photos ?? 0) - 1) }))}
+            count={draft.photos.length}
+            uris={draft.photos.map((photo) => photo.uri)}
+            onAdd={addPhoto}
+            onRemove={(index) => setDraft((current) => ({ ...current, photos: current.photos.filter((_, i) => i !== index) }))}
           />
         </View>
       </BottomSheet>
