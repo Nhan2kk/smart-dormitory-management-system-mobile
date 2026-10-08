@@ -1,0 +1,54 @@
+import { useMemo, useState } from "react";
+import { View } from "react-native";
+import { Formatter } from "../../../shared/format";
+import { useI18n } from "../../../shared/i18n/I18nProvider";
+import { spacing } from "../../../shared/theme";
+import { Callout, DateStrip, DateStripModel, Field, FormSection } from "../../../shared/ui";
+import { RequestFormShell } from "./RequestFormShell";
+
+export function CheckoutForm() {
+  const { t } = useI18n();
+  const today = useMemo(() => new Date(Formatter.now.getFullYear(), Formatter.now.getMonth(), Formatter.now.getDate()), []);
+  const checkoutDates = useMemo(() => DateStripModel.range(new Date(today.getTime() + 86_400_000), 30), [today]);
+  const inspectionDates = useMemo(() => DateStripModel.range(today, 30), [today]);
+  const [checkoutDate, setCheckoutDate] = useState<string | null>(null);
+  const [inspectionDate, setInspectionDate] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+
+  return (
+    <RequestFormShell
+      kind="roomCheckout"
+      validate={() => (!checkoutDate ? t("requestForm.errCheckoutDate") : !inspectionDate ? t("requestForm.errInspection") : !reason.trim() ? t("requestForm.errReason") : null)}
+      summary={[
+        { label: t("requestForm.checkoutDate"), value: checkoutDate ? Formatter.date(checkoutDate) : "—" },
+        { label: t("requestForm.inspectionDate"), value: inspectionDate ? Formatter.date(inspectionDate) : "—" },
+        { label: t("requestForm.checkoutReason"), value: reason.trim() },
+      ]}
+    >
+      <View style={{ marginTop: spacing.sm }}>
+        <Callout tone="violet" icon="information-circle" title={t("requestForm.checkoutFlowTitle")}>
+          {t("requestForm.checkoutFlow")}
+        </Callout>
+      </View>
+
+      <FormSection title={t("requestForm.checkoutDate")}>
+        <DateStrip
+          dates={checkoutDates}
+          value={checkoutDate}
+          onChange={(iso) => {
+            setCheckoutDate(iso);
+            if (inspectionDate && inspectionDate >= iso) setInspectionDate(null);
+          }}
+        />
+      </FormSection>
+
+      <FormSection title={t("requestForm.inspectionDate")} hint={t("requestForm.inspectionHint")}>
+        <DateStrip dates={inspectionDates} value={inspectionDate} onChange={setInspectionDate} isDisabled={(date) => !checkoutDate || DateStripModel.iso(date) >= checkoutDate} />
+      </FormSection>
+
+      <FormSection title={t("requestForm.checkoutReason")}>
+        <Field multiline value={reason} onChangeText={setReason} placeholder={t("requestForm.checkoutReasonPlaceholder")} />
+      </FormSection>
+    </RequestFormShell>
+  );
+}

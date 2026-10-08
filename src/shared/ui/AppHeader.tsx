@@ -1,0 +1,96 @@
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { ReactNode } from "react";
+import { Text, View } from "react-native";
+import { useI18n } from "../i18n/I18nProvider";
+import { makeStyles, spacing, useTheme } from "../theme";
+import { Glass } from "./Glass";
+import { Touchable } from "./Touchable";
+
+type IconName = keyof typeof Ionicons.glyphMap;
+
+/** Nút tròn kính mờ: "surface" theo theme, "photo" dùng trên ảnh. */
+export function CircleButton({
+  icon,
+  onPress,
+  label,
+  variant = "surface",
+  badge,
+  size = 44,
+}: {
+  icon: IconName;
+  onPress?: () => void;
+  label: string;
+  variant?: "surface" | "photo";
+  badge?: boolean;
+  size?: number;
+}) {
+  const { colors, shadow } = useTheme();
+  const styles = useStyles();
+  return (
+    <Touchable onPress={onPress} accessibilityLabel={label} style={[{ borderRadius: size / 2 }, variant === "surface" && shadow(1)]}>
+      <Glass variant={variant} strong={variant === "surface"} style={[styles.circle, { width: size, height: size, borderRadius: size / 2 }]}>
+        <Ionicons name={icon} size={size * 0.47} color={variant === "photo" ? colors.white : colors.ink} />
+      </Glass>
+      {badge && <View style={styles.badge} />}
+    </Touchable>
+  );
+}
+
+type Props = {
+  title: string;
+  subtitle?: string;
+  /** Ẩn nút quay lại (màn hình gốc của tab). */
+  hideBack?: boolean;
+  onBack?: () => void;
+  right?: ReactNode;
+  /** Header đặt trên ảnh: chữ trắng, nút kính tối. */
+  onPhoto?: boolean;
+};
+
+/** Header kiểu iOS: nút tròn quay lại – tiêu đề giữa – thao tác phải. */
+export function AppHeader({ title, subtitle, hideBack, onBack, right, onPhoto }: Props) {
+  const { t } = useI18n();
+  const styles = useStyles();
+  const back = onBack ?? (() => (router.canGoBack() ? router.back() : router.replace("/")));
+  return (
+    <View style={styles.header}>
+      <View style={styles.side}>
+        {!hideBack && <CircleButton icon="chevron-back" label={t("common.back")} onPress={back} variant={onPhoto ? "photo" : "surface"} />}
+      </View>
+      <View style={styles.center}>
+        <Text style={[styles.title, onPhoto && styles.onPhoto]} numberOfLines={1} accessibilityRole="header">
+          {title}
+        </Text>
+        {!!subtitle && (
+          <Text style={[styles.subtitle, onPhoto && styles.onPhotoSoft]} numberOfLines={1}>
+            {subtitle}
+          </Text>
+        )}
+      </View>
+      <View style={[styles.side, { alignItems: "flex-end" }]}>{right}</View>
+    </View>
+  );
+}
+
+const useStyles = makeStyles(({ colors, font }) => ({
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: spacing.md },
+  side: { width: 48 },
+  center: { flex: 1, alignItems: "center" },
+  title: { ...font.heading },
+  subtitle: { ...font.caption, marginTop: 2 },
+  onPhoto: { color: colors.white },
+  onPhotoSoft: { color: "rgba(255,255,255,0.82)" },
+  circle: { alignItems: "center", justifyContent: "center" },
+  badge: {
+    position: "absolute",
+    top: 9,
+    right: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+}));

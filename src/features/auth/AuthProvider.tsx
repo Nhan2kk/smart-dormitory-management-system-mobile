@@ -10,6 +10,8 @@ import {
 import { authApi, AuthResponse, AuthUser } from "./authApi";
 
 const STORAGE_KEY = "sdms.refreshToken";
+/** Bật để xem giao diện bằng dữ liệu mock khi chưa có backend: mọi MSSV/mật khẩu đều đăng nhập được. */
+const MOCK_AUTH = process.env.EXPO_PUBLIC_MOCK_AUTH === "true";
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -52,6 +54,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = useCallback(async (username: string, password: string) => {
+    if (MOCK_AUTH) {
+      setSession({
+        accessToken: "mock",
+        refreshToken: "mock",
+        user: { id: "mock", username: username.trim(), fullName: "Nguyễn Hoàng Nam", role: "STUDENT" },
+      });
+      return;
+    }
     const result = await authApi.login(username.trim(), password);
     if (result.user.role !== "STUDENT") {
       await authApi
@@ -67,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const token = session?.refreshToken;
     const accessToken = session?.accessToken;
     setSession(null);
+    if (MOCK_AUTH) return;
     await SecureStore.deleteItemAsync(STORAGE_KEY);
     if (token && accessToken)
       await authApi.logout(token, accessToken).catch(() => undefined);
