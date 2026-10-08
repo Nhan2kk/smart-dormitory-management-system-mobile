@@ -11,7 +11,8 @@ import { makeStyles, radius, spacing, TAB_BAR_SPACE, useTheme } from "../../shar
 import { Avatar, Backdrop, BottomSheet, Button, Card, IconName, ListRow, PhotoBackground, Touchable, useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { DebtRepository } from "../debts/debts.mock";
-import { RequestRepository } from "../requests/requests.mock";
+import { requestStats } from "../requests/requestModel";
+import { useMyRequests } from "../requests/useMyRequests";
 import { ResidencyRepository } from "../residency/residency.mock";
 import { AvatarPicker } from "./AvatarPicker";
 import { ProfileRepository } from "./profile.mock";
@@ -29,7 +30,8 @@ export function ProfileScreen() {
   const name = user?.fullName || profile.fullName;
   const [avatarSheet, setAvatarSheet] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
-  const go = (href: Href) => () => router.push(href);
+  const processingRequests = requestStats(useMyRequests().requests ?? []).processing;
+  const go =(href: Href) => () => router.push(href);
 
   const pickAvatar = async (source: "camera" | "library") => {
     setAvatarSheet(false);
@@ -89,7 +91,7 @@ export function ProfileScreen() {
         <View style={styles.stats}>
           <Stat value={`${ResidencyRepository.remainingDays()}`} label={t("profile.stayDays")} />
           <Stat value={Formatter.compactCurrency(DebtRepository.totalUnpaid())} label={t("profile.debt")} />
-          <Stat value={`${RequestRepository.stats().processing}`} label={t("profile.processing")} />
+          <Stat value={`${processingRequests}`} label={t("profile.processing")} />
         </View>
 
         <Section title={t("profile.sectionAccount")}>

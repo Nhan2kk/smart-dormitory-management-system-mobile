@@ -1,13 +1,12 @@
-import { Platform } from "react-native";
 import type { ApiClient } from "../../shared/api";
+import type { Attachment } from "../../shared/attachments";
 import type { IconName } from "../../shared/ui";
+import type { RoomTransferCreateBody, RoomTransferRequest } from "../requests/requestsApi";
 
 export type IssueType = "damaged" | "missing" | "notWorking" | "abnormal";
 export type AssetCondition = "unchecked" | "ok" | "issue";
 
 export const ISSUE_TYPES: IssueType[] = ["damaged", "missing", "notWorking", "abnormal"];
-
-export type Attachment = { id: string; name: string; size: string; kind: "image" | "document"; url: string };
 
 export type HandoverAsset = {
   id: string;
@@ -43,9 +42,6 @@ export type CheckInSubmitResult = { completedAt: string; maintenanceRequests: Ge
 
 export type AssetEvaluation = { status: "ok" } | { status: "issue"; issueType: IssueType; note: string; evidenceAttachmentIds: string[] };
 
-/** Ảnh minh chứng đã chọn: `uri` để xem trước, `id` sau khi upload thành công. */
-export type EvidencePhoto = { uri: string; id?: string };
-
 /** Biểu tượng theo loại/tên tài sản (BE chỉ trả chuỗi `category` tự do). */
 export function assetIcon(asset: Pick<HandoverAsset, "name" | "category">): IconName {
   const text = `${asset.category ?? ""} ${asset.name}`.toLowerCase();
@@ -70,18 +66,11 @@ export function checkInApi(request: ApiClient) {
     evaluate: (recordId: string, assetId: string, body: AssetEvaluation) =>
       request<CheckInRecord>(`/student/check-in/${encodeURIComponent(recordId)}/assets/${encodeURIComponent(assetId)}`, { method: "PUT", body }),
     submit: (recordId: string) => request<CheckInSubmitResult>(`/student/check-in/${encodeURIComponent(recordId)}/submit`, { body: { hasSignature: true } }),
-    /** Upload ảnh lên `/attachments` (multipart, field `file`). */
-    upload: async (uri: string) => {
-      const name = uri.split("/").pop()?.split("?")[0] || `evidence-${Date.now()}.jpg`;
-      const form = new FormData();
-      if (Platform.OS === "web") {
-        const blob = await (await fetch(uri)).blob();
-        form.append("file", blob, name.includes(".") ? name : `${name}.jpg`);
-      } else {
-        const type = /\.png$/i.test(name) ? "image/png" : "image/jpeg";
-        form.append("file", { uri, name, type } as unknown as Blob);
-      }
-      return request<Attachment>("/attachments", { form });
-    },
+    /**
+     * Gửi yêu cầu chuyển phòng ngay từ biên bản có tài sản sự cố. BE khoá biên bản ngay sau đó:
+     * sinh viên chọn chuyển phòng thay vì nhận phòng này (không sinh yêu cầu bảo trì).
+     */
+    requestTransfer: (recordId: string, body: Omit<RoomTransferCreateBody, "attachmentIds">) =>
+      request<RoomTransferRequest>(`/student/check-in/${encodeURIComponent(recordId)}/room-transfer-request`, { body }),
   };
 }

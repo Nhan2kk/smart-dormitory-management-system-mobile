@@ -4,25 +4,38 @@ import { Formatter } from "../../../shared/format";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { spacing } from "../../../shared/theme";
 import { Callout, DateStrip, DateStripModel, Field, FormSection } from "../../../shared/ui";
+import { useAuth } from "../../auth/AuthProvider";
+import { requestsApi } from "../requestsApi";
 import { RequestFormShell } from "./RequestFormShell";
 
 export function CheckoutForm() {
   const { t } = useI18n();
-  const today = useMemo(() => new Date(Formatter.now.getFullYear(), Formatter.now.getMonth(), Formatter.now.getDate()), []);
+  const { request } = useAuth();
+  const api = useMemo(() => requestsApi(request), [request]);
+  const today = useMemo(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }, []);
   const checkoutDates = useMemo(() => DateStripModel.range(new Date(today.getTime() + 86_400_000), 30), [today]);
   const inspectionDates = useMemo(() => DateStripModel.range(today, 30), [today]);
   const [checkoutDate, setCheckoutDate] = useState<string | null>(null);
   const [inspectionDate, setInspectionDate] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [note, setNote] = useState("");
 
   return (
     <RequestFormShell
       kind="roomCheckout"
       validate={() => (!checkoutDate ? t("requestForm.errCheckoutDate") : !inspectionDate ? t("requestForm.errInspection") : !reason.trim() ? t("requestForm.errReason") : null)}
+      onSubmit={async () => {
+        const created = await api.createCheckout({ expectedCheckoutDate: checkoutDate!, preferredInspectionDate: inspectionDate!, reason: reason.trim(), studentNote: note.trim() || undefined });
+        return created.id;
+      }}
       summary={[
         { label: t("requestForm.checkoutDate"), value: checkoutDate ? Formatter.date(checkoutDate) : "—" },
         { label: t("requestForm.inspectionDate"), value: inspectionDate ? Formatter.date(inspectionDate) : "—" },
         { label: t("requestForm.checkoutReason"), value: reason.trim() },
+        ...(note.trim() ? [{ label: t("requestForm.note"), value: note.trim() }] : []),
       ]}
     >
       <View style={{ marginTop: spacing.sm }}>
@@ -47,7 +60,11 @@ export function CheckoutForm() {
       </FormSection>
 
       <FormSection title={t("requestForm.checkoutReason")}>
-        <Field multiline value={reason} onChangeText={setReason} placeholder={t("requestForm.checkoutReasonPlaceholder")} />
+        <Field multiline value={reason} onChangeText={setReason} placeholder={t("requestForm.checkoutReasonPlaceholder")} maxLength={500} />
+      </FormSection>
+
+      <FormSection title={t("requestForm.note")} hint={t("requestForm.optional")}>
+        <Field multiline value={note} onChangeText={setNote} placeholder={t("requestForm.notePlaceholder")} maxLength={500} />
       </FormSection>
     </RequestFormShell>
   );

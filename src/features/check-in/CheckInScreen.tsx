@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { errorMessage, isNotFound } from "../../shared/api";
+import { EvidencePhoto, pickPhoto, uploadPhotos } from "../../shared/attachments";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Photos } from "../../shared/images";
@@ -31,7 +31,7 @@ import {
 } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { bedLabel } from "../registration/components/BedMap";
-import { assetIcon, CheckInRecord, checkInApi, CheckInSubmitResult, EvidencePhoto, HandoverAsset, ISSUE_TYPES, IssueType } from "./checkInApi";
+import { assetIcon, CheckInRecord, checkInApi, CheckInSubmitResult, HandoverAsset, ISSUE_TYPES, IssueType } from "./checkInApi";
 
 type Draft = { issueType: IssueType; note: string; photos: EvidencePhoto[] };
 
@@ -71,9 +71,13 @@ export function CheckInScreen() {
     [api],
   );
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Tải lại khi quay về (vd. sau khi gửi yêu cầu chuyển phòng, biên bản bị khoá). Không tải lại
+  // sau khi đã xác nhận nhận phòng vì biên bản lúc đó không còn ở trạng thái chờ.
+  useFocusEffect(
+    useCallback(() => {
+      if (step !== 2) load();
+    }, [load, step]),
+  );
 
   const retry = () => {
     setLoading(true);
@@ -109,12 +113,9 @@ export function CheckInScreen() {
   };
 
   const addPhoto = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return notify(t("checkIn.photoPermission"), "warning");
-    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
-    if (picked.canceled || !picked.assets[0]) return;
-    const uri = picked.assets[0].uri;
-    setDraft((current) => ({ ...current, photos: [...current.photos, { uri }] }));
+    const uri = await pickPhoto();
+    if (uri === "permission") return notify(t("checkIn.photoPermission"), "warning");
+    if (uri) setDraft((current) => ({ ...current, photos: [...current.photos, { uri }] }));
   };
 
   const saveIssue = async () => {
@@ -123,14 +124,13 @@ export function CheckInScreen() {
     setSavingIssue(true);
     try {
       // Upload ảnh mới chọn trước, rồi gửi kèm id minh chứng khi đánh giá tài sản.
-      const photos: EvidencePhoto[] = [];
-      for (const photo of draft.photos) photos.push(photo.id ? photo : { ...photo, id: (await api.upload(photo.uri)).id });
+      const photos = await uploadPhotos(request, draft.photos);
       setDraft((current) => ({ ...current, photos }));
       const updated = await api.evaluate(record.id, editing.id, {
         status: "issue",
         issueType: draft.issueType,
         note: draft.note.trim(),
-        evidenceAttachmentIds: photos.map((photo) => photo.id!),
+        evidenceAttachmentIds: photos.map((photo) => photo.id),
       });
       setRecord(updated);
       setEditing(null);
@@ -326,6 +326,27 @@ export function CheckInScreen() {
               );
             })}
           </View>
+
+          {issues.length > 0 && !locked && (
+            <View style={{ marginTop: spacing.lg }}>
+              <Callout
+                tone="warning"
+                icon="swap-horizontal"
+                title={t("checkIn.transferTitle")}
+                action={
+                  <Button
+                    label={t("checkIn.transferAction")}
+                    size="md"
+                    variant="secondary"
+                    icon="swap-horizontal"
+                    onPress={() => router.push({ pathname: "/request/create/[kind]", params: { kind: "roomTransfer", checkInId: record.id } })}
+                  />
+                }
+              >
+                {t("checkIn.transferBody", { count: issues.length })}
+              </Callout>
+            </View>
+          )}
         </>
       )}
 

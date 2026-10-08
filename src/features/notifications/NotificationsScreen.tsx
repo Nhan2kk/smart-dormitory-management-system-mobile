@@ -1,44 +1,46 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
+import { errorMessage } from "../../shared/api";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
-import { makeStyles, radius, spacing } from "../../shared/theme";
-import { AppHeader, Card, ChipGroup, CircleButton, EmptyState, GroupLabel, IconBadge, Screen, useToast } from "../../shared/ui";
-import { AppNotification, notificationKindMeta, NotificationRepository } from "./notifications.mock";
+import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
+import { AppHeader, Button, Callout, Card, ChipGroup, CircleButton, EmptyState, GroupLabel, IconBadge, Screen, useToast } from "../../shared/ui";
+import { AppNotification, notificationKindMeta } from "./notificationsApi";
+import { useNotifications } from "./NotificationsProvider";
 
 type Filter = "all" | "unread" | "important" | "announcement";
 
-const isRecent = (item: AppNotification) => Formatter.now.getTime() - new Date(item.sentAt).getTime() < 3 * 86_400_000;
+const isRecent = (item: AppNotification) => Date.now() - new Date(item.sentAt).getTime() < 3 * 86_400_000;
 
 export function NotificationsScreen() {
   const { notify } = useToast();
   const { t } = useI18n();
+  const { colors } = useTheme();
+  const { items, unreadCount, error, reload, markRead, markAllRead } = useNotifications();
   const [filter, setFilter] = useState<Filter>("all");
-  const [readIds, setReadIds] = useState<string[]>([]);
-  const items = NotificationRepository.all().map((item) => ({ ...item, read: item.read || readIds.includes(item.id) }));
-  const unread = items.filter((item) => !item.read).length;
-  const filtered = items.filter((item) =>
+  const all = items ?? [];
+  const filtered = all.filter((item) =>
     filter === "unread" ? !item.read : filter === "important" ? item.priority !== "NORMAL" : filter === "announcement" ? item.source === "ANNOUNCEMENT" : true,
   );
   const recent = filtered.filter(isRecent);
   const earlier = filtered.filter((item) => !isRecent(item));
-  const open = (id: string) => setReadIds((ids) => [...ids, id]);
 
   return (
     <Screen
       header={
         <AppHeader
           title={t("notifications.title")}
-          subtitle={unread ? t("notifications.unread", { count: unread }) : t("notifications.allRead")}
+          subtitle={unreadCount ? t("notifications.unread", { count: unreadCount }) : t("notifications.allRead")}
           right={
             <CircleButton
               icon="checkmark-done"
               label={t("notifications.markAll")}
-              onPress={() => {
-                setReadIds(items.map((item) => item.id));
-                notify(t("notifications.markedAll"));
-              }}
+              onPress={() =>
+                markAllRead()
+                  .then(() => notify(t("notifications.markedAll")))
+                  .catch((reason: unknown) => notify(errorMessage(reason), "danger"))
+              }
             />
           }
         />
@@ -49,17 +51,26 @@ export function NotificationsScreen() {
         onChange={setFilter}
         options={[
           { value: "all", label: t("notifications.all") },
-          { value: "unread", label: t("notifications.unreadFilter"), count: unread },
+          { value: "unread", label: t("notifications.unreadFilter"), count: unreadCount },
           { value: "important", label: t("notifications.important") },
           { value: "announcement", label: t("notifications.fromManagement") },
         ]}
       />
-      {filtered.length === 0 ? (
+      {error && (
+        <View style={{ marginTop: spacing.lg }}>
+          <Callout tone="danger" icon="cloud-offline-outline" action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />}>
+            {error}
+          </Callout>
+        </View>
+      )}
+      {items === null && !error ? (
+        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xxl }} />
+      ) : filtered.length === 0 ? (
         <EmptyState icon="notifications-off-outline" title={t("notifications.emptyTitle")} description={t("notifications.emptyBody")} />
       ) : (
         <>
-          {recent.length > 0 && <Group title={t("notifications.recent")} items={recent} onOpen={open} />}
-          {earlier.length > 0 && <Group title={t("notifications.earlier")} items={earlier} onOpen={open} />}
+          {recent.length > 0 && <Group title={t("notifications.recent")} items={recent} onOpen={markRead} />}
+          {earlier.length > 0 && <Group title={t("notifications.earlier")} items={earlier} onOpen={markRead} />}
         </>
       )}
     </Screen>
@@ -68,7 +79,7 @@ export function NotificationsScreen() {
 
 function Group({ title, items, onOpen }: { title: string; items: AppNotification[]; onOpen: (id: string) => void }) {
   const styles = useStyles();
-  const { t, l } = useI18n();
+  const { t } = useI18n();
   return (
     <View>
       <GroupLabel>{title}</GroupLabel>
@@ -80,9 +91,9 @@ function Group({ title, items, onOpen }: { title: string; items: AppNotification
               key={item.id}
               onPress={() => {
                 onOpen(item.id);
-                router.push(`/notifications/${item.id}`);
+                router.push({ pathname: "/notifications/[id]", params: { id: item.id } });
               }}
-              accessibilityLabel={`${item.read ? "" : t("notifications.unreadPrefix")}${l(item.title)}`}
+              accessibilityLabel={`${item.read ? "" : t("notifications.unreadPrefix")}${item.title}`}
               variant={item.read ? "default" : "warm"}
               style={styles.item}
             >
@@ -90,15 +101,15 @@ function Group({ title, items, onOpen }: { title: string; items: AppNotification
               <View style={{ flex: 1, gap: 3 }}>
                 <View style={styles.titleRow}>
                   <Text style={[styles.title, !item.read && { fontWeight: "800" }]} numberOfLines={2}>
-                    {l(item.title)}
+                    {item.title}
                   </Text>
                   {!item.read && <View style={styles.dot} />}
                 </View>
                 <Text style={styles.body} numberOfLines={2}>
-                  {l(item.body)}
+                  {item.content}
                 </Text>
                 <View style={styles.metaRow}>
-                  <Text style={styles.time}>{Formatter.relative(item.sentAt)}</Text>
+                  <Text style={styles.time}>{Formatter.relative(item.sentAt, new Date())}</Text>
                   {item.priority !== "NORMAL" && (
                     <Text style={[styles.priority, item.priority === "URGENT" && styles.urgent]}>{t(`notifications.priority.${item.priority}`)}</Text>
                   )}

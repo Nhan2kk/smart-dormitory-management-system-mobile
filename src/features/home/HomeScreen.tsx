@@ -12,9 +12,10 @@ import { makeStyles, radius, spacing, TAB_BAR_SPACE, Tone, useTheme, withAlpha }
 import { Backdrop, BottomSheet, Button, Card, CircleButton, Glass, Gradient, IconBadge, IconName, PhotoBackground, SectionHeader, StatusBadge, Touchable } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { DebtRepository } from "../debts/debts.mock";
-import { NotificationRepository } from "../notifications/notifications.mock";
+import { useNotifications } from "../notifications/NotificationsProvider";
 import { ProfileRepository } from "../profile/profile.mock";
-import { requestKindMeta, RequestRepository, requestStatusTone } from "../requests/requests.mock";
+import { requestKindMeta, requestStats, requestStatusTone } from "../requests/requestModel";
+import { useMyRequests } from "../requests/useMyRequests";
 import { ResidencyRepository } from "../residency/residency.mock";
 import { UtilityRepository } from "../utilities/utilities.mock";
 
@@ -42,9 +43,10 @@ export function HomeScreen() {
   const today = UtilityRepository.get("day");
   const week = UtilityRepository.get("week");
   const debt = DebtRepository.totalUnpaid();
-  const unread = NotificationRepository.unreadCount();
-  const processing = RequestRepository.stats().processing;
-  const requests = RequestRepository.all().slice(0, 3);
+  const unread = useNotifications().unreadCount;
+  const myRequests = useMyRequests().requests ?? [];
+  const processing = requestStats(myRequests).processing;
+  const requests = myRequests.slice(0, 3);
   const open = (href: Href) => () => router.push(href);
 
   return (
@@ -135,7 +137,7 @@ export function HomeScreen() {
             {requests.map((request) => {
               const kind = requestKindMeta[request.kind];
               return (
-                <Card key={request.id} onPress={open(`/request/${request.id}`)} accessibilityLabel={l(request.title)} style={styles.request}>
+                <Card key={request.id} onPress={open({ pathname: "/request/[id]", params: { id: request.id, kind: request.kind } })} accessibilityLabel={l(request.title)} style={styles.request}>
                   <IconBadge icon={kind.icon} tone={kind.tone} size={46} />
                   <View style={{ flex: 1, gap: 6 }}>
                     <Text style={styles.requestTitle} numberOfLines={1}>
@@ -143,7 +145,7 @@ export function HomeScreen() {
                     </Text>
                     <View style={styles.requestMeta}>
                       <StatusBadge label={t(`requests.status.${request.status}`)} tone={requestStatusTone[request.status]} />
-                      <Text style={styles.caption}>{Formatter.relative(request.submittedAt)}</Text>
+                      <Text style={styles.caption}>{Formatter.relative(request.submittedAt, new Date())}</Text>
                     </View>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={colors.muted} />

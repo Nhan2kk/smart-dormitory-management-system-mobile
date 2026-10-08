@@ -6,10 +6,10 @@ import { SupportForm } from "./components/SupportForm";
 import { TransferForm } from "./components/TransferForm";
 
 export function CreateRequestScreen() {
-  const { kind } = useLocalSearchParams<{ kind: string }>();
+  const { kind, checkInId } = useLocalSearchParams<{ kind: string; checkInId?: string }>();
   const { t } = useI18n();
   if (kind === "supportMaintenance") return <SupportForm />;
-  if (kind === "roomTransfer") return <TransferForm />;
+  if (kind === "roomTransfer") return <TransferForm checkInId={checkInId ? String(checkInId) : undefined} />;
   if (kind === "roomCheckout") return <CheckoutForm />;
   return (
     <Screen header={<AppHeader title={t("requestForm.newRequest")} />}>

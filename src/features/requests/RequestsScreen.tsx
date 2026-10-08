@@ -1,13 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import type { TranslationKey } from "../../shared/i18n/types";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
-import { AppHeader, Button, Card, ChipGroup, CircleButton, EmptyState, Glass, IconBadge, Screen, StatusBadge } from "../../shared/ui";
-import { RequestAction, RequestKind, requestKindMeta, RequestRepository, requestStatusTone } from "./requests.mock";
+import { AppHeader, Button, Callout, Card, ChipGroup, CircleButton, EmptyState, Glass, IconBadge, Screen, StatusBadge } from "../../shared/ui";
+import { RequestAction, RequestKind, requestKindMeta, requestStats, requestStatusTone } from "./requestModel";
+import { useMyRequests } from "./useMyRequests";
 
 type Filter = "all" | RequestKind;
 
@@ -22,8 +23,9 @@ export function RequestsScreen() {
   const { colors } = useTheme();
   const styles = useStyles();
   const [filter, setFilter] = useState<Filter>("all");
-  const all = RequestRepository.all();
-  const stats = RequestRepository.stats();
+  const { requests, error, loading, reload } = useMyRequests();
+  const all = useMemo(() => requests ?? [], [requests]);
+  const stats = requestStats(all);
   const list = useMemo(() => (filter === "all" ? all : all.filter((request) => request.kind === filter)), [all, filter]);
   const count = (kind: RequestKind) => all.filter((request) => request.kind === kind).length;
 
@@ -49,7 +51,17 @@ export function RequestsScreen() {
         />
       </View>
 
-      {list.length === 0 ? (
+      {error && (
+        <View style={{ marginBottom: spacing.lg }}>
+          <Callout tone="danger" icon="cloud-offline-outline" action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />}>
+            {error}
+          </Callout>
+        </View>
+      )}
+
+      {loading ? (
+        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+      ) : list.length === 0 ? (
         <EmptyState
           icon="document-text-outline"
           title={t("requests.emptyTitle")}
@@ -62,21 +74,27 @@ export function RequestsScreen() {
             const kind = requestKindMeta[request.kind];
             const hint = request.action ? actionHint[request.action] : undefined;
             return (
-              <Card key={request.id} onPress={() => router.push(`/request/${request.id}`)} accessibilityLabel={`${l(request.title)}, ${t(`requests.status.${request.status}`)}`}>
+              <Card
+                key={request.id}
+                onPress={() => router.push({ pathname: "/request/[id]", params: { id: request.id, kind: request.kind } })}
+                accessibilityLabel={`${l(request.title)}, ${t(`requests.status.${request.status}`)}`}
+              >
                 <View style={styles.head}>
                   <IconBadge icon={kind.icon} tone={kind.tone} size={42} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.kind}>
                       {t(`requests.kind.${request.kind}`)} · {request.id}
                     </Text>
-                    <Text style={styles.title} numberOfLines={1}>
+                    <Text style={styles.title} numberOfLines={2}>
                       {l(request.title)}
                     </Text>
                   </View>
                 </View>
-                <Text style={styles.summary} numberOfLines={2}>
-                  {l(request.summary)}
-                </Text>
+                {request.summary && (
+                  <Text style={styles.summary} numberOfLines={2}>
+                    {l(request.summary)}
+                  </Text>
+                )}
                 <View style={styles.foot}>
                   <StatusBadge label={t(`requests.status.${request.status}`)} tone={requestStatusTone[request.status]} />
                   <View style={styles.time}>

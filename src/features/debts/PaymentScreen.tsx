@@ -11,23 +11,26 @@ import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { AppHeader, Button, Card, CircleButton, EmptyState, FooterBar, Screen, Touchable, useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { registrationApi } from "../registration/registrationApi";
+import { requestsApi } from "../requests/requestsApi";
 import { DebtRepository, Payable } from "./debts.mock";
 
 const QR_LIFETIME = 15 * 60;
 
 /**
- * Màn hình thanh toán bằng mã QR chuyển khoản. Với đơn đăng ký KTX (`registrationId`), xác nhận
- * chuyển khoản gọi `POST /student/registrations/{id}/payment` — BE hoàn tất đăng ký và tạo biên bản
- * nhận phòng; các khoản khác vẫn là mock.
+ * Màn hình thanh toán bằng mã QR chuyển khoản. Xác nhận chuyển khoản gọi API thật cho:
+ * - đơn đăng ký KTX (`registrationId`): `POST /student/registrations/{id}/payment` — BE hoàn tất đăng ký và tạo biên bản nhận phòng;
+ * - hoá đơn (`billId`, vd. tất toán chuyển/trả phòng, chi phí sửa chữa): `POST /student/bills/{id}/payment`.
+ * Các khoản khác vẫn là mock.
  */
 export function PaymentScreen() {
-  const { id, amount, title, registrationId } = useLocalSearchParams<{ id: string; amount?: string; title?: string; registrationId?: string }>();
+  const { id, amount, title, registrationId, billId } = useLocalSearchParams<{ id: string; amount?: string; title?: string; registrationId?: string; billId?: string }>();
   const { notify } = useToast();
   const { t, l } = useI18n();
   const { shadow } = useTheme();
   const styles = useStyles();
   const { request } = useAuth();
   const api = useMemo(() => registrationApi(request), [request]);
+  const bills = useMemo(() => requestsApi(request), [request]);
   // Khoản phát sinh ngay trong app (vd. đăng ký KTX) truyền số tiền qua tham số.
   const item: Payable | undefined = DebtRepository.find(String(id)) ?? (amount && title ? { id: String(id), amount: Number(amount), title: { vi: String(title), en: String(title) } } : undefined);
   const [seconds, setSeconds] = useState(QR_LIFETIME);
@@ -83,12 +86,13 @@ export function PaymentScreen() {
 
   const confirmTransfer = async () => {
     setPhase("checking");
-    if (!registrationId) {
+    if (!registrationId && !billId) {
       setTimeout(() => setPhase("done"), 1600);
       return;
     }
     try {
-      await api.pay(String(registrationId));
+      if (registrationId) await api.pay(String(registrationId));
+      else await bills.payBill(String(billId));
       setPhase("done");
     } catch (error) {
       notify(errorMessage(error), "danger");
