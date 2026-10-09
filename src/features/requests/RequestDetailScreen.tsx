@@ -197,7 +197,8 @@ export function RequestDetailScreen() {
       <SectionHeader title={t("requests.progress")} />
       <Card>
         <Timeline
-          items={request.timeline.map((item) => ({
+          // Mới nhất ở trên cùng, cũ nhất ở dưới cùng
+          items={[...request.timeline].reverse().map((item) => ({
             title: l(item.title),
             description: item.description ? l(item.description) : undefined,
             time: item.time,

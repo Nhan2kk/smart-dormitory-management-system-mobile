@@ -15,6 +15,7 @@ import {
   Button,
   Callout,
   Card,
+  ChipGroup,
   EmptyState,
   FooterBar,
   Glass,
@@ -37,8 +38,12 @@ import {
   ACTIVE_STATUSES,
   applicationTone,
   BuildingDto,
+  CampaignOption,
+  eligibleOptions,
   Floor,
   floorAvailability,
+  Gender,
+  genderAllowed,
   groupFloors,
   isInScope,
   PERIOD_MONTHS,
@@ -47,8 +52,8 @@ import {
   Registration,
   registrationApi,
   roomStatusTone,
-  StudentCampaign,
   StudentCampaignState,
+  yearOfStudy,
 } from "./registrationApi";
 
 type Phase = "overview" | "wizard" | "held";
@@ -75,6 +80,10 @@ export function RegisterDormScreen() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [debt, setDebt] = useState<DebtBlock | null>(null);
+  // Nhiều đợt có thể mở song song: sinh viên chọn đợt (mặc định đợt đầu tiên đăng ký được).
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const options = useMemo(() => eligibleOptions(campaignState), [campaignState]);
+  const selected = options.find((option) => option.campaign.id === selectedCampaignId) ?? options[0] ?? null;
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -116,11 +125,12 @@ export function RegisterDormScreen() {
   // Đơn đã thanh toán/huỷ/hết hạn thì màn giữ chỗ tự rơi về Tổng quan.
   if (phase === "held" && registration?.status === "pending_payment")
     return <Held api={api} registration={registration} onChanged={setRegistration} />;
-  if (phase === "wizard" && campaignState?.state === "OPEN" && campaignState.campaign)
+  if (phase === "wizard" && selected)
     return (
       <Wizard
         api={api}
-        campaign={campaignState.campaign}
+        option={selected}
+        studentGender={campaignState?.gender ?? null}
         title={t("registration.title")}
         onExit={() => setPhase("overview")}
         onCampaign={setCampaignState}
@@ -140,6 +150,9 @@ export function RegisterDormScreen() {
       loading={loading}
       loadError={loadError}
       campaignState={campaignState}
+      options={options}
+      selected={selected}
+      onSelect={setSelectedCampaignId}
       registration={registration}
       debt={debt}
       onRetry={() => {
@@ -160,6 +173,9 @@ function Overview({
   loading,
   loadError,
   campaignState,
+  options,
+  selected,
+  onSelect,
   registration,
   debt,
   onRetry,
@@ -169,6 +185,9 @@ function Overview({
   loading: boolean;
   loadError: string | null;
   campaignState: StudentCampaignState | null;
+  options: CampaignOption[];
+  selected: CampaignOption | null;
+  onSelect: (campaignId: string) => void;
   registration: Registration | null;
   debt: DebtBlock | null;
   onRetry: () => void;
@@ -179,13 +198,25 @@ function Overview({
   const { colors } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const campaign = campaignState?.campaign ?? null;
-  const state = campaignState?.state ?? "NONE";
-  const audience = campaign ? primaryAudience(campaign) : null;
+  const campaign = selected?.campaign ?? campaignState?.campaign ?? null;
+  const canRegister = options.length > 0;
+  const state = canRegister ? "OPEN" : campaignState?.state ?? "NONE";
+  const audience = selected?.audience ?? (campaign ? primaryAudience(campaign) : null);
   const active = registration && ACTIVE_STATUSES.includes(registration.status) ? registration : null;
   const range = (from?: string | null, to?: string | null) => (from && to ? `${Formatter.shortDate(from)} – ${Formatter.date(to)}` : "—");
+  const cohortText = (code: string) => {
+    if (code.toUpperCase() === "ALL") return t("registration.allStudents");
+    const year = yearOfStudy(code);
+    return year ? t("registration.cohortLabel", { cohort: code, year }) : t("registration.cohortShort", { cohort: code });
+  };
   const tag: { icon: IconName; key: TranslationKey } =
-    state === "OPEN" ? { icon: "megaphone", key: "registration.openCampaign" } : state === "UPCOMING" ? { icon: "time-outline", key: "registration.upcomingCampaign" } : { icon: "information-circle-outline", key: "registration.noCampaign" };
+    state === "OPEN"
+      ? { icon: "megaphone", key: "registration.openCampaign" }
+      : state === "NOT_ELIGIBLE"
+        ? { icon: "lock-closed-outline", key: "registration.notEligibleCampaign" }
+        : state === "UPCOMING"
+          ? { icon: "time-outline", key: "registration.upcomingCampaign" }
+          : { icon: "information-circle-outline", key: "registration.noCampaign" };
 
   const footer = active ? (
     active.status === "pending_payment" ? (
@@ -194,7 +225,7 @@ function Overview({
       <Button label={t("registration.goCheckIn")} icon="key-outline" onPress={() => router.push("/check-in")} style={{ flex: 1 }} />
     )
   ) : (
-    <Button label={state === "OPEN" ? t("registration.newApplication") : t("registration.notOpen")} icon="add" disabled={state !== "OPEN" || loading} onPress={onStart} style={{ flex: 1 }} />
+    <Button label={canRegister ? t("registration.newApplication") : t("registration.notOpen")} icon="add" disabled={!canRegister || loading} onPress={onStart} style={{ flex: 1 }} />
   );
 
   return (
@@ -214,10 +245,19 @@ function Overview({
               <Text style={styles.campaignName}>{campaign?.name ?? t("registration.noCampaign")}</Text>
               {campaign && (
                 <View style={styles.campaignGrid}>
-                  <CampaignCell icon="people-outline" label={t("registration.audience")} value={!audience || audience.audienceCode.toUpperCase() === "ALL" ? t("registration.allStudents") : audience.audienceCode} />
+                  <CampaignCell
+                    icon="people-outline"
+                    label={t("registration.audience")}
+                    value={audience ? cohortText(audience.audienceCode) : campaign.audiences.map((item) => cohortText(item.audienceCode)).join(", ")}
+                  />
                   <CampaignCell icon="calendar-outline" label={t("registration.period")} value={range(audience?.registrationStart ?? campaign.registrationStart, audience?.registrationEnd ?? campaign.registrationEnd)} />
                   <CampaignCell icon="key-outline" label={t("registration.checkIn")} value={range(audience?.checkInStart, audience?.checkInEnd)} />
                 </View>
+              )}
+              {selected?.cohortRemaining != null && (
+                <Text style={styles.campaignRemaining}>
+                  {t("registration.cohortRemaining", { remaining: selected.cohortRemaining, quota: selected.audience?.quota ?? selected.totalRemaining })}
+                </Text>
               )}
               {state !== "OPEN" && <Text style={styles.campaignMessage}>{campaignState?.message ?? t("registration.noCampaignBody")}</Text>}
             </>
@@ -226,6 +266,16 @@ function Overview({
       </PhotoBackground>
 
       <View style={styles.body}>
+        {options.length > 1 && (
+          <>
+            <SectionHeader title={t("registration.chooseCampaign")} />
+            <ChipGroup<string>
+              value={selected?.campaign.id ?? ""}
+              onChange={onSelect}
+              options={options.map((option) => ({ value: option.campaign.id, label: option.campaign.name, icon: "megaphone-outline" as const }))}
+            />
+          </>
+        )}
         {loadError && (
           <View style={{ marginTop: spacing.xl }}>
             <Callout tone="danger" icon="cloud-offline-outline" title={t("registration.loadFailed")} action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={onRetry} />}>
@@ -276,7 +326,8 @@ function Overview({
 
 function Wizard({
   api,
-  campaign,
+  option,
+  studentGender,
   title,
   onExit,
   onCampaign,
@@ -284,7 +335,8 @@ function Wizard({
   onCreated,
 }: {
   api: Api;
-  campaign: StudentCampaign;
+  option: CampaignOption;
+  studentGender: Gender | null;
   title: string;
   onExit: () => void;
   onCampaign: (state: StudentCampaignState) => void;
@@ -306,12 +358,15 @@ function Wizard({
   const [period, setPeriod] = useState<PricingPeriod>("6months");
   const [payment, setPayment] = useState<"now" | "later">("now");
   const [submitting, setSubmitting] = useState(false);
+  const campaign = option.campaign;
+  // Chỗ còn lại của đợt theo tòa (chỉ có khi đợt chia chỉ tiêu theo tòa).
+  const remainingByBuilding = useMemo(() => new Map(option.buildings.map((item) => [item.buildingId, item.remaining])), [option.buildings]);
 
   useEffect(() => {
     let alive = true;
     api
       .buildings()
-      .then((items) => alive && setBuildings(items.filter((item) => isInScope(campaign, item.id))))
+      .then((items) => alive && setBuildings(items.filter((item) => isInScope(campaign, item.id) && remainingByBuilding.get(item.id) !== 0)))
       .catch((error: unknown) => {
         if (!alive) return;
         setBuildings([]);
@@ -320,14 +375,15 @@ function Wizard({
     return () => {
       alive = false;
     };
-  }, [api, campaign, notify]);
+  }, [api, campaign, notify, remainingByBuilding]);
 
+  // Tầng phân khu khác giới tính của sinh viên không hiển thị.
   const loadFloors = useCallback(
     async (id: string) => {
       const [floorItems, roomItems] = await Promise.all([api.floors(id), api.rooms(id)]);
-      return groupFloors(floorItems, roomItems);
+      return groupFloors(floorItems.filter((item) => genderAllowed(item.gender, studentGender)), roomItems);
     },
-    [api],
+    [api, studentGender],
   );
 
   useEffect(() => {
@@ -375,9 +431,11 @@ function Wizard({
       // Hỏi lại đợt hiện tại ngay trước khi đặt giường để không dùng campaignId của đợt đã đóng/huỷ.
       const fresh = await api.currentCampaign();
       onCampaign(fresh);
-      if (fresh.state !== "OPEN" || !fresh.campaign) return notify(t("registration.staleCampaign"), "warning");
-      if (!isInScope(fresh.campaign, building.id)) return notify(t("registration.outOfScope"), "warning");
-      const created = await api.create({ campaignId: fresh.campaign.id, buildingId: building.id, floorId: floor.id, roomId: room.id, bedId: bed.id, pricingPeriod: period });
+      const freshOption = eligibleOptions(fresh).find((item) => item.campaign.id === campaign.id);
+      if (!freshOption)
+        return notify(fresh.campaigns?.find((item) => item.campaign.id === campaign.id)?.reason ?? t("registration.staleCampaign"), "warning");
+      if (!isInScope(freshOption.campaign, building.id)) return notify(t("registration.outOfScope"), "warning");
+      const created = await api.create({ campaignId: freshOption.campaign.id, buildingId: building.id, floorId: floor.id, roomId: room.id, bedId: bed.id, pricingPeriod: period });
       notify(payment === "now" ? t("registration.held") : t("registration.heldLater"));
       onCreated(created, payment === "now");
     } catch (error) {
@@ -464,6 +522,16 @@ function Wizard({
                           <Text style={styles.buildingDesc} numberOfLines={1}>
                             {t("registration.buildingMeta", { rooms: item.rooms, rate: Formatter.decimal(item.occupancyRate) })}
                           </Text>
+                          {(remainingByBuilding.get(item.id) != null || item.genderSummary) && (
+                            <Text style={styles.buildingFree} numberOfLines={1}>
+                              {[
+                                remainingByBuilding.get(item.id) != null ? t("registration.buildingRemaining", { count: remainingByBuilding.get(item.id)! }) : null,
+                                item.genderSummary ? t(`registration.genderSummary.${item.genderSummary}`) : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </Text>
+                          )}
                         </View>
                         {item.baseRoomPrice != null && (
                           <Text style={styles.buildingPrice}>
@@ -507,7 +575,10 @@ function Wizard({
                     accessibilityLabel={`${floorTitle(item)}, ${t("registration.free", { count: available })}`}
                     style={[styles.floor, selected && styles.selected, available === 0 && { opacity: 0.55 }]}
                   >
-                    <Text style={styles.caption}>{t("common.floor")}</Text>
+                    <Text style={styles.caption}>
+                      {t("common.floor")}
+                      {item.gender ? ` · ${t(`common.${item.gender}`)}` : ""}
+                    </Text>
                     <Text style={[styles.floorNum, selected && { color: colors.primary }]} numberOfLines={1} adjustsFontSizeToFit>
                       {item.number ?? item.name}
                     </Text>
@@ -749,6 +820,7 @@ const useStyles = makeStyles(({ colors, font }) => ({
   campaignTagText: { color: colors.primaryLight, fontWeight: "700", fontSize: 13 },
   campaignName: { color: white, fontSize: 19, fontWeight: "800", lineHeight: 25 },
   campaignMessage: { color: "rgba(255,255,255,0.85)", fontSize: 13, lineHeight: 19 },
+  campaignRemaining: { color: "#5BE49B", fontSize: 13, fontWeight: "700" },
   campaignGrid: { flexDirection: "row", gap: spacing.sm },
   campaignCell: { flex: 1, gap: 3, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: radius.sm, padding: spacing.sm },
   campaignLabel: { color: "rgba(255,255,255,0.7)", fontSize: 11, fontWeight: "600" },
@@ -768,6 +840,7 @@ const useStyles = makeStyles(({ colors, font }) => ({
   buildingBadgeText: { color: white, fontSize: 12, fontWeight: "800" },
   buildingInfo: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radius.md },
   buildingDesc: { color: white, fontSize: 14, fontWeight: "700" },
+  buildingFree: { color: "#5BE49B", fontSize: 12, fontWeight: "700", marginTop: 2 },
   buildingPrice: { color: white, fontSize: 18, fontWeight: "800" },
   buildingUnit: { fontSize: 12, fontWeight: "600" },
   floors: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: spacing.md },

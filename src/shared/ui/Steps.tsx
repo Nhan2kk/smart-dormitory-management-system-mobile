@@ -44,7 +44,8 @@ export function Timeline({ items }: { items: TimelineItem[] }) {
                 {item.state === "failed" && <Ionicons name="close" size={13} color={colors.white} />}
                 {item.state === "current" && <View style={styles.tlPulse} />}
               </View>
-              {!last && <View style={[styles.tlLine, item.state === "done" && { backgroundColor: colors.success }]} />}
+              {/* Đoạn nối tô xanh khi cả 2 bước hai đầu đều đã tới (đúng cho cả thứ tự cũ→mới lẫn mới→cũ) */}
+              {!last && <View style={[styles.tlLine, !upcoming && items[index + 1].state !== "upcoming" && { backgroundColor: colors.success }]} />}
             </View>
             <View style={[styles.tlBody, last && { paddingBottom: 0 }]}>
               <Text style={[styles.tlTitle, upcoming && { color: colors.muted }]}>{item.title}</Text>

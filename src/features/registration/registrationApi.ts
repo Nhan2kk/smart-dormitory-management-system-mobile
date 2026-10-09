@@ -2,15 +2,19 @@ import type { ApiClient } from "../../shared/api";
 
 // ---- DTO đúng theo backend (/student/registration-campaigns, /student/facilities, /student/registrations) ----
 
-export type CampaignState = "OPEN" | "UPCOMING" | "NONE";
+/** NOT_ELIGIBLE: có đợt đang mở nhưng không dành cho khóa của sinh viên (xem message). */
+export type CampaignState = "OPEN" | "NOT_ELIGIBLE" | "UPCOMING" | "NONE";
+export type Gender = "male" | "female";
 export type ScopeType = "ALL_BUILDINGS" | "SELECTED_BUILDINGS";
 
 export type CampaignAudience = {
+  /** "ALL" (mọi khóa) hoặc năm học nhập học, vd "2026-2027". */
   audienceCode: string;
   registrationStart: string;
   registrationEnd: string;
   checkInStart: string | null;
   checkInEnd: string | null;
+  quota?: number | null;
 };
 
 export type StudentCampaign = {
@@ -24,14 +28,69 @@ export type StudentCampaign = {
   selectedBuildingIds: string[];
   audiences: CampaignAudience[];
   description: string | null;
+  totalQuota?: number;
 };
 
-export type StudentCampaignState = { state: CampaignState; message: string | null; campaign: StudentCampaign | null };
+/** Một đợt đang mở/sắp mở đối với sinh viên (nhiều đợt có thể chạy song song). */
+export type CampaignOption = {
+  campaign: StudentCampaign;
+  state: "OPEN" | "UPCOMING";
+  /** Đặt giường được ngay; false thì `reason` giải thích (vd chỉ dành cho khóa khác). */
+  eligible: boolean;
+  reason: string | null;
+  audience: CampaignAudience | null;
+  cohortRemaining: number | null;
+  totalRemaining: number;
+  buildings: { buildingId: string; buildingName: string; quota: number | null; remaining: number | null }[];
+};
+
+export type StudentCampaignState = {
+  state: CampaignState;
+  message: string | null;
+  campaign: StudentCampaign | null;
+  campaigns?: CampaignOption[];
+  /** Khóa (năm học nhập học) của sinh viên, vd "2026-2027". */
+  cohort?: string | null;
+  yearOfStudy?: number | null;
+  gender?: Gender | null;
+};
+
+/** Các đợt sinh viên đăng ký được ngay; BE cũ chưa có `campaigns` thì dựng từ `campaign`. */
+export function eligibleOptions(state: StudentCampaignState | null): CampaignOption[] {
+  if (!state) return [];
+  if (state.campaigns) return state.campaigns.filter((option) => option.eligible);
+  return state.state === "OPEN" && state.campaign
+    ? [{ campaign: state.campaign, state: "OPEN", eligible: true, reason: null, audience: primaryAudience(state.campaign), cohortRemaining: null, totalRemaining: 0, buildings: [] }]
+    : [];
+}
+
+/** Tầng chưa phân khu, hoặc đúng giới tính sinh viên (chưa rõ giới tính sinh viên thì không lọc — BE vẫn kiểm tra). */
+export function genderAllowed(floorGender: Gender | null | undefined, studentGender: Gender | null | undefined) {
+  return !floorGender || !studentGender || floorGender === studentGender;
+}
+
+/** Năm học bắt đầu từ tháng 8 (giống BE): khóa "2026-2027" là năm nhất trong năm học 2026-2027. */
+export function yearOfStudy(cohort: string, now = new Date()) {
+  const start = Number.parseInt(cohort.slice(0, 4), 10);
+  const current = now.getMonth() + 1 >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+  return Number.isFinite(start) ? Math.max(1, current - start + 1) : null;
+}
 
 type PageResponse<T> = { content: T[]; page: number; size: number; totalElements: number; totalPages: number; last: boolean };
 
-export type BuildingDto = { id: string; name: string; floors: number; rooms: number; occupiedRooms: number; occupancyRate: number; status: string; baseRoomPrice: number | null };
-export type FloorDto = { id: string; name: string; symbol: string | null; buildingId: string; rooms: number; beds: number; occupancyRate: number; status: string; baseRoomPrice: number | null };
+export type BuildingDto = {
+  id: string;
+  name: string;
+  floors: number;
+  rooms: number;
+  occupiedRooms: number;
+  occupancyRate: number;
+  status: string;
+  baseRoomPrice: number | null;
+  /** Tổng hợp giới tính các tầng: nam / nữ / cả hai theo tầng; null = chưa phân khu. */
+  genderSummary?: Gender | "mixed" | null;
+};
+export type FloorDto = { id: string; name: string; symbol: string | null; buildingId: string; rooms: number; beds: number; occupancyRate: number; status: string; baseRoomPrice: number | null; gender?: Gender | null };
 export type BedDto = { id: string; code: string; status: string; studentId: string | null; studentName: string | null };
 export type RoomDto = {
   id: string;
@@ -82,7 +141,7 @@ export type BedStatus = "available" | "occupied" | "reserved" | "maintenance";
 
 export type Bed = { id: string; code: string; level?: 1 | 2; status: BedStatus };
 export type Room = { id: string; code: string; floorId: string; type: string | null; capacity: number; available: number; status: RoomStatus; price: number; hasBunkBeds: boolean; beds: Bed[] };
-export type Floor = { id: string; name: string; number: number | null; status: string; rooms: Room[] };
+export type Floor = { id: string; name: string; number: number | null; status: string; gender: Gender | null; rooms: Room[] };
 
 export const roomStatusTone: Record<RoomStatus, "success" | "danger" | "neutral"> = { available: "success", full: "danger", maintenance: "neutral" };
 export const applicationTone: Record<RegistrationStatus, "success" | "warning" | "neutral" | "danger" | "info"> = {
@@ -127,6 +186,7 @@ export function groupFloors(floors: FloorDto[], rooms: RoomDto[]): Floor[] {
       name: floor.name,
       number: floorNumber(floor),
       status: floor.status,
+      gender: floor.gender ?? null,
       rooms: rooms
         .filter((room) => room.floorId === floor.id)
         .map(mapRoom)

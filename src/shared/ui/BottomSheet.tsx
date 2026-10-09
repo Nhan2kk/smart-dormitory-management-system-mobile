@@ -14,7 +14,8 @@ export function BottomSheet({ visible, onClose, title, subtitle, children, foote
   const { t } = useI18n();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.root}>
+      {/* Modal Android (statusBarTranslucent) không tự co khi mở bàn phím → thu chiều cao vùng chứa để đẩy bảng lên trên bàn phím. */}
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.root}>
         <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={t("common.close")} />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg }]}>
           <View style={styles.handle} />
