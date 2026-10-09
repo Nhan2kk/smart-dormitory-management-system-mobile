@@ -34,7 +34,7 @@ export type Preferences = {
 export const DEFAULT_PREFERENCES: Preferences = {
   language: "vi",
   mode: "light",
-  preset: "sunset",
+  preset: "forest",
   glass: false,
   glassLevel: "medium",
   wallpaper: "lobby",

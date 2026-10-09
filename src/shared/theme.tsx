@@ -453,7 +453,7 @@ export class ThemeFactory {
 const ThemeContext = createContext<Theme>(
   ThemeFactory.create({
     isDark: false,
-    preset: "sunset",
+    preset: "forest",
     glass: false,
     glassLevel: "medium",
     wallpaper: "lobby",
