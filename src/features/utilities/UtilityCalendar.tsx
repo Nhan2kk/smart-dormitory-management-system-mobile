@@ -3,18 +3,24 @@ import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { Touchable } from "../../shared/ui";
-import { DailyRecord } from "./utilities.mock";
+import { DailyRecord, UtilityMetric, UtilityUsage } from "./utilityModel";
 
-/** Lịch nhiệt theo ngày: ô càng đậm tiêu thụ điện càng cao. */
-export function UtilityCalendar({ records, onSelect }: { records: DailyRecord[]; onSelect: (record: DailyRecord) => void }) {
+/** Lịch nhiệt theo ngày của một tháng (yyyy-MM): ô càng đậm tiêu thụ càng cao; ngày chưa có số đo để mờ. */
+export function UtilityCalendar({ month, records, metric = "electricity", onSelect }: { month: string; records: DailyRecord[]; metric?: UtilityMetric; onSelect: (record: DailyRecord) => void }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const { t } = useI18n();
-  const max = Math.max(...records.map((record) => record.electricity));
-  const min = Math.min(...records.map((record) => record.electricity));
-  const first = new Date(records[0].date);
+  const color = metric === "electricity" ? colors.primary : colors.info;
+  const unit = metric === "electricity" ? "kWh" : "m³";
+  const byDate = new Map(records.map((record) => [record.date, record]));
+  const values = records.map((record) => record[metric]);
+  const max = Math.max(0, ...values);
+  const min = values.length ? Math.min(...values) : 0;
+  const first = UtilityUsage.dateOf(`${month}-01`);
+  const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
   const offset = (first.getDay() + 6) % 7; // Thứ Hai đầu tuần
-  const cells: (DailyRecord | null)[] = [...Array.from({ length: offset }, () => null), ...records];
+  const dates = Array.from({ length: daysInMonth }, (_, index) => UtilityUsage.addDays(`${month}-01`, index));
+  const cells: (string | null)[] = [...Array.from({ length: offset }, () => null), ...dates];
   const weekdays = Array.from({ length: 7 }, (_, index) => Formatter.weekday(new Date(2026, 8, 7 + index)));
 
   return (
@@ -27,18 +33,29 @@ export function UtilityCalendar({ records, onSelect }: { records: DailyRecord[];
         ))}
       </View>
       <View style={styles.grid}>
-        {cells.map((record, index) => {
-          if (!record) return <View key={`e${index}`} style={styles.cell} />;
-          const level = (record.electricity - min) / Math.max(0.01, max - min);
+        {cells.map((date, index) => {
+          if (!date) return <View key={`e${index}`} style={styles.cell} />;
+          const record = byDate.get(date);
+          const dayNumber = Number(date.slice(8));
+          if (!record) {
+            return (
+              <View key={date} style={styles.cell}>
+                <View style={[styles.day, { backgroundColor: colors.surfaceMuted }]}>
+                  <Text style={[styles.dayText, { color: colors.muted, fontWeight: "500" }]}>{dayNumber}</Text>
+                </View>
+              </View>
+            );
+          }
+          const level = (record[metric] - min) / Math.max(0.0001, max - min);
           const strong = level > 0.55;
           return (
-            <View key={record.date} style={styles.cell}>
+            <View key={date} style={styles.cell}>
               <Touchable
                 onPress={() => onSelect(record)}
-                accessibilityLabel={`${Formatter.date(record.date)}: ${Formatter.decimal(record.electricity, 2)} kWh`}
-                style={[styles.day, { backgroundColor: colors.primary, opacity: 0.18 + level * 0.82 }]}
+                accessibilityLabel={`${Formatter.date(UtilityUsage.dateOf(date))}: ${Formatter.decimal(record[metric], metric === "electricity" ? 2 : 3)} ${unit}`}
+                style={[styles.day, { backgroundColor: color, opacity: 0.18 + level * 0.82 }]}
               >
-                <Text style={[styles.dayText, { color: strong ? colors.onPrimary : colors.ink }]}>{new Date(record.date).getDate()}</Text>
+                <Text style={[styles.dayText, { color: strong ? colors.onPrimary : colors.ink }]}>{dayNumber}</Text>
               </Touchable>
             </View>
           );
@@ -47,7 +64,7 @@ export function UtilityCalendar({ records, onSelect }: { records: DailyRecord[];
       <View style={styles.legend}>
         <Text style={styles.legendText}>{t("utilities.less")}</Text>
         {[0.2, 0.4, 0.6, 0.8, 1].map((value) => (
-          <View key={value} style={[styles.legendCell, { backgroundColor: colors.primary, opacity: value }]} />
+          <View key={value} style={[styles.legendCell, { backgroundColor: color, opacity: value }]} />
         ))}
         <Text style={styles.legendText}>{t("utilities.more")}</Text>
       </View>

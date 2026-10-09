@@ -17,7 +17,8 @@ import { ProfileRepository } from "../profile/profile.mock";
 import { requestKindMeta, requestStats, requestStatusTone } from "../requests/requestModel";
 import { useMyRequests } from "../requests/useMyRequests";
 import { ResidencyRepository } from "../residency/residency.mock";
-import { UtilityRepository } from "../utilities/utilities.mock";
+import { UtilityUsage } from "../utilities/utilityModel";
+import { useUtilities } from "../utilities/useUtilities";
 
 const services: { key: TranslationKey; icon: IconName; href: Href; tone: Tone }[] = [
   { key: "home.service.register", icon: "clipboard-outline", href: "/register-dorm", tone: "violet" },
@@ -40,8 +41,9 @@ export function HomeScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const name = user?.fullName || ProfileRepository.get().fullName;
   const residence = ResidencyRepository.current();
-  const today = UtilityRepository.get("day");
-  const week = UtilityRepository.get("week");
+  const usage = useUtilities().usage;
+  const today = usage?.series("day") ?? null;
+  const week = usage?.series("week") ?? null;
   const debt = DebtRepository.totalUnpaid();
   const unread = useNotifications().unreadCount;
   const myRequests = useMyRequests().requests ?? [];
@@ -94,7 +96,7 @@ export function HomeScreen() {
               action="arrow-forward"
               onPress={open("/residency-record")}
             />
-            <Tile icon="flash-outline" title={t("home.powerTile")} subtitle={`${Formatter.decimal(today.electricityTotal)} kWh`} action="power" onPress={() => router.navigate("/utilities")} />
+            <Tile icon="flash-outline" title={t("home.powerTile")} subtitle={today ? `${Formatter.decimal(today.electricityTotal)} kWh` : "— kWh"} action="power" onPress={() => router.navigate("/utilities")} />
             <Tile icon="wallet-outline" title={t("home.debtTile")} subtitle={Formatter.currency(debt)} subtitleColor={DebtRepository.hasOverdue() ? colors.danger : undefined} onPress={open("/debts")} />
             <Tile icon="document-text-outline" title={t("home.requestTile")} subtitle={t("home.requestTileSub", { count: processing })} onPress={() => router.navigate("/requests")} />
           </View>
@@ -121,14 +123,18 @@ export function HomeScreen() {
           <SectionHeader title={t("home.todayUsage")} action={t("common.details")} onAction={() => router.navigate("/utilities")} />
           <Card onPress={() => router.navigate("/utilities")} accessibilityLabel={t("utilities.title")}>
             <View style={styles.usageRow}>
-              <UsageStat icon="flash" color={colors.primary} label={t("utilities.electricity")} value={Formatter.decimal(today.electricityTotal)} unit="kWh" change={today.changePercent.electricity} />
+              <UsageStat icon="flash" color={colors.primary} label={t("utilities.electricity")} value={today ? Formatter.decimal(today.electricityTotal) : "—"} unit="kWh" change={today?.changePercent.electricity ?? null} />
               <View style={styles.usageDivider} />
-              <UsageStat icon="water" color={colors.info} label={t("utilities.water")} value={Formatter.decimal(today.waterTotal, 2)} unit="m³" change={today.changePercent.water} />
+              <UsageStat icon="water" color={colors.info} label={t("utilities.water")} value={today ? Formatter.decimal(today.waterTotal, 2) : "—"} unit="m³" change={today?.changePercent.water ?? null} />
             </View>
-            <Text style={styles.caption}>{t("home.weekChart")}</Text>
-            <View style={{ marginTop: spacing.sm }}>
-              <BarChart values={week.electricity} labels={UtilityRepository.weekLabels()} height={64} />
-            </View>
+            {week && (
+              <>
+                <Text style={styles.caption}>{t("home.weekChart")}</Text>
+                <View style={{ marginTop: spacing.sm }}>
+                  <BarChart values={week.electricity} labels={week.labels.map((date) => Formatter.weekday(UtilityUsage.dateOf(date)))} height={64} />
+                </View>
+              </>
+            )}
           </Card>
 
           {/* Yêu cầu gần đây */}
@@ -240,11 +246,11 @@ function Tile({
   );
 }
 
-function UsageStat({ icon, color, label, value, unit, change }: { icon: IconName; color: string; label: string; value: string; unit: string; change: number }) {
+function UsageStat({ icon, color, label, value, unit, change }: { icon: IconName; color: string; label: string; value: string; unit: string; change: number | null }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const { t } = useI18n();
-  const up = change >= 0;
+  const up = (change ?? 0) >= 0;
   return (
     <View style={{ flex: 1, gap: 4 }}>
       <View style={styles.usageHead}>
@@ -254,9 +260,13 @@ function UsageStat({ icon, color, label, value, unit, change }: { icon: IconName
       <Text style={styles.usageValue}>
         {value} <Text style={styles.usageUnit}>{unit}</Text>
       </Text>
-      <Text style={[styles.usageChange, { color: up ? colors.danger : colors.success }]}>
-        {up ? "▲" : "▼"} {t("home.vsYesterday", { value: Math.abs(change) })}
-      </Text>
+      {change == null ? (
+        <Text style={[styles.usageChange, { color: colors.muted }]}>{t("utilities.noPrevious")}</Text>
+      ) : (
+        <Text style={[styles.usageChange, { color: up ? colors.danger : colors.success }]}>
+          {up ? "▲" : "▼"} {t("home.vsYesterday", { value: Math.abs(change) })}
+        </Text>
+      )}
     </View>
   );
 }

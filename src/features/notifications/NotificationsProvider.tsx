@@ -3,9 +3,10 @@ import { AppState } from "react-native";
 import { errorMessage } from "../../shared/api";
 import { useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
-import { AppNotification, notificationsApi } from "./notificationsApi";
+import { useRealtime } from "../realtime/RealtimeProvider";
+import { AppNotification, notificationKindMeta, notificationsApi } from "./notificationsApi";
 
-/** Chu kỳ hỏi thông báo mới khi app đang mở (BE chưa có push cho mobile, web dùng WebSocket). */
+/** Chu kỳ hỏi thông báo mới khi app đang mở nhưng WebSocket chưa kết nối được (dự phòng). */
 const POLL_MS = 30_000;
 
 type NotificationsValue = {
@@ -25,6 +26,7 @@ const NotificationsContext = createContext<NotificationsValue | null>(null);
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { request } = useAuth();
   const { notify } = useToast();
+  const { connected, notifySignal } = useRealtime();
   const api = useMemo(() => notificationsApi(request), [request]);
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -40,7 +42,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         const fresh = list.filter((item) => !item.read && !seen.current!.has(item.id));
         if (fresh.length) {
           setLastIncoming(fresh[0]);
-          notify(fresh[0].title, "info");
+          // Cảnh báo IoT (danger/warning) hiện toast cùng màu mức độ.
+          notify(fresh[0].title, notificationKindMeta[fresh[0].kind]?.tone ?? "info");
         }
       }
       seen.current = new Set(list.map((item) => item.id));
@@ -52,11 +55,16 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     }
   }, [api, notify]);
 
+  // Có thông báo mới qua WebSocket (hoặc vừa nối lại) → tải lại danh sách.
+  useEffect(() => {
+    if (notifySignal > 0) reload();
+  }, [notifySignal, reload]);
+
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null;
     const start = () => {
       reload();
-      timer ??= setInterval(reload, POLL_MS);
+      if (!connected) timer ??= setInterval(reload, POLL_MS);
     };
     const stop = () => {
       if (timer) clearInterval(timer);
@@ -68,7 +76,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       stop();
       subscription.remove();
     };
-  }, [reload]);
+  }, [connected, reload]);
 
   const replace = useCallback((updated: AppNotification) => {
     setItems((current) => current?.map((item) => (item.id === updated.id ? updated : item)) ?? current);

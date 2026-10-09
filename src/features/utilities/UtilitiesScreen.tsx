@@ -1,40 +1,104 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { AreaChart } from "../../shared/charts/AreaChart";
 import { CompareBar } from "../../shared/charts/BarChart";
 import { DonutChart } from "../../shared/charts/DonutChart";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
-import { AppHeader, BottomSheet, Card, Gradient, IconBadge, InfoRow, Screen, SectionHeader, SegmentedControl } from "../../shared/ui";
-import { ResidencyRepository } from "../residency/residency.mock";
+import { AppHeader, BottomSheet, Button, Callout, Card, EmptyState, Gradient, IconBadge, IconName, InfoRow, Screen, SectionHeader, SegmentedControl } from "../../shared/ui";
 import { UtilityCalendar } from "./UtilityCalendar";
-import { DailyRecord, UtilityMetric, UtilityRange, UtilityRepository } from "./utilities.mock";
+import { DailyRecord, UtilityInsightKind, UtilityMetric, UtilityRange, UtilityUsage } from "./utilityModel";
+import { useRealtime } from "../realtime/RealtimeProvider";
+import { useUtilities } from "./useUtilities";
 
+const INSIGHT_ICONS: Record<UtilityInsightKind, IconName> = {
+  electricityUp: "flash-outline",
+  electricityDown: "leaf-outline",
+  waterUp: "water-outline",
+  waterDown: "leaf-outline",
+  peakHour: "time-outline",
+  stable: "shield-checkmark-outline",
+};
+
+/** Điện & nước của phòng hiện tại, lấy từ `POST /student/utilities` (số đo IoT theo giờ). */
 export function UtilitiesScreen() {
-  const { t, l } = useI18n();
+  const { t } = useI18n();
+  const { colors } = useTheme();
+  const { usage, error, noRoom, loading, reload } = useUtilities();
+  const { lastIncident } = useRealtime();
+  const liveIncident = usage && lastIncident?.status === "OPEN" && lastIncident.roomCode.toUpperCase() === usage.roomCode.toUpperCase() ? lastIncident : null;
+  const retry = <Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />;
+  const header = <AppHeader title={t("utilities.title")} subtitle={usage ? t("utilities.subtitle", { room: usage.roomCode }) : undefined} hideBack />;
+
+  return (
+    <Screen inTabs header={header}>
+      {liveIncident && (
+        <View style={{ marginBottom: spacing.lg }}>
+          <Callout tone={liveIncident.severity === "DANGER" ? "danger" : "warning"} icon="warning-outline" title={t("utilities.liveIncidentTitle")}>
+            {liveIncident.reasons[0] ?? t("utilities.liveIncidentBody", { time: Formatter.dateTime(liveIncident.lastDetectedAt) })}
+          </Callout>
+        </View>
+      )}
+      {error && (
+        <View style={{ marginBottom: spacing.lg }}>
+          <Callout tone="danger" icon="cloud-offline-outline" title={t("utilities.loadError")} action={retry}>
+            {error}
+          </Callout>
+        </View>
+      )}
+      {loading ? (
+        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+      ) : noRoom ? (
+        <EmptyState icon="home-outline" title={t("utilities.noRoomTitle")} description={t("utilities.noRoomBody")} />
+      ) : usage && !usage.hasData ? (
+        <EmptyState icon="pulse-outline" title={t("utilities.emptyTitle")} description={t("utilities.emptyBody")} action={retry} />
+      ) : usage ? (
+        <UtilitiesContent usage={usage} />
+      ) : null}
+    </Screen>
+  );
+}
+
+function UtilitiesContent({ usage }: { usage: UtilityUsage }) {
+  const { t } = useI18n();
   const { colors, tones, shadow } = useTheme();
   const styles = useStyles();
   const [range, setRange] = useState<UtilityRange>("day");
   const [metric, setMetric] = useState<UtilityMetric>("electricity");
   const [day, setDay] = useState<DailyRecord | null>(null);
-  const residence = ResidencyRepository.current();
-  const data = UtilityRepository.get(range);
+  const data = usage.series(range);
   const isElectricity = metric === "electricity";
   const total = isElectricity ? data.electricityTotal : data.waterTotal;
   const change = data.changePercent[metric];
   const unit = isElectricity ? "kWh" : "m³";
-  const electricityCost = UtilityRepository.cost("electricity", data.electricityTotal);
-  const waterCost = UtilityRepository.cost("water", data.waterTotal);
-  const totalCost = electricityCost + waterCost;
-  const labels = data.labels === "weekdays" ? UtilityRepository.weekLabels() : data.labels;
+  const electricityCost = usage.cost("electricity", data.electricityTotal);
+  const waterCost = usage.cost("water", data.waterTotal);
+  const hasCost = electricityCost != null || waterCost != null;
+  const totalCost = (electricityCost ?? 0) + (waterCost ?? 0);
+  const labels = range === "week" ? data.labels.map((date) => Formatter.weekday(UtilityUsage.dateOf(date))) : data.labels;
   const period = { day: t("utilities.vsDay"), week: t("utilities.vsWeek"), month: t("utilities.vsMonth") }[range];
   const subtotal = { day: t("utilities.subtotalDay"), week: t("utilities.subtotalWeek"), month: t("utilities.subtotalMonth") }[range];
   const metricName = isElectricity ? t("utilities.electricity") : t("utilities.water");
+  const caption =
+    range === "day"
+      ? t("utilities.captionDay", { date: Formatter.date(UtilityUsage.dateOf(data.to)) })
+      : range === "week"
+        ? t("utilities.captionRange", { from: Formatter.shortDate(UtilityUsage.dateOf(data.from)), to: Formatter.date(UtilityUsage.dateOf(data.to)) })
+        : t("utilities.captionMonth", { month: Formatter.monthYear(UtilityUsage.dateOf(data.from)) });
+  const monthToDate = usage.monthToDate();
+  const meters = usage.meters();
+  const insights = usage.insights();
+  /** "2,4 kWh × ≈2.370đ" — đơn giá trung bình tháng do BE tính theo bảng giá. */
+  const priceDetail = (target: UtilityMetric, amount: number) => {
+    const price = usage.unitPrice(target);
+    const quantity = target === "electricity" ? `${Formatter.decimal(amount, 2)} kWh` : `${Formatter.decimal(amount, 3)} m³`;
+    return price == null ? quantity : t("utilities.unitPrice", { amount: quantity, price: Formatter.currency(Math.round(price)) });
+  };
 
   return (
-    <Screen inTabs header={<AppHeader title={t("utilities.title")} subtitle={t("utilities.subtitle", { room: residence.room, building: `${t("common.building")} ${residence.building}` })} hideBack />}>
+    <>
       <SegmentedControl
         options={[
           { value: "day", label: t("utilities.day") },
@@ -51,16 +115,22 @@ export function UtilitiesScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.heroLabel}>{t("utilities.totalUsage", { metric: metricName.toLowerCase() })}</Text>
               <Text style={styles.heroValue}>
-                {Formatter.decimal(total, 2)} <Text style={styles.heroUnit}>{unit}</Text>
+                {Formatter.decimal(total, isElectricity ? 2 : 3)} <Text style={styles.heroUnit}>{unit}</Text>
               </Text>
-              <Text style={styles.heroCaption}>{l(data.caption)}</Text>
+              <Text style={styles.heroCaption}>{caption}</Text>
             </View>
             <View style={{ alignItems: "flex-end" }}>
-              <View style={styles.changePill}>
-                <Ionicons name={change >= 0 ? "trending-up" : "trending-down"} size={14} color={colors.white} />
-                <Text style={styles.changeText}>{Math.abs(change)}%</Text>
-              </View>
-              <Text style={styles.heroCaption}>{t("utilities.vs", { period })}</Text>
+              {change == null ? (
+                <Text style={styles.heroCaption}>{t("utilities.noPrevious")}</Text>
+              ) : (
+                <>
+                  <View style={styles.changePill}>
+                    <Ionicons name={change >= 0 ? "trending-up" : "trending-down"} size={14} color={white} />
+                    <Text style={styles.changeText}>{Math.abs(change)}%</Text>
+                  </View>
+                  <Text style={styles.heroCaption}>{t("utilities.vs", { period })}</Text>
+                </>
+              )}
             </View>
           </View>
           <SegmentedControl
@@ -78,39 +148,45 @@ export function UtilitiesScreen() {
       </View>
 
       <SectionHeader title={t("utilities.estimatedCost")} />
-      <Card>
-        <View style={styles.costRow}>
-          <DonutChart size={128} thickness={20} segments={[{ value: electricityCost, color: colors.primary }, { value: waterCost, color: colors.info }]}>
-            <Text style={styles.donutValue}>{Formatter.compactCurrency(totalCost)}</Text>
-            <Text style={styles.caption}>{t("utilities.total")}</Text>
-          </DonutChart>
-          <View style={{ flex: 1, gap: spacing.md }}>
-            <CostLegend color={colors.primary} label={t("utilities.electricity")} amount={electricityCost} detail={`${Formatter.decimal(data.electricityTotal, 2)} kWh × ${Formatter.currency(UtilityRepository.unitPrice("electricity"))}`} share={electricityCost / totalCost} />
-            <CostLegend color={colors.info} label={t("utilities.water")} amount={waterCost} detail={`${Formatter.decimal(data.waterTotal, 2)} m³ × ${Formatter.currency(UtilityRepository.unitPrice("water"))}`} share={waterCost / totalCost} />
+      {hasCost ? (
+        <Card>
+          <View style={styles.costRow}>
+            <DonutChart size={128} thickness={20} segments={[{ value: electricityCost ?? 0, color: colors.primary }, { value: waterCost ?? 0, color: colors.info }]}>
+              <Text style={styles.donutValue}>{Formatter.compactCurrency(totalCost)}</Text>
+              <Text style={styles.caption}>{t("utilities.total")}</Text>
+            </DonutChart>
+            <View style={{ flex: 1, gap: spacing.md }}>
+              <CostLegend color={colors.primary} label={t("utilities.electricity")} amount={electricityCost} detail={priceDetail("electricity", data.electricityTotal)} share={totalCost ? (electricityCost ?? 0) / totalCost : 0} />
+              <CostLegend color={colors.info} label={t("utilities.water")} amount={waterCost} detail={priceDetail("water", data.waterTotal)} share={totalCost ? (waterCost ?? 0) / totalCost : 0} />
+            </View>
           </View>
-        </View>
-        <View style={styles.costFooter}>
-          <IconBadge icon="receipt-outline" tone="success" size={40} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.caption}>
-              {t("utilities.subtotal")} {subtotal}
-            </Text>
-            <Text style={styles.costTotal}>{Formatter.currency(totalCost)}</Text>
+          <View style={styles.costFooter}>
+            <IconBadge icon="receipt-outline" tone="success" size={40} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.caption}>
+                {t("utilities.subtotal")} {subtotal}
+              </Text>
+              <Text style={styles.costTotal}>{Formatter.currency(totalCost)}</Text>
+            </View>
+            <Text style={[styles.caption, { textAlign: "right" }]}>{t("utilities.splitAmong")}</Text>
           </View>
-          <Text style={[styles.caption, { textAlign: "right" }]}>{t("utilities.splitAmong", { count: residence.roommates })}</Text>
-        </View>
-      </Card>
+        </Card>
+      ) : (
+        <Callout tone="info" icon="pricetag-outline">
+          {t("utilities.priceUnavailable")}
+        </Callout>
+      )}
 
-      <SectionHeader title={t("utilities.calendar", { month: Formatter.monthYear(`${UtilityRepository.calendarMonth}-01`) })} />
+      <SectionHeader title={t("utilities.calendar", { month: Formatter.monthYear(UtilityUsage.dateOf(`${usage.month}-01`)) })} />
       <Card>
         <Text style={[styles.caption, { marginBottom: spacing.md }]}>{t("utilities.calendarHint")}</Text>
-        <UtilityCalendar records={UtilityRepository.month()} onSelect={setDay} />
+        <UtilityCalendar month={usage.month} records={usage.days()} metric={metric} onSelect={setDay} />
       </Card>
 
       <SectionHeader title={t("utilities.compare")} />
       <Card style={{ gap: spacing.lg }}>
-        <CompareBar label={t("utilities.electricityThisMonth")} value={UtilityRepository.comparison.electricity.room} reference={UtilityRepository.comparison.electricity.average} unit="kWh" />
-        <CompareBar label={t("utilities.waterThisMonth")} value={UtilityRepository.comparison.water.room} reference={UtilityRepository.comparison.water.average} unit="m³" color={colors.info} />
+        <CompareBar label={t("utilities.electricityThisMonth")} value={monthToDate.electricity.current} reference={monthToDate.electricity.previous} unit="kWh" />
+        <CompareBar label={t("utilities.waterThisMonth")} value={monthToDate.water.current} reference={monthToDate.water.previous} unit="m³" color={colors.info} />
         <View style={styles.legend}>
           <LegendDot color={colors.primary} label={t("utilities.yourRoom")} />
           <LegendDot color={colors.border} label={t("utilities.buildingAverage")} />
@@ -121,32 +197,31 @@ export function UtilitiesScreen() {
         <Card style={styles.meter}>
           <IconBadge icon="flash" tone="primary" size={38} rounded="circle" />
           <Text style={styles.caption}>{t("utilities.electricityMeter")}</Text>
-          <Text style={styles.meterValue}>{Formatter.decimal(UtilityRepository.meters.electricity)} kWh</Text>
+          <Text style={styles.meterValue}>{meters.electricity == null ? t("utilities.noReading") : `${Formatter.decimal(meters.electricity)} kWh`}</Text>
         </Card>
         <Card style={styles.meter}>
           <IconBadge icon="water" tone="info" size={38} rounded="circle" />
           <Text style={styles.caption}>{t("utilities.waterMeter")}</Text>
-          <Text style={styles.meterValue}>{Formatter.decimal(UtilityRepository.meters.water)} m³</Text>
+          <Text style={styles.meterValue}>{meters.water == null ? t("utilities.noReading") : `${Formatter.decimal(meters.water)} m³`}</Text>
         </Card>
       </View>
-      <Text style={styles.meterUpdated}>{t("utilities.meterUpdated", { time: Formatter.dateTime(UtilityRepository.meters.updatedAt) })}</Text>
+      {meters.updatedAt && <Text style={styles.meterUpdated}>{t("utilities.meterUpdated", { time: Formatter.dateTime(meters.updatedAt) })}</Text>}
 
-      <SectionHeader title={t("utilities.alerts")} />
+      {insights.length > 0 && <SectionHeader title={t("utilities.alerts")} />}
       <View style={{ gap: spacing.md }}>
-        {UtilityRepository.alerts().map((alert) => (
-          <Card key={alert.id} style={styles.alert}>
-            <View style={[styles.alertBar, { backgroundColor: tones[alert.tone].fg }]} />
-            <IconBadge icon={alert.tone === "danger" ? "alert-circle-outline" : alert.tone === "warning" ? "water-outline" : "shield-checkmark-outline"} tone={alert.tone} size={40} />
+        {insights.map((insight) => (
+          <Card key={insight.kind} style={styles.alert}>
+            <View style={[styles.alertBar, { backgroundColor: tones[insight.tone].fg }]} />
+            <IconBadge icon={INSIGHT_ICONS[insight.kind]} tone={insight.tone} size={40} />
             <View style={{ flex: 1, gap: 3 }}>
-              <Text style={styles.alertTitle}>{l(alert.title)}</Text>
-              <Text style={styles.alertBody}>{l(alert.description)}</Text>
-              <Text style={styles.caption}>{Formatter.relative(alert.occurredAt)}</Text>
+              <Text style={styles.alertTitle}>{t(`utilities.insightTitle.${insight.kind}`)}</Text>
+              <Text style={styles.alertBody}>{t(`utilities.insight.${insight.kind}`, { value: insight.value, next: (insight.value + 1) % 24 })}</Text>
             </View>
           </Card>
         ))}
       </View>
 
-      <BottomSheet visible={!!day} onClose={() => setDay(null)} title={day ? t("utilities.dayDetail", { date: Formatter.date(day.date) }) : ""}>
+      <BottomSheet visible={!!day} onClose={() => setDay(null)} title={day ? t("utilities.dayDetail", { date: Formatter.date(UtilityUsage.dateOf(day.date)) }) : ""}>
         {day && (
           <>
             <Card style={{ paddingVertical: spacing.xs }}>
@@ -171,18 +246,20 @@ export function UtilitiesScreen() {
               <InfoRow label={t("utilities.averageFlow")} value={`${Formatter.decimal(day.averageLiterPerHour)} L/h`} />
               <InfoRow label={t("utilities.peakFlow")} value={`${Formatter.decimal(day.peakLiterPerHour)} L/h`} divider={false} />
             </Card>
-            <Card variant="warm" style={styles.sheetTotal}>
-              <Text style={styles.sheetTitle}>{t("utilities.amount")}</Text>
-              <Text style={styles.costTotal}>{Formatter.currency(day.cost)}</Text>
-            </Card>
+            {day.cost != null && (
+              <Card variant="warm" style={styles.sheetTotal}>
+                <Text style={styles.sheetTitle}>{t("utilities.amount")}</Text>
+                <Text style={styles.costTotal}>{Formatter.currency(day.cost)}</Text>
+              </Card>
+            )}
           </>
         )}
       </BottomSheet>
-    </Screen>
+    </>
   );
 }
 
-function CostLegend({ color, label, amount, detail, share }: { color: string; label: string; amount: number; detail: string; share: number }) {
+function CostLegend({ color, label, amount, detail, share }: { color: string; label: string; amount: number | null; detail: string; share: number }) {
   const styles = useStyles();
   return (
     <View style={{ gap: 2 }}>
@@ -191,7 +268,7 @@ function CostLegend({ color, label, amount, detail, share }: { color: string; la
         <Text style={styles.legendLabel}>{label}</Text>
         <Text style={styles.legendShare}>{Math.round(share * 100)}%</Text>
       </View>
-      <Text style={styles.legendAmount}>{Formatter.currency(amount)}</Text>
+      <Text style={styles.legendAmount}>{amount == null ? "—" : Formatter.currency(amount)}</Text>
       <Text style={styles.caption}>{detail}</Text>
     </View>
   );

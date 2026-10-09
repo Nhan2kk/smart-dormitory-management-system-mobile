@@ -23,6 +23,8 @@ type AuthContextValue = {
   signOut: () => Promise<void>;
   /** Gọi API kèm access token; tự làm mới token một lần khi nhận 401. */
   request: ApiClient;
+  /** Làm mới access token (vd. WebSocket bị từ chối); trả token mới hoặc null nếu phiên đã hết. */
+  refresh: () => Promise<string | null>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -131,6 +133,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [refreshSession],
   ) as ApiClient;
 
+  const refresh = useCallback(async () => (await refreshSession())?.accessToken ?? null, [refreshSession]);
+
   const value = useMemo(
     () => ({
       user: session?.user ?? null,
@@ -139,8 +143,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signIn,
       signOut,
       request,
+      refresh,
     }),
-    [session, loading, signIn, signOut, request],
+    [session, loading, signIn, signOut, request, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
