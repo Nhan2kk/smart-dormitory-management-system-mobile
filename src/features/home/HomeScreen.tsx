@@ -11,7 +11,7 @@ import { Photos } from "../../shared/images";
 import { makeStyles, radius, spacing, TAB_BAR_SPACE, Tone, useTheme, withAlpha } from "../../shared/theme";
 import { Backdrop, BottomSheet, Button, Card, CircleButton, Glass, Gradient, IconBadge, IconName, PhotoBackground, SectionHeader, StatusBadge, Touchable } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
-import { DebtRepository } from "../debts/debts.mock";
+import { useDebts } from "../debts/useDebts";
 import { useNotifications } from "../notifications/NotificationsProvider";
 import { requestKindMeta, requestStats, requestStatusTone } from "../requests/requestModel";
 import { useMyRequests } from "../requests/useMyRequests";
@@ -44,7 +44,8 @@ export function HomeScreen() {
   const usage = useUtilities().usage;
   const today = usage?.series("day") ?? null;
   const week = usage?.series("week") ?? null;
-  const debt = DebtRepository.totalUnpaid();
+  const debts = useDebts().ledger;
+  const debt = debts?.totalUnpaid() ?? 0;
   const unread = useNotifications().unreadCount;
   const myRequests = useMyRequests().requests ?? [];
   const processing = requestStats(myRequests).processing;
@@ -97,7 +98,7 @@ export function HomeScreen() {
               onPress={open("/residency-record")}
             />
             <Tile icon="flash-outline" title={t("home.powerTile")} subtitle={today ? `${Formatter.decimal(today.electricityTotal)} kWh` : "— kWh"} action="power" onPress={() => router.navigate("/utilities")} />
-            <Tile icon="wallet-outline" title={t("home.debtTile")} subtitle={Formatter.currency(debt)} subtitleColor={DebtRepository.hasOverdue() ? colors.danger : undefined} onPress={open("/debts")} />
+            <Tile icon="wallet-outline" title={t("home.debtTile")} subtitle={Formatter.currency(debt)} subtitleColor={debts?.hasOverdue() ? colors.danger : undefined} onPress={open("/debts")} />
             <Tile icon="document-text-outline" title={t("home.requestTile")} subtitle={t("home.requestTileSub", { count: processing })} onPress={() => router.navigate("/requests")} />
           </View>
           <Button label={t("home.createRequest")} icon="add" onPress={open("/request/new")} style={{ marginTop: spacing.lg }} />

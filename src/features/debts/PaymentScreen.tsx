@@ -11,8 +11,9 @@ import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { AppHeader, Button, Card, CircleButton, EmptyState, FooterBar, Screen, Touchable, useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { registrationApi } from "../registration/registrationApi";
-import { requestsApi } from "../requests/requestsApi";
-import { DebtRepository, Payable } from "./debts.mock";
+import type { Payable } from "../../models/debt.model";
+import { DebtService } from "../../services/debt.service";
+import { DebtLedger, PAYMENT_ACCOUNT } from "./DebtLedger";
 
 const QR_LIFETIME = 15 * 60;
 
@@ -20,19 +21,36 @@ const QR_LIFETIME = 15 * 60;
  * Màn hình thanh toán bằng mã QR chuyển khoản. Xác nhận chuyển khoản gọi API thật cho:
  * - đơn đăng ký KTX (`registrationId`): `POST /student/registrations/{id}/payment` — BE hoàn tất đăng ký và tạo biên bản nhận phòng;
  * - hoá đơn (`billId`, vd. tất toán chuyển/trả phòng, chi phí sửa chữa): `POST /student/bills/{id}/payment`.
- * Các khoản khác vẫn là mock.
+ * Màn mở với tham số `amount`/`title`; nếu thiếu (vd. mở từ thông báo) thì tải hoá đơn theo `billId`.
  */
 export function PaymentScreen() {
   const { id, amount, title, registrationId, billId } = useLocalSearchParams<{ id: string; amount?: string; title?: string; registrationId?: string; billId?: string }>();
   const { notify } = useToast();
-  const { t, l } = useI18n();
+  const { t } = useI18n();
   const { shadow } = useTheme();
   const styles = useStyles();
-  const { request } = useAuth();
+  const { request, user } = useAuth();
   const api = useMemo(() => registrationApi(request), [request]);
-  const bills = useMemo(() => requestsApi(request), [request]);
+  const bills = useMemo(() => new DebtService(request), [request]);
   // Khoản phát sinh ngay trong app (vd. đăng ký KTX) truyền số tiền qua tham số.
-  const item: Payable | undefined = DebtRepository.find(String(id)) ?? (amount && title ? { id: String(id), amount: Number(amount), title: { vi: String(title), en: String(title) } } : undefined);
+  const fromParams: Payable | null = amount && title ? { id: String(id), amount: Number(amount), title: String(title) } : null;
+  const needsFetch = !fromParams && !!billId;
+  // undefined = đang tải hoá đơn, null = không có / không tìm thấy.
+  const [loaded, setLoaded] = useState<Payable | null | undefined>(needsFetch ? undefined : null);
+  const item = fromParams ?? loaded ?? undefined;
+
+  // Mở thiếu số tiền / nội dung (vd. từ thông báo): lấy hoá đơn từ BE.
+  useEffect(() => {
+    if (!needsFetch) return;
+    let active = true;
+    bills
+      .get(String(billId))
+      .then((bill) => active && setLoaded({ id: bill.id, amount: bill.amount, title: bill.title }))
+      .catch(() => active && setLoaded(null));
+    return () => {
+      active = false;
+    };
+  }, [billId, bills, needsFetch]);
   const [seconds, setSeconds] = useState(QR_LIFETIME);
   const [phase, setPhase] = useState<"waiting" | "checking" | "done">("waiting");
 
@@ -44,6 +62,13 @@ export function PaymentScreen() {
 
   const close = <CircleButton icon="close" label={t("common.close")} onPress={() => router.back()} />;
 
+  if (!item && loaded === undefined)
+    return (
+      <Screen edges={["top", "bottom"]} header={<AppHeader title={t("payment.title")} hideBack right={close} />}>
+        <ActivityIndicator style={{ marginTop: spacing.xl }} />
+      </Screen>
+    );
+
   if (!item)
     return (
       <Screen edges={["top", "bottom"]} header={<AppHeader title={t("payment.title")} hideBack right={close} />}>
@@ -51,8 +76,8 @@ export function PaymentScreen() {
       </Screen>
     );
 
-  const account = DebtRepository.account;
-  const content = DebtRepository.transferContent(item.id);
+  const account = PAYMENT_ACCOUNT;
+  const content = DebtLedger.transferContent(item.id, user?.username);
   const copy = async (label: string, value: string) => {
     await Clipboard.setStringAsync(value.replace(/\s/g, ""));
     notify(t("common.copied", { label }));
@@ -66,9 +91,9 @@ export function PaymentScreen() {
         </View>
         <Text style={styles.doneTitle}>{t("payment.success")}</Text>
         <Text style={styles.doneAmount}>{Formatter.currency(item.amount)}</Text>
-        <Text style={styles.doneBody}>{l(item.title)}</Text>
+        <Text style={styles.doneBody}>{item.title}</Text>
         <Card variant="outline" style={styles.receipt}>
-          <ReceiptRow label={t("debts.transactionCode")} value={`GD${item.id.replace(/\D/g, "")}8812`} />
+          <ReceiptRow label={t("debts.billCode")} value={item.id} />
           <ReceiptRow label={t("debts.paidAt")} value={Formatter.dateTime(new Date())} />
           <ReceiptRow label={t("debts.method")} value={`QR · ${account.bank}`} />
         </Card>
@@ -86,13 +111,9 @@ export function PaymentScreen() {
 
   const confirmTransfer = async () => {
     setPhase("checking");
-    if (!registrationId && !billId) {
-      setTimeout(() => setPhase("done"), 1600);
-      return;
-    }
     try {
       if (registrationId) await api.pay(String(registrationId));
-      else await bills.payBill(String(billId));
+      else await bills.pay(String(billId ?? item.id));
       setPhase("done");
     } catch (error) {
       notify(errorMessage(error), "danger");
@@ -120,7 +141,7 @@ export function PaymentScreen() {
       <View style={styles.amountBox}>
         <Text style={styles.caption}>{t("payment.amount")}</Text>
         <Text style={styles.amount}>{Formatter.currency(item.amount)}</Text>
-        <Text style={styles.amountFor}>{l(item.title)}</Text>
+        <Text style={styles.amountFor}>{item.title}</Text>
       </View>
 
       <Card style={[styles.qrCard, shadow(2)]}>

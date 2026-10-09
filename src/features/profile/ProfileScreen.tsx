@@ -10,7 +10,7 @@ import { usePreferences } from "../../shared/preferences";
 import { makeStyles, radius, spacing, TAB_BAR_SPACE, useTheme } from "../../shared/theme";
 import { Avatar, Backdrop, BottomSheet, Button, Card, CircleButton, IconName, ListRow, PhotoBackground, Touchable, useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
-import { DebtRepository } from "../debts/debts.mock";
+import { useDebts } from "../debts/useDebts";
 import { requestStats } from "../requests/requestModel";
 import { useMyRequests } from "../requests/useMyRequests";
 import { useResidency } from "../residency/useResidency";
@@ -27,6 +27,7 @@ export function ProfileScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const remainingDays = useResidency().overview?.remainingDays() ?? null;
+  const unpaidDebt = useDebts().ledger?.totalUnpaid() ?? 0;
   const { profile } = useProfile();
   const name = profile?.fullName || user?.fullName || "";
   const [avatarSheet, setAvatarSheet] = useState(false);
@@ -94,7 +95,7 @@ export function ProfileScreen() {
         </Card>
         <View style={styles.stats}>
           <Stat value={remainingDays != null ? `${remainingDays}` : "—"} label={t("profile.stayDays")} />
-          <Stat value={Formatter.compactCurrency(DebtRepository.totalUnpaid())} label={t("profile.debt")} />
+          <Stat value={Formatter.compactCurrency(unpaidDebt)} label={t("profile.debt")} />
           <Stat value={`${processingRequests}`} label={t("profile.processing")} />
         </View>
 
