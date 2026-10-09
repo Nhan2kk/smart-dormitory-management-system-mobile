@@ -3,50 +3,8 @@ import { L } from "../../shared/i18n/localized";
 import type { Localized } from "../../shared/i18n/types";
 import type { Tone } from "../../shared/theme";
 import type { IconName } from "../../shared/ui";
-import type { Bill, Location, RefundRecipient, RequestKind, RequestSummary, RoomCheckoutRequest, RoomTransferRequest, SupportMaintenanceRequest, TimelineEntry } from "./requestsApi";
-
-export type { RequestKind } from "./requestsApi";
-
-export type RequestStatus =
-  | "pending"
-  | "approved"
-  | "rejected"
-  | "inspection_scheduled"
-  | "inspected"
-  | "awaiting_settlement"
-  | "received"
-  | "repaired"
-  | "reopened"
-  | "completed"
-  | "expired";
-
-/** Hành động sinh viên cần làm tiếp với yêu cầu. */
-export type RequestAction = "confirmRepair" | "pay" | "checkIn" | "resubmit";
-
-export type TimelineState = "done" | "current" | "upcoming" | "failed";
-
-/** Dữ liệu hiển thị chung cho mọi loại yêu cầu (danh sách, trang chủ, chi tiết). */
-export type StudentRequest = {
-  id: string;
-  kind: RequestKind;
-  title: Localized;
-  summary?: Localized;
-  submittedAt: string;
-  status: RequestStatus;
-  action?: RequestAction;
-};
-
-export type RequestDetail = StudentRequest & {
-  details: { label: Localized; value: Localized | string }[];
-  timeline: { title: Localized; description?: Localized; time?: string; state: TimelineState }[];
-  notice?: { tone: Tone; text: Localized };
-  rejectReason?: string;
-  /** Tất toán (sinh viên trả thêm) hoặc hoàn tiền (KTX trả lại). */
-  settlement?: { lines: { label: Localized; amount: number }[]; total: number; dueAt?: string; billId?: string; refund?: boolean; refunded?: boolean };
-  refundAccount?: { bank: string; account: string };
-  /** Biên bản nhận phòng mới cần hoàn tất sau khi chuyển phòng. */
-  checkInId?: string;
-};
+import type { RequestKind, RequestStatus } from "../../enums/request.enum";
+import type { Bill, Location, RefundRecipient, RequestDetail, RequestSummary, RoomCheckoutRequest, RoomTransferRequest, StudentRequest, SupportMaintenanceRequest, TimelineEntry } from "../../models/request.model";
 
 export const requestKindMeta: Record<RequestKind, { icon: IconName; tone: Tone }> = {
   supportMaintenance: { icon: "construct-outline", tone: "primary" },
@@ -348,4 +306,15 @@ export function fromSupport(request: SupportMaintenanceRequest): RequestDetail {
     ],
     timeline: buildTimeline("supportMaintenance", request.history, value === "completed"),
   };
+}
+
+const kindByPrefix: [string, RequestKind][] = [
+  ["YCCP", "roomTransfer"],
+  ["YCTP", "roomCheckout"],
+  ["YCBT", "supportMaintenance"],
+];
+
+/** Mã yêu cầu mang tiền tố theo loại (YCCP-/YCTP-/YCBT-), dùng khi route không kèm `kind`. */
+export function kindFromId(id: string): RequestKind | null {
+  return kindByPrefix.find(([prefix]) => id.toUpperCase().startsWith(prefix))?.[1] ?? null;
 }

@@ -3,7 +3,8 @@ import { Text, View } from "react-native";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../../shared/theme";
 import { Touchable } from "../../../shared/ui";
-import { Bed, BedStatus } from "../registrationApi";
+import { Bed } from "../../../models/registration.model";
+import { BedStatus } from "../../../enums/registration.enum";
 
 /** Mã ngắn ("01") hiển thị kiểu "G01"; mã đầy đủ từ BE ("A101-01") giữ nguyên. */
 export function bedLabel(code: string) {

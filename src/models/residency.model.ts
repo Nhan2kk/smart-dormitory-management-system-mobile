@@ -1,8 +1,5 @@
 import type { ResidencyRecordType } from "../enums/residency.enum";
 
-// ---- Dữ liệu server trả về ----
-
-/** `GET /student/residency-records` — hồ sơ lưu trú hiện hành. */
 export interface ResidencyRecordResponse {
   id: string;
   code: string | null;
@@ -26,7 +23,6 @@ export interface ResidencyRecordResponse {
   endedReason: string | null;
 }
 
-/** Một phòng trong `POST /student/facilities/rooms/searchRequest` (chỉ các trường màn lưu trú dùng). */
 export interface ResidencyRoomResponse {
   id: string;
   code: string;
@@ -36,13 +32,10 @@ export interface ResidencyRoomResponse {
   price: number | null;
 }
 
-/** Thời hạn ở lấy từ `GET /student/profile`. */
 export interface StayPeriodResponse {
   startDate: string | null;
   endDate: string | null;
 }
-
-// ---- Dữ liệu cho màn hình ----
 
 export interface ResidencyLocation {
   building: string;
@@ -51,7 +44,6 @@ export interface ResidencyLocation {
   bed: string;
 }
 
-/** Một mốc trong lịch sử lưu trú. */
 export interface ResidencyHistory {
   id: string;
   type: ResidencyRecordType;

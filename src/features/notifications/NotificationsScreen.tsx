@@ -6,7 +6,8 @@ import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { AppHeader, Button, Callout, Card, ChipGroup, CircleButton, EmptyState, GroupLabel, IconBadge, Screen, useToast } from "../../shared/ui";
-import { AppNotification, notificationKindMeta } from "./notificationsApi";
+import { AppNotification } from "../../models/notification.model";
+import { notificationKindMeta } from "./notificationMeta";
 import { useNotifications } from "./NotificationsProvider";
 
 type Filter = "all" | "unread" | "important" | "announcement";

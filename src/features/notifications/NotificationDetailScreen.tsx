@@ -6,7 +6,7 @@ import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { AppHeader, Button, Card, EmptyState, FooterBar, IconBadge, InfoRow, Screen, useToast } from "../../shared/ui";
-import { notificationHref, notificationKindMeta } from "./notificationsApi";
+import { notificationHref, notificationKindMeta } from "./notificationMeta";
 import { useNotifications } from "./NotificationsProvider";
 
 export function NotificationDetailScreen() {

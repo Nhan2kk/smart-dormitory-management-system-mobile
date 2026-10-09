@@ -7,14 +7,18 @@ import type { WallpaperName } from "./theme";
  */
 export class Photos {
   private static url(id: string, width: number): ImageSource {
-    return { uri: `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&q=75&w=${width}` };
+    return {
+      uri: `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&q=75&w=${width}`,
+    };
   }
 
   static readonly placeholder = require("../../assets/dormitory-hero.png");
 
   /** Ảnh màn chào do người dùng chọn (nguồn: CafeF). */
   static welcome(): ImageSource {
-    return { uri: "https://cafefcdn.com/2020/3/25/db4c1279-1585103343848695628731.jpg" };
+    return {
+      uri: "https://cafefcdn.com/2020/3/25/db4c1279-1585103343848695628731.jpg",
+    };
   }
 
   /** KTX ĐHQG TP.HCM (Dĩ An) — ảnh Phong Nguyen. */
@@ -80,6 +84,11 @@ export class Photos {
 
   /** Ảnh nền cho chế độ kính trong suốt. */
   static wallpaper(name: WallpaperName, width = 900) {
-    return { lobby: Photos.grandLobby, campus: Photos.campusSunset, dorm: Photos.dormVietnam, room: Photos.bunkRoom }[name](width);
+    return {
+      lobby: Photos.grandLobby,
+      campus: Photos.campusSunset,
+      dorm: Photos.dormVietnam,
+      room: Photos.bunkRoom,
+    }[name](width);
   }
 }

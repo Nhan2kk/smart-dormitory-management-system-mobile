@@ -29,23 +29,18 @@ export interface BillPayRequest {
   paymentMethod: string;
 }
 
-// ---- Dữ liệu cho màn hình ----
-
-/** Hoá đơn kèm mức hạn và số ngày còn lại (âm = đã quá hạn). */
 export interface Debt {
   bill: BillResponse;
   status: DebtStatus;
   daysLeft: number | null;
 }
 
-/** Tài khoản nhận chuyển khoản của KTX. */
 export interface PaymentAccount {
   bank: string;
   accountNumber: string;
   holder: string;
 }
 
-/** Khoản đang thanh toán trên màn QR. */
 export interface Payable {
   id: string;
   title: string;

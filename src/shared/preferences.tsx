@@ -1,8 +1,23 @@
 import * as SecureStore from "expo-secure-store";
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Platform } from "react-native";
 import { I18nProvider, Language } from "./i18n/I18nProvider";
-import { GlassLevel, PresetName, PRESETS, ThemeMode, ThemeProvider, WallpaperName } from "./theme";
+import {
+  GlassLevel,
+  PresetName,
+  PRESETS,
+  ThemeMode,
+  ThemeProvider,
+  WallpaperName,
+} from "./theme";
 
 export type Preferences = {
   language: Language;
@@ -33,7 +48,10 @@ export class PreferencesStore {
 
   static async load(): Promise<Partial<Preferences>> {
     try {
-      const raw = Platform.OS === "web" ? globalThis.localStorage?.getItem(PreferencesStore.key) : await SecureStore.getItemAsync(PreferencesStore.key);
+      const raw =
+        Platform.OS === "web"
+          ? globalThis.localStorage?.getItem(PreferencesStore.key)
+          : await SecureStore.getItemAsync(PreferencesStore.key);
       return raw ? (JSON.parse(raw) as Partial<Preferences>) : {};
     } catch {
       return {};
@@ -43,7 +61,8 @@ export class PreferencesStore {
   static async save(preferences: Preferences): Promise<void> {
     try {
       const raw = JSON.stringify(preferences);
-      if (Platform.OS === "web") globalThis.localStorage?.setItem(PreferencesStore.key, raw);
+      if (Platform.OS === "web")
+        globalThis.localStorage?.setItem(PreferencesStore.key, raw);
       else await SecureStore.setItemAsync(PreferencesStore.key, raw);
     } catch {
       // Lưu thất bại không ảnh hưởng phiên hiện tại.
@@ -61,7 +80,8 @@ const PreferencesContext = createContext<PreferencesValue | null>(null);
 
 /** Cung cấp tuỳ chọn người dùng, đồng thời bọc Theme và I18n theo tuỳ chọn đó. */
 export function PreferencesProvider({ children }: { children: ReactNode }) {
-  const [preferences, setPreferences] = useState<Preferences>(DEFAULT_PREFERENCES);
+  const [preferences, setPreferences] =
+    useState<Preferences>(DEFAULT_PREFERENCES);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -85,13 +105,20 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   const reset = useCallback(() => {
     setPreferences((current) => {
-      const next = { ...DEFAULT_PREFERENCES, avatarUri: current.avatarUri, language: current.language };
+      const next = {
+        ...DEFAULT_PREFERENCES,
+        avatarUri: current.avatarUri,
+        language: current.language,
+      };
       PreferencesStore.save(next);
       return next;
     });
   }, []);
 
-  const value = useMemo(() => ({ ...preferences, ready, update, reset }), [preferences, ready, update, reset]);
+  const value = useMemo(
+    () => ({ ...preferences, ready, update, reset }),
+    [preferences, ready, update, reset],
+  );
 
   return (
     <PreferencesContext.Provider value={value}>
@@ -110,6 +137,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
 export function usePreferences() {
   const context = useContext(PreferencesContext);
-  if (!context) throw new Error("usePreferences phải nằm trong PreferencesProvider");
+  if (!context)
+    throw new Error("usePreferences phải nằm trong PreferencesProvider");
   return context;
 }

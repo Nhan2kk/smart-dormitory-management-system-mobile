@@ -55,11 +55,19 @@ export const en: Dictionary = {
     weekdays: "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
     monthShort: "M{{month}}",
   },
-  tabs: { home: "Home", utilities: "Utilities", create: "Open AI assistant", assistant: "AI", requests: "Requests", profile: "Me" },
+  tabs: {
+    home: "Home",
+    utilities: "Utilities",
+    create: "Open AI assistant",
+    assistant: "AI",
+    requests: "Requests",
+    profile: "Me",
+  },
   auth: {
     welcomeTitle1: "Dorm life,",
     welcomeTitle2: "right in your hand.",
-    welcomeBody: "Manage your room, bills, utilities and support requests — all in one app.",
+    welcomeBody:
+      "Manage your room, bills, utilities and support requests — all in one app.",
     highlightQr: "QR payment",
     highlightIot: "IoT utilities",
     highlightAi: "AI assistant",
@@ -76,7 +84,8 @@ export const en: Dictionary = {
     showPassword: "Show password",
     hidePassword: "Hide password",
     forgot: "Forgot password?",
-    forgotMessage: "Please contact the dormitory office to reset your password.",
+    forgotMessage:
+      "Please contact the dormitory office to reset your password.",
     secure: "Your session is encrypted and stored securely on this device",
     requiredCode: "Please enter your student ID.",
     requiredPassword: "Please enter your password.",
@@ -175,22 +184,30 @@ export const en: Dictionary = {
     captionRange: "{{from}} – {{to}}",
     captionMonth: "Month to date {{month}}",
     unitPrice: "{{amount}} × ≈{{price}}",
-    priceUnavailable: "No utility tariff for this month yet, so the cost cannot be estimated.",
+    priceUnavailable:
+      "No utility tariff for this month yet, so the cost cannot be estimated.",
     loadError: "Could not load utility data.",
     emptyTitle: "No readings this month",
     emptyBody: "Your room's sensors have not sent any readings this month yet.",
     noRoomTitle: "You have no room yet",
-    noRoomBody: "Once you check in, your room's electricity and water usage will appear here.",
+    noRoomBody:
+      "Once you check in, your room's electricity and water usage will appear here.",
     noReading: "N/A",
     liveIncidentTitle: "Active alert in your room",
-    liveIncidentBody: "An anomaly was detected at {{time}}. See Notifications for details.",
+    liveIncidentBody:
+      "An anomaly was detected at {{time}}. See Notifications for details.",
     insight: {
-      electricityUp: "Electricity is up {{value}}% vs the same period last month. Check long-running devices such as the air conditioner or water heater.",
-      electricityDown: "Electricity is down {{value}}% vs the same period last month. Nice saving.",
-      waterUp: "Water is up {{value}}% vs the same period last month. Turn taps off when not in use and check for leaks.",
+      electricityUp:
+        "Electricity is up {{value}}% vs the same period last month. Check long-running devices such as the air conditioner or water heater.",
+      electricityDown:
+        "Electricity is down {{value}}% vs the same period last month. Nice saving.",
+      waterUp:
+        "Water is up {{value}}% vs the same period last month. Turn taps off when not in use and check for leaks.",
       waterDown: "Water is down {{value}}% vs the same period last month.",
-      peakHour: "Your room uses the most electricity around {{value}}h – {{next}}h each day.",
-      stable: "Usage this month is about the same as the same period last month.",
+      peakHour:
+        "Your room uses the most electricity around {{value}}h – {{next}}h each day.",
+      stable:
+        "Usage this month is about the same as the same period last month.",
     },
     insightTitle: {
       electricityUp: "Electricity up",
@@ -210,7 +227,8 @@ export const en: Dictionary = {
     rejected: "Rejected",
     all: "All",
     emptyTitle: "No requests yet",
-    emptyBody: "Create a request when you need support, a room transfer or check-out.",
+    emptyBody:
+      "Create a request when you need support, a room transfer or check-out.",
     needsConfirm: "Please confirm the repair result",
     needsPayment: "Payment needed to complete",
     needsCheckIn: "Check in to your new room",
@@ -221,7 +239,8 @@ export const en: Dictionary = {
     code: "Request ID",
     rejectReason: "Rejection reason",
     confirmTitle: "Your confirmation is needed",
-    confirmBody: "The technician reported the issue fixed. Please check and confirm below.",
+    confirmBody:
+      "The technician reported the issue fixed. Please check and confirm below.",
     notDone: "Not fixed",
     isDone: "It's fixed",
     notDoneTitle: "Not fixed yet?",
@@ -240,7 +259,8 @@ export const en: Dictionary = {
     refundPending: "Not refunded",
     refundDone: "Refunded",
     refundAccount: "The refund goes to {{bank}} · {{account}}",
-    refundNoAccount: "You haven't added a bank account for refunds in your profile.",
+    refundNoAccount:
+      "You haven't added a bank account for refunds in your profile.",
     paid: "Paid",
     sheetTitle: "New request",
     sheetSubtitle: "Choose what you want to send to the office",
@@ -251,9 +271,12 @@ export const en: Dictionary = {
       roomCheckout: "Check-out",
     },
     kindDescription: {
-      supportMaintenance: "Report broken equipment, power, water or internet in your room or common areas.",
-      roomTransfer: "Move to another room or bed and preview the price difference.",
-      roomCheckout: "Request check-out, book an inspection and settle your balance.",
+      supportMaintenance:
+        "Report broken equipment, power, water or internet in your room or common areas.",
+      roomTransfer:
+        "Move to another room or bed and preview the price difference.",
+      roomCheckout:
+        "Request check-out, book an inspection and settle your balance.",
     },
     status: {
       pending: "Pending",
@@ -276,7 +299,8 @@ export const en: Dictionary = {
     confirmSubtitle: "Review the details before sending",
     editAgain: "Edit",
     send: "Send request",
-    responseTime: "The office usually replies within 1–2 working days. You'll be notified when the status changes.",
+    responseTime:
+      "The office usually replies within 1–2 working days. You'll be notified when the status changes.",
     trackHint: "Track progress in the Requests tab.",
     sent: "Request sent successfully.",
     issueType: "Issue type",
@@ -284,13 +308,28 @@ export const en: Dictionary = {
     priority: "Priority",
     priorityHint: "Choose “High” if it affects safety or daily living.",
     description: "Description",
-    descriptionPlaceholder: "e.g. The ceiling light over beds 1–4 has been off since last night…",
+    descriptionPlaceholder:
+      "e.g. The ceiling light over beds 1–4 has been off since last night…",
     characters: "{{count}}/500 characters",
     evidence: "Photos",
     evidenceHint: "Up to 4 photos to help the technician prepare.",
     images: "Photos",
-    issue: { electrical: "Electrical", plumbing: "Plumbing", internet: "Internet", doorLock: "Door / lock", appliance: "Furniture", other: "Other" },
-    issueHint: { electrical: "Lights, sockets, fans", plumbing: "Leaks, clogs, taps", internet: "Wi-Fi, cables", doorLock: "Doors, locks, keys", appliance: "Bed, wardrobe, desk", other: "Anything else" },
+    issue: {
+      electrical: "Electrical",
+      plumbing: "Plumbing",
+      internet: "Internet",
+      doorLock: "Door / lock",
+      appliance: "Furniture",
+      other: "Other",
+    },
+    issueHint: {
+      electrical: "Lights, sockets, fans",
+      plumbing: "Leaks, clogs, taps",
+      internet: "Wi-Fi, cables",
+      doorLock: "Doors, locks, keys",
+      appliance: "Bed, wardrobe, desk",
+      other: "Anything else",
+    },
     title: "Title",
     titlePlaceholder: "e.g. Ceiling light not working",
     errTitle: "Please enter a short title for the issue.",
@@ -299,12 +338,14 @@ export const en: Dictionary = {
     optional: "Optional",
     fromCheckIn: "From check-in record",
     fromCheckInTitle: "Transfer instead of checking in",
-    checkInLockNote: "After sending, your check-in record is locked: you won't check in to this room and the reported issues won't create maintenance requests.",
+    checkInLockNote:
+      "After sending, your check-in record is locked: you won't check in to this room and the reported issues won't create maintenance requests.",
     checkInReasonPlaceholder: "e.g. Many items in the room are broken…",
     errResidency: "We couldn't find your current residency record.",
     errPreview: "Calculating the price difference, please wait.",
     noRooms: "No rooms are available in this building.",
-    priceEstimateNote: "Estimated amount — it may change until the office approves.",
+    priceEstimateNote:
+      "Estimated amount — it may change until the office approves.",
     myRoom: "My room",
     commonArea: "Common area",
     low: "Low",
@@ -332,11 +373,14 @@ export const en: Dictionary = {
     errReason: "Please enter a reason.",
     errAck: "Please confirm the price difference.",
     checkoutFlowTitle: "Check-out process",
-    checkoutFlow: "The office inspects assets against your check-in record → settle your balance → check-out is completed and your residency record is updated.",
+    checkoutFlow:
+      "The office inspects assets against your check-in record → settle your balance → check-out is completed and your residency record is updated.",
     checkoutDate: "Expected check-out date",
     inspectionDate: "When the office can inspect",
-    inspectionHint: "From today and before your check-out date. The office may adjust it.",
-    transferInspectionHint: "Before the transfer, the office inspects your current room. Pick a day you can be present; the office may adjust it.",
+    inspectionHint:
+      "From today and before your check-out date. The office may adjust it.",
+    transferInspectionHint:
+      "Before the transfer, the office inspects your current room. Pick a day you can be present; the office may adjust it.",
     checkoutReason: "Reason for check-out",
     checkoutReasonPlaceholder: "e.g. Graduating, internship…",
     errCheckoutDate: "Please choose a check-out date.",
@@ -365,7 +409,8 @@ export const en: Dictionary = {
     pay: "Pay",
     payBill: "Pay bill",
     noticeTitle: "Note",
-    notice: "Pay on time so your request can be completed. After transferring, tap \"I have transferred\" to confirm.",
+    notice:
+      'Pay on time so your request can be completed. After transferring, tap "I have transferred" to confirm.',
     empty: "No transactions yet",
     receipt: "Receipt",
     receiptTitle: "E-receipt",
@@ -376,13 +421,29 @@ export const en: Dictionary = {
     amount: "Amount",
     downloadReceipt: "Download receipt",
     receiptDownloaded: "E-receipt saved.",
-    status: { overdue: "Overdue", due: "Due", upcoming: "Not due yet", paid: "Paid" },
+    status: {
+      overdue: "Overdue",
+      due: "Due",
+      upcoming: "Not due yet",
+      paid: "Paid",
+    },
     type: { room: "Rent", utilities: "Utilities", service: "Service fee" },
-    billStatus: { pending: "Awaiting payment", paid: "Paid", failed: "Failed", cancelled: "Cancelled" },
-    billType: { maintenanceCost: "Maintenance cost", checkoutSettlement: "Check-out settlement", roomTransferSettlement: "Transfer settlement", registration: "Dorm registration" },
+    billStatus: {
+      pending: "Awaiting payment",
+      paid: "Paid",
+      failed: "Failed",
+      cancelled: "Cancelled",
+    },
+    billType: {
+      maintenanceCost: "Maintenance cost",
+      checkoutSettlement: "Check-out settlement",
+      roomTransferSettlement: "Transfer settlement",
+      registration: "Dorm registration",
+    },
     loadError: "Could not load your bills.",
     allPaid: "Nothing to pay",
-    allPaidBody: "Bills for repairs, room transfers and checkout will appear here.",
+    allPaidBody:
+      "Bills for repairs, room transfers and checkout will appear here.",
     noBills: "No bills yet",
     billCode: "Bill code",
     bankTransfer: "Bank transfer",
@@ -399,13 +460,15 @@ export const en: Dictionary = {
     accountNumber: "Account number",
     holder: "Account holder",
     content: "Reference",
-    autoUpdate: "The status updates automatically a few seconds after the money arrives.",
+    autoUpdate:
+      "The status updates automatically a few seconds after the money arrives.",
     transferred: "I've transferred",
     checking: "Checking transaction…",
     success: "Payment successful!",
     notFound: "Payment item not found",
     qrLabel: "Payment QR code",
-    registrationDone: "Your dorm registration is complete. Check in to start your stay.",
+    registrationDone:
+      "Your dorm registration is complete. Check in to start your stay.",
     goCheckIn: "Go to check-in",
   },
   notifications: {
@@ -430,9 +493,19 @@ export const en: Dictionary = {
     open: "View details",
     acknowledge: "Acknowledge",
     acknowledged: "Notification acknowledged.",
-    kind: { info: "Info", success: "Completed", warning: "Warning", danger: "Urgent", system: "System" },
+    kind: {
+      info: "Info",
+      success: "Completed",
+      warning: "Warning",
+      danger: "Urgent",
+      system: "System",
+    },
     priority: { NORMAL: "Normal", IMPORTANT: "Important", URGENT: "Urgent" },
-    sources: { ANNOUNCEMENT: "Dormitory office announcement", MANUAL: "Direct message", SYSTEM: "Automated system" },
+    sources: {
+      ANNOUNCEMENT: "Dormitory office announcement",
+      MANUAL: "Direct message",
+      SYSTEM: "Automated system",
+    },
   },
   residency: {
     title: "Residency record",
@@ -461,16 +534,27 @@ export const en: Dictionary = {
     effective: "Effective date",
     endedDate: "End date",
     note: "Note",
-    types: { new: "New check-in", room_transfer: "Room transfer", checkout: "Check-out" },
+    types: {
+      new: "New check-in",
+      room_transfer: "Room transfer",
+      checkout: "Check-out",
+    },
     noneTitle: "No residency record",
     noneBody: "Your residency record is created when you check in to the dorm.",
     loadError: "Could not load your residency record.",
     previousStay: "Previous stay",
-    historyNote: "Showing the active record and the room before your transfer (if any).",
+    historyNote:
+      "Showing the active record and the room before your transfer (if any).",
   },
   registration: {
     title: "Dorm registration",
-    steps: { building: "Building", floor: "Floor", room: "Room", bed: "Bed", confirm: "Review & submit" },
+    steps: {
+      building: "Building",
+      floor: "Floor",
+      room: "Room",
+      bed: "Bed",
+      confirm: "Review & submit",
+    },
     openCampaign: "Registration is open",
     upcomingCampaign: "Registration opens soon",
     noCampaign: "No registration period",
@@ -481,7 +565,8 @@ export const en: Dictionary = {
     period: "Registration",
     checkIn: "Check-in",
     instructions: "Check-in instructions",
-    defaultInstructions: "Bring your ID card and student card to the building office to check in.",
+    defaultInstructions:
+      "Bring your ID card and student card to the building office to check in.",
     myApplications: "My applications",
     noApplications: "You have no applications yet.",
     newApplication: "New application",
@@ -504,7 +589,8 @@ export const en: Dictionary = {
     noRooms: "This floor has no rooms yet.",
     noBeds: "This room has no beds yet.",
     roomMeta: "{{capacity}} beds · {{available}} free",
-    staleCampaign: "The registration period has closed or changed. Please try again.",
+    staleCampaign:
+      "The registration period has closed or changed. Please try again.",
     outOfScope: "This building isn't part of the registration period.",
     bedRefreshed: "The bed map was updated, please choose again.",
     duration: "Duration",
@@ -523,7 +609,8 @@ export const en: Dictionary = {
     heldBody: "Bed {{bed}} · Room {{room}} · {{building}} is held for you.",
     holdLeft: "Hold time remaining",
     amountDue: "Amount due",
-    holdWarning: "If you don't pay before {{deadline}}, the application is cancelled and the bed is released.",
+    holdWarning:
+      "If you don't pay before {{deadline}}, the application is cancelled and the bed is released.",
     holdExpired: "The payment deadline for this application has passed.",
     cancel: "Cancel registration",
     cancelTitle: "Cancel registration?",
@@ -535,13 +622,34 @@ export const en: Dictionary = {
     cluster: "Bunk {{number}}",
     selected: "Selected",
     bedLabel: "Bed {{code}}, {{status}}",
-    roomStatus: { available: "Available", full: "Full", maintenance: "Maintenance" },
-    bedStatus: { available: "Free", occupied: "Taken", reserved: "On hold", maintenance: "Maintenance" },
-    appStatus: { completed: "Checked out", pending_payment: "Awaiting payment", paid: "Paid", approved: "Approved", rejected: "Rejected", cancelled: "Cancelled", expired: "Payment expired" },
+    roomStatus: {
+      available: "Available",
+      full: "Full",
+      maintenance: "Maintenance",
+    },
+    bedStatus: {
+      available: "Free",
+      occupied: "Taken",
+      reserved: "On hold",
+      maintenance: "Maintenance",
+    },
+    appStatus: {
+      completed: "Checked out",
+      pending_payment: "Awaiting payment",
+      paid: "Paid",
+      approved: "Approved",
+      rejected: "Rejected",
+      cancelled: "Cancelled",
+      expired: "Payment expired",
+    },
   },
   checkIn: {
     title: "Check-in",
-    steps: { inspect: "Inspect assets", confirm: "Confirm details", complete: "Done" },
+    steps: {
+      inspect: "Inspect assets",
+      confirm: "Confirm details",
+      complete: "Done",
+    },
     receivingRoom: "Your room",
     assetList: "Handover checklist",
     assetHint: "Inspect each item and mark its condition.",
@@ -560,8 +668,10 @@ export const en: Dictionary = {
     goodAssets: "Good",
     issueAssets: "Problems",
     lockTitle: "The record will be locked",
-    lockBody: "After confirming you can't edit it. Each problem creates its own maintenance request.",
-    agree: "I confirm I inspected all items and the meter readings above are correct at handover.",
+    lockBody:
+      "After confirming you can't edit it. Each problem creates its own maintenance request.",
+    agree:
+      "I confirm I inspected all items and the meter readings above are correct at handover.",
     success: "Check-in completed!",
     welcomeRoom: "Welcome to room {{room}}!",
     lockedBody: "The handover record is locked for comparison at check-out.",
@@ -576,18 +686,27 @@ export const en: Dictionary = {
     reportSaved: "Asset report saved.",
     reportRequired: "Please describe the problem.",
     emptyTitle: "No check-in record yet",
-    emptyBody: "Your check-in record is created automatically after you pay for your dorm registration.",
+    emptyBody:
+      "Your check-in record is created automatically after you pay for your dorm registration.",
     goRegister: "Dorm registration",
     lockedTitle: "Record locked",
-    lockedPending: "This record is locked because you requested a room transfer. Follow it under Requests.",
-    noAssets: "No handover items for this room — you can confirm check-in right away.",
+    lockedPending:
+      "This record is locked because you requested a room transfer. Follow it under Requests.",
+    noAssets:
+      "No handover items for this room — you can confirm check-in right away.",
     meterPending: "Not recorded",
     expected: "Expected check-in: {{date}}",
     photoPermission: "Photo library access is needed to attach evidence.",
     transferTitle: "Items with problems?",
-    transferBody: "{{count}} item(s) have problems. You can check in (maintenance requests are created automatically) or request a room transfer instead of checking in.",
+    transferBody:
+      "{{count}} item(s) have problems. You can check in (maintenance requests are created automatically) or request a room transfer instead of checking in.",
     transferAction: "Request transfer",
-    issue: { damaged: "Broken / unusable", missing: "Missing", notWorking: "Not working", abnormal: "Looks abnormal" },
+    issue: {
+      damaged: "Broken / unusable",
+      missing: "Missing",
+      notWorking: "Not working",
+      abnormal: "Looks abnormal",
+    },
   },
   assistant: {
     title: "AI assistant",
@@ -611,7 +730,8 @@ export const en: Dictionary = {
     messages: "{{count}} messages",
     offline: "● Paused",
     disabledTitle: "The AI assistant is paused",
-    disabledBody: "The dorm office has turned the AI assistant off. You can send a support request instead.",
+    disabledBody:
+      "The dorm office has turned the AI assistant off. You can send a support request instead.",
     questions: {
       registration: "How do I apply for dormitory accommodation?",
       curfew: "What are the dormitory entry and exit hours?",
@@ -685,7 +805,13 @@ export const en: Dictionary = {
   },
   profileEdit: {
     title: "Personal information",
-    tabs: { contact: "Contact", personal: "Personal", identity: "ID", study: "Study", account: "Account" },
+    tabs: {
+      contact: "Contact",
+      personal: "Personal",
+      identity: "ID",
+      study: "Study",
+      account: "Account",
+    },
     phone: "Phone",
     email: "Email",
     emailInvalid: "Invalid email address.",
@@ -707,7 +833,8 @@ export const en: Dictionary = {
     holder: "Account holder",
     branch: "Branch",
     saved: "Personal information updated.",
-    readonlyNote: "This information is managed by the Student Affairs Office. Contact the office to change it.",
+    readonlyNote:
+      "This information is managed by the Student Affairs Office. Contact the office to change it.",
     fullName: "Full name",
     birthDate: "Date of birth",
     birthPlace: "Place of birth",
@@ -755,7 +882,8 @@ export const en: Dictionary = {
     dark: "Dark",
     system: "System",
     theme: "Theme",
-    themeHint: "Each theme sets background, surface and accent colors — in light and dark.",
+    themeHint:
+      "Each theme sets background, surface and accent colors — in light and dark.",
     presets: {
       sunset: "Sunset",
       lavender: "Lavender",
@@ -777,7 +905,12 @@ export const en: Dictionary = {
     glassOn: "Enable glass mode",
     glassOnSub: "Prettier, may use slightly more battery",
     wallpaper: "Wallpaper",
-    wallpapers: { lobby: "Lobby", campus: "Campus", dorm: "Dormitory", room: "Room" },
+    wallpapers: {
+      lobby: "Lobby",
+      campus: "Campus",
+      dorm: "Dormitory",
+      room: "Room",
+    },
     glassLevel: "Transparency",
     levels: { soft: "Frosted", medium: "Balanced", clear: "Clear" },
     preview: "Preview",
@@ -787,5 +920,4 @@ export const en: Dictionary = {
     resetDone: "Appearance reset to default.",
     savedNote: "Your choices are saved on this device.",
   },
-
 };

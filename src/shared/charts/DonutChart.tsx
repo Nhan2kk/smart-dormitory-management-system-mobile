@@ -22,12 +22,27 @@ export function DonutChart({
   const circumference = 2 * Math.PI * r;
   const total = segments.reduce((sum, segment) => sum + segment.value, 0) || 1;
   const gap = segments.length > 1 ? 4 : 0;
-  const lengths = segments.map((segment) => (segment.value / total) * circumference);
-  const offsets = lengths.map((_, index) => lengths.slice(0, index).reduce((sum, length) => sum + length, 0));
+  const lengths = segments.map(
+    (segment) => (segment.value / total) * circumference,
+  );
+  const offsets = lengths.map((_, index) =>
+    lengths.slice(0, index).reduce((sum, length) => sum + length, 0),
+  );
   return (
     <View style={{ width: size, height: size }}>
-      <Svg width={size} height={size} style={{ transform: [{ rotate: "-90deg" }] }}>
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke={colors.surfaceMuted} strokeWidth={thickness} fill="none" />
+      <Svg
+        width={size}
+        height={size}
+        style={{ transform: [{ rotate: "-90deg" }] }}
+      >
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke={colors.surfaceMuted}
+          strokeWidth={thickness}
+          fill="none"
+        />
         <G>
           {segments.map((segment, index) => {
             const dash = Math.max(0, lengths[index] - gap);
@@ -77,8 +92,19 @@ export function ProgressRing({
   const dash = Math.min(1, Math.max(0, value)) * circumference;
   return (
     <View style={{ width: size, height: size }}>
-      <Svg width={size} height={size} style={{ transform: [{ rotate: "-90deg" }] }}>
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke={trackColor} strokeWidth={thickness} fill="none" />
+      <Svg
+        width={size}
+        height={size}
+        style={{ transform: [{ rotate: "-90deg" }] }}
+      >
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke={trackColor}
+          strokeWidth={thickness}
+          fill="none"
+        />
         <G>
           <Circle
             cx={size / 2}

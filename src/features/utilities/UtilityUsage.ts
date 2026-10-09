@@ -1,44 +1,8 @@
-import type { Tone } from "../../shared/theme";
-import type { StudentMonthlyUsage } from "./utilitiesApi";
-
-export type UtilityRange = "day" | "week" | "month";
-export type UtilityMetric = "electricity" | "water";
+import type { UtilityMetric, UtilityRange } from "../../enums/utilities.enum";
+import type { DailyRecord, StudentMonthlyUsage, UtilityInsight, UtilitySeries } from "../../models/utilities.model";
 
 /** Một điểm trên trục thời gian: tổng điện (kWh) và nước (m³) của giờ/ngày đó. */
 type Amount = { electricity: number; water: number };
-
-export type UtilitySeries = {
-  /** Nhãn trục X: giờ ("0h"), ngày trong tháng ("08") hoặc ngày yyyy-MM-dd với biểu đồ tuần. */
-  labels: string[];
-  electricity: number[];
-  water: number[];
-  electricityTotal: number;
-  waterTotal: number;
-  /** % thay đổi so với kỳ trước cùng độ dài; null khi kỳ trước chưa có dữ liệu. */
-  changePercent: { electricity: number | null; water: number | null };
-  /** Kỳ đang xem: từ ngày → đến ngày (yyyy-MM-dd, giờ Việt Nam). */
-  from: string;
-  to: string;
-};
-
-export type DailyRecord = {
-  date: string;
-  electricityStart: number;
-  electricityEnd: number;
-  electricity: number;
-  waterStart: number;
-  waterEnd: number;
-  water: number;
-  /** Tiền ước tính theo đơn giá trung bình tháng; null khi chưa có giá. */
-  cost: number | null;
-  averageKw: number;
-  peakKw: number;
-  averageLiterPerHour: number;
-  peakLiterPerHour: number;
-};
-
-export type UtilityInsightKind = "electricityUp" | "electricityDown" | "waterUp" | "waterDown" | "peakHour" | "stable";
-export type UtilityInsight = { kind: UtilityInsightKind; tone: Tone; value: number };
 
 /** Ngưỡng % thay đổi so với cùng kỳ tháng trước để coi là đáng chú ý. */
 const NOTABLE_CHANGE = 15;

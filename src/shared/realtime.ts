@@ -9,7 +9,10 @@ const apiUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "");
 const origin = process.env.EXPO_PUBLIC_WS_ORIGIN?.replace(/\/$/, "");
 const STOMP_PROTOCOLS = ["v12.stomp", "v11.stomp", "v10.stomp"];
 
-export type RealtimeSubscription = { destination: string; onMessage: (body: unknown) => void };
+export type RealtimeSubscription = {
+  destination: string;
+  onMessage: (body: unknown) => void;
+};
 
 export type RealtimeHandlers = {
   onConnected?: (connected: boolean) => void;
@@ -27,13 +30,25 @@ export class RealtimeConnection {
   private readonly client: Client;
   private connectedOnce = false;
 
-  private constructor(token: string, subscriptions: RealtimeSubscription[], handlers: RealtimeHandlers) {
+  private constructor(
+    token: string,
+    subscriptions: RealtimeSubscription[],
+    handlers: RealtimeHandlers,
+  ) {
     const url = RealtimeConnection.url();
     this.client = new Client({
       webSocketFactory: () => {
         // React Native nhận tham số thứ ba để đặt header (không có trong WebSocket của trình duyệt).
-        const NativeWebSocket = WebSocket as unknown as new (url: string, protocols: string[], options?: { headers: Record<string, string> }) => WebSocket;
-        return new NativeWebSocket(url, STOMP_PROTOCOLS, origin ? { headers: { Origin: origin } } : undefined);
+        const NativeWebSocket = WebSocket as unknown as new (
+          url: string,
+          protocols: string[],
+          options?: { headers: Record<string, string> },
+        ) => WebSocket;
+        return new NativeWebSocket(
+          url,
+          STOMP_PROTOCOLS,
+          origin ? { headers: { Origin: origin } } : undefined,
+        );
       },
       connectHeaders: { Authorization: `Bearer ${token}` },
       forceBinaryWSFrames: true,
@@ -49,13 +64,16 @@ export class RealtimeConnection {
         if (this.connectedOnce) handlers.onReconnect?.();
         this.connectedOnce = true;
         for (const subscription of subscriptions) {
-          this.client.subscribe(subscription.destination, (message: IMessage) => {
-            try {
-              subscription.onMessage(JSON.parse(message.body));
-            } catch {
-              // Bỏ qua khung lỗi, giữ kênh tiếp tục chạy.
-            }
-          });
+          this.client.subscribe(
+            subscription.destination,
+            (message: IMessage) => {
+              try {
+                subscription.onMessage(JSON.parse(message.body));
+              } catch {
+                // Bỏ qua khung lỗi, giữ kênh tiếp tục chạy.
+              }
+            },
+          );
         }
       },
       onDisconnect: () => handlers.onConnected?.(false),
@@ -72,7 +90,11 @@ export class RealtimeConnection {
   }
 
   /** Mở kết nối; trả về hàm đóng (dùng làm cleanup của `useEffect`). */
-  static open(token: string, subscriptions: RealtimeSubscription[], handlers: RealtimeHandlers = {}): () => void {
+  static open(
+    token: string,
+    subscriptions: RealtimeSubscription[],
+    handlers: RealtimeHandlers = {},
+  ): () => void {
     const connection = new RealtimeConnection(token, subscriptions, handlers);
     connection.client.activate();
     return () => {

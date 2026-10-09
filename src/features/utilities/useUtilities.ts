@@ -3,8 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError, errorMessage } from "../../shared/api";
 import { useAuth } from "../auth/AuthProvider";
 import { useRealtime } from "../realtime/RealtimeProvider";
-import { utilitiesApi } from "./utilitiesApi";
-import { UtilityUsage } from "./utilityModel";
+import { UtilitiesService } from "../../services/utilities.service";
+import { UtilityUsage } from "./UtilityUsage";
 
 /**
  * Điện nước phòng hiện tại (`POST /student/utilities`): tải tháng này và tháng trước để so sánh,
@@ -12,7 +12,7 @@ import { UtilityUsage } from "./utilityModel";
  */
 export function useUtilities() {
   const { request } = useAuth();
-  const api = useMemo(() => utilitiesApi(request), [request]);
+  const api = useMemo(() => new UtilitiesService(request), [request]);
   const [usage, setUsage] = useState<UtilityUsage | null>(null);
   const [error, setError] = useState<string | null>(null);
   /** BE trả 404 khi sinh viên chưa có phòng hiện tại. */

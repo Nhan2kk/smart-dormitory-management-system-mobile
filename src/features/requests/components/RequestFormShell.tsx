@@ -5,7 +5,7 @@ import { errorMessage } from "../../../shared/api";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { spacing, useTheme } from "../../../shared/theme";
 import { AppHeader, BottomSheet, Button, Callout, Card, FooterBar, InfoRow, Screen, useToast } from "../../../shared/ui";
-import type { RequestKind } from "../requestsApi";
+import type { RequestKind } from "../../../enums/request.enum";
 
 type Props = {
   kind: RequestKind;

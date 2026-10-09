@@ -17,7 +17,14 @@ type Props = {
 };
 
 /** Ảnh nền phủ kín khung (expo-image: có bộ nhớ đệm, ảnh chờ và hiệu ứng hiện dần). */
-export function PhotoBackground({ source, anchor = "center", shade, blurRadius, style, children }: Props) {
+export function PhotoBackground({
+  source,
+  anchor = "center",
+  shade,
+  blurRadius,
+  style,
+  children,
+}: Props) {
   const { gradients } = useTheme();
   return (
     <View style={[styles.box, style]}>
@@ -32,7 +39,13 @@ export function PhotoBackground({ source, anchor = "center", shade, blurRadius, 
         style={StyleSheet.absoluteFill}
         accessibilityIgnoresInvertColors
       />
-      {shade && <Gradient colors={gradients.shade} direction="vertical" style={StyleSheet.absoluteFill} />}
+      {shade && (
+        <Gradient
+          colors={gradients.shade}
+          direction="vertical"
+          style={StyleSheet.absoluteFill}
+        />
+      )}
       {children}
     </View>
   );

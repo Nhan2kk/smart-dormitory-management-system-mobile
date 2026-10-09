@@ -1,5 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Animated, Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { radius, Tone, useTheme } from "../theme";
@@ -36,9 +45,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     if (!messageId) return;
     if (timer.current) clearTimeout(timer.current);
     progress.setValue(0);
-    Animated.spring(progress, { toValue: 1, useNativeDriver: nativeDriver, friction: 8 }).start();
+    Animated.spring(progress, {
+      toValue: 1,
+      useNativeDriver: nativeDriver,
+      friction: 8,
+    }).start();
     timer.current = setTimeout(() => {
-      Animated.timing(progress, { toValue: 0, duration: 220, useNativeDriver: nativeDriver }).start(() => setMessage(null));
+      Animated.timing(progress, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: nativeDriver,
+      }).start(() => setMessage(null));
     }, 2800);
   }, [messageId, progress]);
 
@@ -55,12 +72,32 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           accessibilityRole="alert"
           style={[
             styles.wrap,
-            { top: insets.top + 8, opacity: progress, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [-24, 0] }) }] },
+            {
+              top: insets.top + 8,
+              opacity: progress,
+              transform: [
+                {
+                  translateY: progress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-24, 0],
+                  }),
+                },
+              ],
+            },
           ]}
         >
-          <Glass variant="photo" strong intensity={60} style={[styles.toast, shadow(3)]}>
+          <Glass
+            variant="photo"
+            strong
+            intensity={60}
+            style={[styles.toast, shadow(3)]}
+          >
             <View style={[styles.icon, { backgroundColor: palette.bg }]}>
-              <Ionicons name={icons[message.tone] ?? "notifications"} size={18} color={palette.fg} />
+              <Ionicons
+                name={icons[message.tone] ?? "notifications"}
+                size={18}
+                color={palette.fg}
+              />
             </View>
             <Text style={styles.text}>{message.text}</Text>
           </Glass>
@@ -77,8 +114,36 @@ export function useToast() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { position: "absolute", left: 16, right: 16, alignItems: "center", zIndex: 1000 },
-  toast: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingLeft: 12, paddingRight: 18, borderRadius: radius.lg, maxWidth: 480, backgroundColor: "rgba(20,14,10,0.6)" },
-  icon: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  text: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", flexShrink: 1, lineHeight: 19 },
+  wrap: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  toast: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
+    paddingLeft: 12,
+    paddingRight: 18,
+    borderRadius: radius.lg,
+    maxWidth: 480,
+    backgroundColor: "rgba(20,14,10,0.6)",
+  },
+  icon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  text: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+    flexShrink: 1,
+    lineHeight: 19,
+  },
 });

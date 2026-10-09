@@ -33,26 +33,13 @@ import {
 } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { BedMap, bedLabel } from "./components/BedMap";
-import {
-  ACTIVE_STATUSES,
-  applicationTone,
-  BuildingDto,
-  Floor,
-  floorAvailability,
-  groupFloors,
-  isInScope,
-  PERIOD_MONTHS,
-  primaryAudience,
-  PricingPeriod,
-  Registration,
-  registrationApi,
-  roomStatusTone,
-  StudentCampaign,
-  StudentCampaignState,
-} from "./registrationApi";
+import { ACTIVE_STATUSES, applicationTone, floorAvailability, groupFloors, isInScope, PERIOD_MONTHS, primaryAudience, roomStatusTone } from "./registrationHelpers";
+import { BuildingDto, Floor, Registration, StudentCampaign, StudentCampaignState } from "../../models/registration.model";
+import { PricingPeriod } from "../../enums/registration.enum";
+import { RegistrationService } from "../../services/registration.service";
 
 type Phase = "overview" | "wizard" | "held";
-type Api = ReturnType<typeof registrationApi>;
+type Api = RegistrationService;
 type DebtBlock = { message: string; actionPath?: string };
 
 const DEBT_CODE = "DORM_DEBT_UNSETTLED";
@@ -68,7 +55,7 @@ function openPayment(registration: Registration, title: string) {
 export function RegisterDormScreen() {
   const { t } = useI18n();
   const { request } = useAuth();
-  const api = useMemo(() => registrationApi(request), [request]);
+  const api = useMemo(() => new RegistrationService(request), [request]);
   const [phase, setPhase] = useState<Phase>("overview");
   const [campaignState, setCampaignState] = useState<StudentCampaignState | null>(null);
   const [registration, setRegistration] = useState<Registration | null>(null);

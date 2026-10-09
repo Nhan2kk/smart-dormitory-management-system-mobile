@@ -13,18 +13,37 @@ type Props = {
   variant?: "default" | "warm" | "muted" | "outline" | "glass";
 };
 
-export function Card({ children, style, onPress, accessibilityLabel, variant = "default" }: Props) {
+export function Card({
+  children,
+  style,
+  onPress,
+  accessibilityLabel,
+  variant = "default",
+}: Props) {
   const styles = useStyles();
   const { shadow, isDark, glass } = useTheme();
   const body =
     variant === "glass" || (glass && variant === "default") ? (
       <Glass style={[styles.base, styles.glass, style]}>{children}</Glass>
     ) : (
-      <View style={[styles.base, styles[variant], variant === "default" && !isDark && shadow(1), style]}>{children}</View>
+      <View
+        style={[
+          styles.base,
+          styles[variant],
+          variant === "default" && !isDark && shadow(1),
+          style,
+        ]}
+      >
+        {children}
+      </View>
     );
   if (!onPress) return body;
   return (
-    <Touchable onPress={onPress} accessibilityLabel={accessibilityLabel} pressScale={0.98}>
+    <Touchable
+      onPress={onPress}
+      accessibilityLabel={accessibilityLabel}
+      pressScale={0.98}
+    >
       {body}
     </Touchable>
   );
@@ -32,7 +51,11 @@ export function Card({ children, style, onPress, accessibilityLabel, variant = "
 
 const useStyles = makeStyles(({ colors, isDark }) => ({
   base: { borderRadius: radius.lg, padding: spacing.lg },
-  default: { backgroundColor: colors.surface, borderWidth: isDark ? 1 : 0, borderColor: colors.border },
+  default: {
+    backgroundColor: colors.surface,
+    borderWidth: isDark ? 1 : 0,
+    borderColor: colors.border,
+  },
   warm: { backgroundColor: colors.surfaceWarm },
   muted: { backgroundColor: colors.surfaceMuted },
   outline: { borderWidth: 1, borderColor: colors.border },

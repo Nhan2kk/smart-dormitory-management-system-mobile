@@ -17,7 +17,13 @@ type Props = {
  * Lớp kính mờ (glassmorphism). iOS/web làm mờ thật nội dung phía sau; Android dùng lớp phủ bán trong suốt
  * đậm hơn vì blur trên Android cần cấu hình riêng.
  */
-export function Glass({ children, style, variant = "surface", intensity = 45, strong }: Props) {
+export function Glass({
+  children,
+  style,
+  variant = "surface",
+  intensity = 45,
+  strong,
+}: Props) {
   const { colors, isDark } = useTheme();
   const onPhoto = variant === "photo";
   const tint = onPhoto || isDark ? "dark" : "light";
@@ -35,12 +41,23 @@ export function Glass({ children, style, variant = "surface", intensity = 45, st
     <View
       style={[
         styles.base,
-        { borderColor: onPhoto ? "rgba(255,255,255,0.28)" : colors.glassBorder },
+        {
+          borderColor: onPhoto ? "rgba(255,255,255,0.28)" : colors.glassBorder,
+        },
         style,
       ]}
     >
-      {!android && <BlurView intensity={intensity} tint={tint} style={StyleSheet.absoluteFill} />}
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: fill }]} pointerEvents="none" />
+      {!android && (
+        <BlurView
+          intensity={intensity}
+          tint={tint}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
+      <View
+        style={[StyleSheet.absoluteFill, { backgroundColor: fill }]}
+        pointerEvents="none"
+      />
       {children}
     </View>
   );

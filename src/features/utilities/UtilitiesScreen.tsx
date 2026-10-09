@@ -9,7 +9,9 @@ import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { AppHeader, BottomSheet, Button, Callout, Card, EmptyState, Gradient, IconBadge, IconName, InfoRow, Screen, SectionHeader, SegmentedControl } from "../../shared/ui";
 import { UtilityCalendar } from "./UtilityCalendar";
-import { DailyRecord, UtilityInsightKind, UtilityMetric, UtilityRange, UtilityUsage } from "./utilityModel";
+import { DailyRecord } from "../../models/utilities.model";
+import { UtilityInsightKind, UtilityMetric, UtilityRange } from "../../enums/utilities.enum";
+import { UtilityUsage } from "./UtilityUsage";
 import { useRealtime } from "../realtime/RealtimeProvider";
 import { useUtilities } from "./useUtilities";
 

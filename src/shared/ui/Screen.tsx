@@ -1,6 +1,10 @@
 import { ReactNode } from "react";
 import { ScrollView, StyleSheet, View, ViewStyle } from "react-native";
-import { Edge, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  Edge,
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { spacing, TAB_BAR_SPACE, useTheme } from "../theme";
 import { Backdrop } from "./Backdrop";
 
@@ -18,7 +22,16 @@ type Props = {
   contentStyle?: ViewStyle;
 };
 
-export function Screen({ children, header, footer, scroll = true, inTabs = false, padded = true, edges = ["top"], contentStyle }: Props) {
+export function Screen({
+  children,
+  header,
+  footer,
+  scroll = true,
+  inTabs = false,
+  padded = true,
+  edges = ["top"],
+  contentStyle,
+}: Props) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const padding = padded ? spacing.xl : 0;
@@ -31,16 +44,31 @@ export function Screen({ children, header, footer, scroll = true, inTabs = false
         {scroll ? (
           <ScrollView
             style={styles.flex}
-            contentContainerStyle={[{ paddingHorizontal: padding, paddingBottom: bottom }, contentStyle]}
+            contentContainerStyle={[
+              { paddingHorizontal: padding, paddingBottom: bottom },
+              contentStyle,
+            ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
             {children}
           </ScrollView>
         ) : (
-          <View style={[styles.flex, { paddingHorizontal: padding }, contentStyle]}>{children}</View>
+          <View
+            style={[styles.flex, { paddingHorizontal: padding }, contentStyle]}
+          >
+            {children}
+          </View>
         )}
-        {footer && <View style={{ paddingBottom: edges.includes("bottom") ? 0 : insets.bottom }}>{footer}</View>}
+        {footer && (
+          <View
+            style={{
+              paddingBottom: edges.includes("bottom") ? 0 : insets.bottom,
+            }}
+          >
+            {footer}
+          </View>
+        )}
       </SafeAreaView>
     </View>
   );

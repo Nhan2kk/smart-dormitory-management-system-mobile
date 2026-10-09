@@ -9,7 +9,8 @@ import {
   useState,
 } from "react";
 import { ApiCallOptions, ApiClient, ApiError, apiCall } from "../../shared/api";
-import { authApi, AuthResponse, AuthUser } from "./authApi";
+import { AuthService } from "../../services/auth.service";
+import { AuthResponse, AuthUser } from "../../models/auth.model";
 
 const STORAGE_KEY = "sdms.refreshToken";
 /** Bật để xem giao diện bằng dữ liệu mock khi chưa có backend: mọi MSSV/mật khẩu đều đăng nhập được. */
@@ -45,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const token = await SecureStore.getItemAsync(STORAGE_KEY);
         if (token) {
-          const refreshed = await authApi.refresh(token);
+          const refreshed = await AuthService.refresh(token);
           if (refreshed.user.role === "STUDENT") {
             await SecureStore.setItemAsync(STORAGE_KEY, refreshed.refreshToken);
             if (mounted) setSession(refreshed);
@@ -74,9 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       return;
     }
-    const result = await authApi.login(username.trim(), password);
+    const result = await AuthService.login(username.trim(), password);
     if (result.user.role !== "STUDENT") {
-      await authApi
+      await AuthService
         .logout(result.refreshToken, result.accessToken)
         .catch(() => undefined);
       throw new Error("Ứng dụng này dành cho tài khoản sinh viên.");
@@ -92,14 +93,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (MOCK_AUTH) return;
     await SecureStore.deleteItemAsync(STORAGE_KEY);
     if (token && accessToken)
-      await authApi.logout(token, accessToken).catch(() => undefined);
+      await AuthService.logout(token, accessToken).catch(() => undefined);
   }, [session]);
 
   /** Dùng chung một lượt refresh khi nhiều request cùng gặp 401. */
   const refreshSession = useCallback(async () => {
     const current = sessionRef.current;
     if (!current || MOCK_AUTH) return null;
-    refreshing.current ??= authApi
+    refreshing.current ??= AuthService
       .refresh(current.refreshToken)
       .then(async (next) => {
         await SecureStore.setItemAsync(STORAGE_KEY, next.refreshToken);

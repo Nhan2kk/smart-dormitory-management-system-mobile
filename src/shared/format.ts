@@ -16,9 +16,22 @@ export class Formatter {
     return Formatter.lang === "en" ? "en-US" : "vi-VN";
   }
 
-  private static text(path: "justNow" | "minutes" | "hours" | "days" | "morning" | "noon" | "afternoon" | "evening", count?: number) {
+  private static text(
+    path:
+      | "justNow"
+      | "minutes"
+      | "hours"
+      | "days"
+      | "morning"
+      | "noon"
+      | "afternoon"
+      | "evening",
+    count?: number,
+  ) {
     const value = Formatter.dictionary?.time[path] ?? path;
-    return count === undefined ? value : value.replace("{{count}}", String(count));
+    return count === undefined
+      ? value
+      : value.replace("{{count}}", String(count));
   }
 
   static currency(amount: number): string {
@@ -38,18 +51,27 @@ export class Formatter {
   }
 
   static decimal(value: number, digits = 1): string {
-    return value.toLocaleString(Formatter.locale, { maximumFractionDigits: digits });
+    return value.toLocaleString(Formatter.locale, {
+      maximumFractionDigits: digits,
+    });
   }
 
   static date(value: string | Date): string {
     const date = typeof value === "string" ? new Date(value) : value;
-    const [d, m, y] = [Formatter.pad(date.getDate()), Formatter.pad(date.getMonth() + 1), date.getFullYear()];
+    const [d, m, y] = [
+      Formatter.pad(date.getDate()),
+      Formatter.pad(date.getMonth() + 1),
+      date.getFullYear(),
+    ];
     return Formatter.lang === "en" ? `${m}/${d}/${y}` : `${d}/${m}/${y}`;
   }
 
   static shortDate(value: string | Date): string {
     const date = typeof value === "string" ? new Date(value) : value;
-    const [d, m] = [Formatter.pad(date.getDate()), Formatter.pad(date.getMonth() + 1)];
+    const [d, m] = [
+      Formatter.pad(date.getDate()),
+      Formatter.pad(date.getMonth() + 1),
+    ];
     return Formatter.lang === "en" ? `${m}/${d}` : `${d}/${m}`;
   }
 
@@ -68,13 +90,18 @@ export class Formatter {
   }
 
   static weekday(value: Date): string {
-    const names = (Formatter.dictionary?.time.weekdays ?? "CN,T2,T3,T4,T5,T6,T7").split(",");
+    const names = (
+      Formatter.dictionary?.time.weekdays ?? "CN,T2,T3,T4,T5,T6,T7"
+    ).split(",");
     return names[value.getDay()];
   }
 
   /** "Vừa xong", "5 phút trước", "2 giờ trước", "3 ngày trước". */
   static relative(value: string, now: Date = Formatter.now): string {
-    const minutes = Math.max(0, Math.round((now.getTime() - new Date(value).getTime()) / 60000));
+    const minutes = Math.max(
+      0,
+      Math.round((now.getTime() - new Date(value).getTime()) / 60000),
+    );
     if (minutes < 1) return Formatter.text("justNow");
     if (minutes < 60) return Formatter.text("minutes", minutes);
     const hours = Math.round(minutes / 60);
@@ -89,7 +116,9 @@ export class Formatter {
     const h = Math.floor(safe / 3600);
     const m = Math.floor((safe % 3600) / 60);
     const s = safe % 60;
-    return h > 0 ? `${Formatter.pad(h)}:${Formatter.pad(m)}:${Formatter.pad(s)}` : `${Formatter.pad(m)}:${Formatter.pad(s)}`;
+    return h > 0
+      ? `${Formatter.pad(h)}:${Formatter.pad(m)}:${Formatter.pad(s)}`
+      : `${Formatter.pad(m)}:${Formatter.pad(s)}`;
   }
 
   static greeting(hour: number = new Date().getHours()): string {
@@ -107,7 +136,11 @@ export class Formatter {
   static initials(name: string): string {
     const parts = name.trim().split(/\s+/).filter(Boolean);
     if (parts.length === 0) return "S";
-    return (parts.length > 1 ? parts[parts.length - 2][0] + parts[parts.length - 1][0] : parts[0][0]).toUpperCase();
+    return (
+      parts.length > 1
+        ? parts[parts.length - 2][0] + parts[parts.length - 1][0]
+        : parts[0][0]
+    ).toUpperCase();
   }
 
   private static pad(value: number): string {

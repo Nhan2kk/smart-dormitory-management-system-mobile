@@ -10,7 +10,7 @@ import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { AppHeader, Button, Card, CircleButton, EmptyState, FooterBar, Screen, Touchable, useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
-import { registrationApi } from "../registration/registrationApi";
+import { RegistrationService } from "../../services/registration.service";
 import type { Payable } from "../../models/debt.model";
 import { DebtService } from "../../services/debt.service";
 import { DebtLedger, PAYMENT_ACCOUNT } from "./DebtLedger";
@@ -30,7 +30,7 @@ export function PaymentScreen() {
   const { shadow } = useTheme();
   const styles = useStyles();
   const { request, user } = useAuth();
-  const api = useMemo(() => registrationApi(request), [request]);
+  const api = useMemo(() => new RegistrationService(request), [request]);
   const bills = useMemo(() => new DebtService(request), [request]);
   // Khoản phát sinh ngay trong app (vd. đăng ký KTX) truyền số tiền qua tham số.
   const fromParams: Payable | null = amount && title ? { id: String(id), amount: Number(amount), title: String(title) } : null;

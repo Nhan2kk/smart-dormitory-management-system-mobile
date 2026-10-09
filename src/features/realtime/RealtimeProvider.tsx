@@ -1,21 +1,8 @@
 import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { RealtimeConnection } from "../../shared/realtime";
+import type { RoomIncident, TelemetryUpdate } from "../../models/realtime.model";
 import { useAuth } from "../auth/AuthProvider";
-
-/** Cảnh báo IoT của phòng đang ở (`/user/queue/iot/incidents`), chỉ các trường mobile dùng. */
-export type RoomIncident = {
-  id: string;
-  roomCode: string;
-  type: string;
-  severity: "INFO" | "WARNING" | "DANGER";
-  status: "OPEN" | "ACKNOWLEDGED" | "RESOLVED";
-  lastDetectedAt: string;
-  reasons: string[];
-};
-
-/** Phòng vừa có số đo giờ mới (`/user/queue/iot/telemetry`). */
-export type TelemetryUpdate = { rooms: { roomCode: string; recordedAt: string }[]; publishedAt: string };
 
 type RealtimeValue = {
   connected: boolean;

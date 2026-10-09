@@ -3,13 +3,14 @@ import { useCallback, useMemo, useState } from "react";
 import { errorMessage } from "../../shared/api";
 import { useAuth } from "../auth/AuthProvider";
 import { useNotifyRefresh } from "../notifications/NotificationsProvider";
-import { fromSummary, StudentRequest } from "./requestModel";
-import { requestsApi } from "./requestsApi";
+import { fromSummary } from "./requestModel";
+import { StudentRequest } from "../../models/request.model";
+import { RequestService } from "../../services/request.service";
 
 /** Danh sách yêu cầu của tôi (`GET /student/requests`), tự tải lại mỗi khi màn hình được focus. */
 export function useMyRequests() {
   const { request } = useAuth();
-  const api = useMemo(() => requestsApi(request), [request]);
+  const api = useMemo(() => new RequestService(request), [request]);
   const [requests, setRequests] = useState<StudentRequest[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 

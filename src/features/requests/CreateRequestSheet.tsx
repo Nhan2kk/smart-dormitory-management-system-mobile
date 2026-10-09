@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { CircleButton, IconBadge, Touchable } from "../../shared/ui";
-import { RequestKind, requestKindMeta } from "./requestModel";
+import { RequestKind } from "../../enums/request.enum";
+import { requestKindMeta } from "./requestModel";
 
 const kinds: RequestKind[] = ["supportMaintenance", "roomTransfer", "roomCheckout"];
 

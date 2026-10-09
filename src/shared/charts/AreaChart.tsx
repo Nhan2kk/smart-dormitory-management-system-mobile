@@ -1,6 +1,13 @@
 import { useId, useState } from "react";
 import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
-import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop } from "react-native-svg";
+import Svg, {
+  Circle,
+  Defs,
+  Line,
+  LinearGradient,
+  Path,
+  Stop,
+} from "react-native-svg";
 
 type Props = {
   values: number[];
@@ -47,20 +54,36 @@ export function AreaChart({
   const axisWidth = 34;
   const chartWidth = Math.max(0, width - axisWidth);
   const max = Math.max(...values, 1) * 1.15;
-  const step = values.length > 1 ? chartWidth / (values.length - 1) : chartWidth;
-  const points = values.map((value, index) => ({ x: index * step, y: height - (value / max) * height }));
+  const step =
+    values.length > 1 ? chartWidth / (values.length - 1) : chartWidth;
+  const points = values.map((value, index) => ({
+    x: index * step,
+    y: height - (value / max) * height,
+  }));
   const line = SmoothPath.build(points);
-  const area = points.length ? `${line} L ${chartWidth} ${height} L 0 ${height} Z` : "";
+  const area = points.length
+    ? `${line} L ${chartWidth} ${height} L 0 ${height} Z`
+    : "";
   const focus = highlightIndex ?? values.indexOf(Math.max(...values));
   const focusPoint = points[focus];
-  const ticks = [max, max / 2, 0].map((tick) => (max < 10 ? Number(tick.toFixed(1)) : Math.round(tick)));
+  const ticks = [max, max / 2, 0].map((tick) =>
+    max < 10 ? Number(tick.toFixed(1)) : Math.round(tick),
+  );
 
   return (
-    <View onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}>
+    <View
+      onLayout={(event: LayoutChangeEvent) =>
+        setWidth(event.nativeEvent.layout.width)
+      }
+    >
       <View style={{ flexDirection: "row" }}>
         <View style={{ width: chartWidth, height }}>
           {width > 0 && (
-            <Svg width={chartWidth} height={height} style={{ overflow: "visible" }}>
+            <Svg
+              width={chartWidth}
+              height={height}
+              style={{ overflow: "visible" }}
+            >
               <Defs>
                 <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
                   <Stop offset="0" stopColor={color} stopOpacity={0.35} />
@@ -80,7 +103,13 @@ export function AreaChart({
                 />
               ))}
               <Path d={area} fill={`url(#${id})`} />
-              <Path d={line} stroke={color} strokeWidth={3} fill="none" strokeLinecap="round" />
+              <Path
+                d={line}
+                stroke={color}
+                strokeWidth={3}
+                fill="none"
+                strokeLinecap="round"
+              />
               {focusPoint && (
                 <>
                   <Line
@@ -92,8 +121,19 @@ export function AreaChart({
                     strokeDasharray="3 4"
                     strokeOpacity={0.8}
                   />
-                  <Circle cx={focusPoint.x} cy={focusPoint.y} r={9} fill={color} fillOpacity={0.3} />
-                  <Circle cx={focusPoint.x} cy={focusPoint.y} r={5} fill={color} />
+                  <Circle
+                    cx={focusPoint.x}
+                    cy={focusPoint.y}
+                    r={9}
+                    fill={color}
+                    fillOpacity={0.3}
+                  />
+                  <Circle
+                    cx={focusPoint.x}
+                    cy={focusPoint.y}
+                    r={5}
+                    fill={color}
+                  />
                 </>
               )}
             </Svg>
@@ -110,7 +150,10 @@ export function AreaChart({
       </View>
       <View style={[styles.labels, { width: chartWidth }]}>
         {labels.map((label, index) => (
-          <Text key={`${label}-${index}`} style={[styles.axisText, { color: axisColor }]}>
+          <Text
+            key={`${label}-${index}`}
+            style={[styles.axisText, { color: axisColor }]}
+          >
             {label}
           </Text>
         ))}
@@ -120,7 +163,16 @@ export function AreaChart({
 }
 
 const styles = StyleSheet.create({
-  axis: { justifyContent: "space-between", alignItems: "flex-end", marginTop: -7, marginBottom: -7 },
+  axis: {
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    marginTop: -7,
+    marginBottom: -7,
+  },
   axisText: { fontSize: 11, fontWeight: "600" },
-  labels: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
+  labels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
 });

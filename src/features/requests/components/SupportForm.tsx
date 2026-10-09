@@ -3,14 +3,15 @@ import { EvidencePhoto, pickPhoto, uploadPhotos } from "../../../shared/attachme
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { Field, FormSection, OptionGrid, PhotoSlots, SegmentedControl, useToast } from "../../../shared/ui";
 import { useAuth } from "../../auth/AuthProvider";
-import { IssueLocation, Priority, requestsApi, SupportIssueType } from "../requestsApi";
+import { IssueLocation, Priority, SupportIssueType } from "../../../enums/request.enum";
+import { RequestService } from "../../../services/request.service";
 import { RequestFormShell } from "./RequestFormShell";
 
 export function SupportForm() {
   const { t } = useI18n();
   const { notify } = useToast();
   const { request } = useAuth();
-  const api = useMemo(() => requestsApi(request), [request]);
+  const api = useMemo(() => new RequestService(request), [request]);
   const [issue, setIssue] = useState<SupportIssueType | null>(null);
   const [location, setLocation] = useState<IssueLocation>("room");
   const [priority, setPriority] = useState<Priority>("medium");

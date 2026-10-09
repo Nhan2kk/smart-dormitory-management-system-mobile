@@ -9,7 +9,15 @@ import { IconName } from "./Badges";
 import { Touchable } from "./Touchable";
 
 /** Nhóm trường form có tiêu đề. */
-export function FormSection({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+export function FormSection({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: ReactNode;
+}) {
   const styles = useStyles();
   return (
     <View style={styles.section}>
@@ -45,18 +53,40 @@ export function OptionGrid<T extends string>({
             accessibilityRole="radio"
             accessibilityState={{ selected }}
             accessibilityLabel={option.label}
-            style={[styles.tile, { width: `${100 / columns - 2.5}%` }, selected && styles.tileSelected]}
+            style={[
+              styles.tile,
+              { width: `${100 / columns - 2.5}%` },
+              selected && styles.tileSelected,
+            ]}
           >
-            <View style={[styles.tileIcon, selected && { backgroundColor: colors.primary }]}>
-              <Ionicons name={option.icon} size={20} color={selected ? colors.onPrimary : colors.inkSoft} />
+            <View
+              style={[
+                styles.tileIcon,
+                selected && { backgroundColor: colors.primary },
+              ]}
+            >
+              <Ionicons
+                name={option.icon}
+                size={20}
+                color={selected ? colors.onPrimary : colors.inkSoft}
+              />
             </View>
-            <Text style={[styles.tileLabel, selected && { color: colors.primary }]} numberOfLines={1}>
+            <Text
+              style={[styles.tileLabel, selected && { color: colors.primary }]}
+              numberOfLines={1}
+            >
               {option.label}
             </Text>
-            {!!option.description && <Text style={styles.tileDescription}>{option.description}</Text>}
+            {!!option.description && (
+              <Text style={styles.tileDescription}>{option.description}</Text>
+            )}
             {selected && (
               <View style={styles.tileCheck}>
-                <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color={colors.primary}
+                />
               </View>
             )}
           </Touchable>
@@ -81,11 +111,26 @@ export class DateStripModel {
 }
 
 /** Dải chọn ngày cuộn ngang — chọn nhanh bằng một chạm thay cho lịch bật lên. */
-export function DateStrip({ dates, value, onChange, isDisabled }: { dates: Date[]; value: string | null; onChange: (iso: string) => void; isDisabled?: (date: Date) => boolean }) {
+export function DateStrip({
+  dates,
+  value,
+  onChange,
+  isDisabled,
+}: {
+  dates: Date[];
+  value: string | null;
+  onChange: (iso: string) => void;
+  isDisabled?: (date: Date) => boolean;
+}) {
   const styles = useStyles();
   const { t } = useI18n();
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stripScroller} contentContainerStyle={styles.strip}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.stripScroller}
+      contentContainerStyle={styles.strip}
+    >
       {dates.map((date) => {
         const iso = DateStripModel.iso(date);
         const selected = iso === value;
@@ -100,9 +145,15 @@ export function DateStrip({ dates, value, onChange, isDisabled }: { dates: Date[
             accessibilityLabel={Formatter.date(date)}
             style={[styles.day, selected && styles.daySelected]}
           >
-            <Text style={[styles.dayWeek, selected && styles.daySoft]}>{Formatter.weekday(date)}</Text>
-            <Text style={[styles.dayNum, selected && styles.dayStrong]}>{date.getDate()}</Text>
-            <Text style={[styles.dayMonth, selected && styles.daySoft]}>{t("time.monthShort", { month: date.getMonth() + 1 })}</Text>
+            <Text style={[styles.dayWeek, selected && styles.daySoft]}>
+              {Formatter.weekday(date)}
+            </Text>
+            <Text style={[styles.dayNum, selected && styles.dayStrong]}>
+              {date.getDate()}
+            </Text>
+            <Text style={[styles.dayMonth, selected && styles.daySoft]}>
+              {t("time.monthShort", { month: date.getMonth() + 1 })}
+            </Text>
           </Touchable>
         );
       })}
@@ -110,19 +161,50 @@ export function DateStrip({ dates, value, onChange, isDisabled }: { dates: Date[
   );
 }
 
-export function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: (value: boolean) => void; label: string }) {
+export function Checkbox({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  label: string;
+}) {
   const styles = useStyles();
   const { colors } = useTheme();
   return (
-    <Touchable onPress={() => onChange(!checked)} accessibilityRole="checkbox" accessibilityState={{ checked }} accessibilityLabel={label} style={styles.checkRow} pressScale={0.99}>
-      <View style={[styles.checkBox, checked && styles.checkBoxOn]}>{checked && <Ionicons name="checkmark" size={16} color={colors.onPrimary} />}</View>
+    <Touchable
+      onPress={() => onChange(!checked)}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      accessibilityLabel={label}
+      style={styles.checkRow}
+      pressScale={0.99}
+    >
+      <View style={[styles.checkBox, checked && styles.checkBoxOn]}>
+        {checked && (
+          <Ionicons name="checkmark" size={16} color={colors.onPrimary} />
+        )}
+      </View>
       <Text style={styles.checkLabel}>{label}</Text>
     </Touchable>
   );
 }
 
 /** Ô thêm ảnh minh chứng. Truyền `uris` để hiển thị ảnh thật; không truyền thì hiện biểu tượng giữ chỗ. */
-export function PhotoSlots({ count, onAdd, onRemove, max = 4, uris }: { count: number; onAdd: () => void; onRemove: (index: number) => void; max?: number; uris?: string[] }) {
+export function PhotoSlots({
+  count,
+  onAdd,
+  onRemove,
+  max = 4,
+  uris,
+}: {
+  count: number;
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+  max?: number;
+  uris?: string[];
+}) {
   const styles = useStyles();
   const { colors } = useTheme();
   const { t } = useI18n();
@@ -130,14 +212,30 @@ export function PhotoSlots({ count, onAdd, onRemove, max = 4, uris }: { count: n
     <View style={styles.photos}>
       {Array.from({ length: count }, (_, index) => (
         <View key={index} style={styles.photo}>
-          {uris?.[index] ? <Image source={{ uri: uris[index] }} style={styles.photoImage} contentFit="cover" /> : <Ionicons name="image" size={26} color={colors.primary} />}
-          <Touchable onPress={() => onRemove(index)} accessibilityLabel={t("common.removePhoto", { index: index + 1 })} style={styles.photoRemove}>
+          {uris?.[index] ? (
+            <Image
+              source={{ uri: uris[index] }}
+              style={styles.photoImage}
+              contentFit="cover"
+            />
+          ) : (
+            <Ionicons name="image" size={26} color={colors.primary} />
+          )}
+          <Touchable
+            onPress={() => onRemove(index)}
+            accessibilityLabel={t("common.removePhoto", { index: index + 1 })}
+            style={styles.photoRemove}
+          >
             <Ionicons name="close" size={14} color={colors.onInverse} />
           </Touchable>
         </View>
       ))}
       {count < max && (
-        <Touchable onPress={onAdd} accessibilityLabel={t("common.addPhoto")} style={[styles.photo, styles.photoAdd]}>
+        <Touchable
+          onPress={onAdd}
+          accessibilityLabel={t("common.addPhoto")}
+          style={[styles.photo, styles.photoAdd]}
+        >
           <Ionicons name="camera-outline" size={24} color={colors.primary} />
           <Text style={styles.photoAddText}>{t("common.addPhoto")}</Text>
         </Touchable>
@@ -150,30 +248,100 @@ const useStyles = makeStyles(({ colors, font }) => ({
   section: { marginTop: spacing.xxl },
   sectionTitle: { ...font.heading, fontSize: 16 },
   sectionHint: { ...font.caption, fontSize: 13, marginTop: 4 },
-  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: spacing.md },
-  tile: { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, borderWidth: 1.5, borderColor: colors.border, gap: spacing.sm, minHeight: 92 },
-  tileSelected: { borderColor: colors.primary, backgroundColor: colors.surfaceWarm },
-  tileIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: colors.surfaceMuted, alignItems: "center", justifyContent: "center" },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: spacing.md,
+  },
+  tile: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    gap: spacing.sm,
+    minHeight: 92,
+  },
+  tileSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.surfaceWarm,
+  },
+  tileIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   tileLabel: { ...font.label },
   tileDescription: { ...font.caption },
   tileCheck: { position: "absolute", top: 10, right: 10 },
   stripScroller: { marginHorizontal: -spacing.xl, flexGrow: 0 },
   strip: { gap: spacing.sm, paddingHorizontal: spacing.xl },
-  day: { width: 62, height: 82, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", gap: 2 },
+  day: {
+    width: 62,
+    height: 82,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
   daySelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   dayWeek: { ...font.caption, fontWeight: "700" },
   dayNum: { fontSize: 20, fontWeight: "800", color: colors.ink },
   dayMonth: { ...font.caption, fontSize: 11 },
   daySoft: { color: "rgba(255,255,255,0.85)" },
   dayStrong: { color: colors.onPrimary },
-  checkRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md, paddingVertical: spacing.xs },
-  checkBox: { width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: colors.border, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
+  checkRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  checkBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   checkBoxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
   checkLabel: { ...font.body, flex: 1, fontSize: 14, color: colors.ink },
   photos: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-  photo: { width: 76, height: 76, borderRadius: radius.md, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
+  photo: {
+    width: 76,
+    height: 76,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   photoImage: { width: "100%", height: "100%", borderRadius: radius.md },
-  photoAdd: { backgroundColor: colors.surface, borderWidth: 1.5, borderStyle: "dashed", borderColor: colors.primaryLight, gap: 2 },
+  photoAdd: {
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: colors.primaryLight,
+    gap: 2,
+  },
   photoAddText: { fontSize: 11, fontWeight: "700", color: colors.primary },
-  photoRemove: { position: "absolute", top: -6, right: -6, width: 22, height: 22, borderRadius: 11, backgroundColor: colors.inverse, alignItems: "center", justifyContent: "center" },
+  photoRemove: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.inverse,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 }));

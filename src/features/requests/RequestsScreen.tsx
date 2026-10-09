@@ -7,7 +7,8 @@ import { useI18n } from "../../shared/i18n/I18nProvider";
 import type { TranslationKey } from "../../shared/i18n/types";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { AppHeader, Button, Callout, Card, ChipGroup, CircleButton, EmptyState, Glass, IconBadge, Screen, StatusBadge } from "../../shared/ui";
-import { RequestAction, RequestKind, requestKindMeta, requestStats, requestStatusTone } from "./requestModel";
+import { RequestAction, RequestKind } from "../../enums/request.enum";
+import { requestKindMeta, requestStats, requestStatusTone } from "./requestModel";
 import { useMyRequests } from "./useMyRequests";
 
 type Filter = "all" | RequestKind;

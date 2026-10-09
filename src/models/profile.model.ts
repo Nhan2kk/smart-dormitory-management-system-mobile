@@ -1,7 +1,5 @@
 import type { Gender } from "../enums/profile.enum";
 
-// ---- Dữ liệu server trả về / nhận ----
-
 export interface EmergencyContactResponse {
   id: string;
   fullName: string;
@@ -10,7 +8,6 @@ export interface EmergencyContactResponse {
   address: string | null;
 }
 
-/** `GET /student/profile` — hồ sơ sinh viên (StudentResponse), chỉ các trường mobile dùng. */
 export interface StudentProfileResponse {
   id: string;
   studentCode: string;
@@ -44,16 +41,12 @@ export interface StudentProfileResponse {
   emergencyContacts: EmergencyContactResponse[];
 }
 
-/** `POST /auth/change-password`. */
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
 }
 
-// ---- Dữ liệu cho màn hình ----
-
-/** Ô mật khẩu trong bảng đổi mật khẩu. */
 export interface PasswordDraft {
   current: string;
   next: string;

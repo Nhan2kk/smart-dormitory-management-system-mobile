@@ -29,19 +29,32 @@ export function CircleButton({
   const { colors, shadow } = useTheme();
   const styles = useStyles();
   return (
-    <Touchable onPress={onPress} accessibilityLabel={label} style={[{ borderRadius: size / 2 }, variant === "surface" && shadow(1)]}>
-      <Glass variant={variant} strong={variant === "surface"} style={[styles.circle, { width: size, height: size, borderRadius: size / 2 }]}>
-        <Ionicons name={icon} size={size * 0.47} color={variant === "photo" ? colors.white : colors.ink} />
+    <Touchable
+      onPress={onPress}
+      accessibilityLabel={label}
+      style={[{ borderRadius: size / 2 }, variant === "surface" && shadow(1)]}
+    >
+      <Glass
+        variant={variant}
+        strong={variant === "surface"}
+        style={[
+          styles.circle,
+          { width: size, height: size, borderRadius: size / 2 },
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={size * 0.47}
+          color={variant === "photo" ? colors.white : colors.ink}
+        />
       </Glass>
-      {typeof badge === "number" ? (
-        badge > 0 && (
-          <View style={styles.countBadge} pointerEvents="none">
-            <Text style={styles.countText}>{badge > 99 ? "99+" : badge}</Text>
-          </View>
-        )
-      ) : (
-        badge && <View style={styles.badge} />
-      )}
+      {typeof badge === "number"
+        ? badge > 0 && (
+            <View style={styles.countBadge} pointerEvents="none">
+              <Text style={styles.countText}>{badge > 99 ? "99+" : badge}</Text>
+            </View>
+          )
+        : badge && <View style={styles.badge} />}
     </Touchable>
   );
 }
@@ -58,21 +71,44 @@ type Props = {
 };
 
 /** Header kiểu iOS: nút tròn quay lại – tiêu đề giữa – thao tác phải. */
-export function AppHeader({ title, subtitle, hideBack, onBack, right, onPhoto }: Props) {
+export function AppHeader({
+  title,
+  subtitle,
+  hideBack,
+  onBack,
+  right,
+  onPhoto,
+}: Props) {
   const { t } = useI18n();
   const styles = useStyles();
-  const back = onBack ?? (() => (router.canGoBack() ? router.back() : router.replace("/")));
+  const back =
+    onBack ??
+    (() => (router.canGoBack() ? router.back() : router.replace("/")));
   return (
     <View style={styles.header}>
       <View style={styles.side}>
-        {!hideBack && <CircleButton icon="chevron-back" label={t("common.back")} onPress={back} variant={onPhoto ? "photo" : "surface"} />}
+        {!hideBack && (
+          <CircleButton
+            icon="chevron-back"
+            label={t("common.back")}
+            onPress={back}
+            variant={onPhoto ? "photo" : "surface"}
+          />
+        )}
       </View>
       <View style={styles.center}>
-        <Text style={[styles.title, onPhoto && styles.onPhoto]} numberOfLines={1} accessibilityRole="header">
+        <Text
+          style={[styles.title, onPhoto && styles.onPhoto]}
+          numberOfLines={1}
+          accessibilityRole="header"
+        >
           {title}
         </Text>
         {!!subtitle && (
-          <Text style={[styles.subtitle, onPhoto && styles.onPhotoSoft]} numberOfLines={1}>
+          <Text
+            style={[styles.subtitle, onPhoto && styles.onPhotoSoft]}
+            numberOfLines={1}
+          >
             {subtitle}
           </Text>
         )}
@@ -83,7 +119,13 @@ export function AppHeader({ title, subtitle, hideBack, onBack, right, onPhoto }:
 }
 
 const useStyles = makeStyles(({ colors, font }) => ({
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.xl, paddingTop: spacing.sm, paddingBottom: spacing.md },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
   side: { width: 48 },
   center: { flex: 1, alignItems: "center" },
   title: { ...font.heading },
@@ -116,5 +158,10 @@ const useStyles = makeStyles(({ colors, font }) => ({
     alignItems: "center",
     justifyContent: "center",
   },
-  countText: { color: colors.white, fontSize: 10, fontWeight: "800", lineHeight: 12 },
+  countText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: "800",
+    lineHeight: 12,
+  },
 }));

@@ -15,9 +15,18 @@ type Props = {
  * Nền chuyển màu dùng expo-linear-gradient (gradient gốc của hệ điều hành).
  * Không dùng SVG vì iOS không nhận màu rgba trong stop SVG và tô thành đen đặc.
  */
-export function Gradient({ colors, direction = "diagonal", style, children }: Props) {
+export function Gradient({
+  colors,
+  direction = "diagonal",
+  style,
+  children,
+}: Props) {
   const theme = useTheme();
-  const stops = (colors ?? theme.gradients.accent) as unknown as readonly [string, string, ...string[]];
+  const stops = (colors ?? theme.gradients.accent) as unknown as readonly [
+    string,
+    string,
+    ...string[],
+  ];
   return (
     <LinearGradient
       colors={stops}

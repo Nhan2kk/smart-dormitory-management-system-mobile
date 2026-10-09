@@ -5,13 +5,13 @@ import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { spacing } from "../../../shared/theme";
 import { Callout, DateStrip, DateStripModel, Field, FormSection } from "../../../shared/ui";
 import { useAuth } from "../../auth/AuthProvider";
-import { requestsApi } from "../requestsApi";
+import { RequestService } from "../../../services/request.service";
 import { RequestFormShell } from "./RequestFormShell";
 
 export function CheckoutForm() {
   const { t } = useI18n();
   const { request } = useAuth();
-  const api = useMemo(() => requestsApi(request), [request]);
+  const api = useMemo(() => new RequestService(request), [request]);
   const today = useMemo(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());

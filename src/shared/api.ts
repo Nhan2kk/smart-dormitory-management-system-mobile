@@ -24,9 +24,15 @@ export type ApiCallOptions = {
 };
 
 /** Hàm gọi API đã gắn sẵn phiên đăng nhập (xem `useAuth().request`). */
-export type ApiClient = <T>(path: string, options?: Omit<ApiCallOptions, "accessToken">) => Promise<T>;
+export type ApiClient = <T>(
+  path: string,
+  options?: Omit<ApiCallOptions, "accessToken">,
+) => Promise<T>;
 
-export async function apiCall<T>(path: string, { method = "POST", body, form, accessToken }: ApiCallOptions = {}): Promise<T> {
+export async function apiCall<T>(
+  path: string,
+  { method = "POST", body, form, accessToken }: ApiCallOptions = {},
+): Promise<T> {
   if (!baseUrl)
     throw new ApiError("Chưa cấu hình EXPO_PUBLIC_API_URL trong .env.", 0);
 
@@ -74,5 +80,7 @@ export function isNotFound(error: unknown): boolean {
 }
 
 export function errorMessage(error: unknown): string {
-  return error instanceof Error && error.message ? error.message : "Yêu cầu không thành công. Vui lòng thử lại.";
+  return error instanceof Error && error.message
+    ? error.message
+    : "Yêu cầu không thành công. Vui lòng thử lại.";
 }

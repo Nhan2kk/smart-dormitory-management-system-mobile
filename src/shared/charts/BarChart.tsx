@@ -32,7 +32,10 @@ export function BarChart({
             <View
               style={[
                 styles.bar,
-                { height: Math.max(6, (value / max) * height), backgroundColor: index === active ? barColor : inactive },
+                {
+                  height: Math.max(6, (value / max) * height),
+                  backgroundColor: index === active ? barColor : inactive,
+                },
               ]}
             />
           </View>
@@ -40,7 +43,13 @@ export function BarChart({
       </View>
       <View style={styles.labels}>
         {labels.map((label, index) => (
-          <Text key={index} style={[styles.label, index === active && { color: colors.ink, fontWeight: "800" }]}>
+          <Text
+            key={index}
+            style={[
+              styles.label,
+              index === active && { color: colors.ink, fontWeight: "800" },
+            ]}
+          >
             {label}
           </Text>
         ))}
@@ -72,7 +81,12 @@ export function CompareBar({
       <Text style={styles.compareLabel}>{label}</Text>
       <View style={styles.compareRow}>
         <View style={styles.compareTrack}>
-          <View style={[styles.compareFill, { width: `${(value / max) * 100}%`, backgroundColor: fill }]} />
+          <View
+            style={[
+              styles.compareFill,
+              { width: `${(value / max) * 100}%`, backgroundColor: fill },
+            ]}
+          />
         </View>
         <Text style={styles.compareValue}>
           {Formatter.decimal(value)} {unit}
@@ -80,7 +94,15 @@ export function CompareBar({
       </View>
       <View style={styles.compareRow}>
         <View style={styles.compareTrack}>
-          <View style={[styles.compareFill, { width: `${(reference / max) * 100}%`, backgroundColor: colors.border }]} />
+          <View
+            style={[
+              styles.compareFill,
+              {
+                width: `${(reference / max) * 100}%`,
+                backgroundColor: colors.border,
+              },
+            ]}
+          />
         </View>
         <Text style={[styles.compareValue, { color: colors.muted }]}>
           {Formatter.decimal(reference)} {unit}
@@ -92,14 +114,37 @@ export function CompareBar({
 
 const stylesFor = (colors: Theme["colors"]) =>
   StyleSheet.create({
-  bars: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
-  col: { flex: 1, alignItems: "center", justifyContent: "flex-end", height: "100%" },
-  bar: { width: "100%", maxWidth: 26, borderRadius: 8 },
-  labels: { flexDirection: "row", gap: 8, marginTop: 8 },
-  label: { flex: 1, textAlign: "center", fontSize: 11, fontWeight: "600", color: colors.muted },
-  compareLabel: { fontSize: 14, fontWeight: "700", color: colors.ink },
-  compareRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  compareTrack: { flex: 1, height: 10, borderRadius: 5, backgroundColor: colors.surfaceMuted, overflow: "hidden" },
-  compareFill: { height: "100%", borderRadius: 5 },
-  compareValue: { width: 74, textAlign: "right", fontSize: 13, fontWeight: "700", color: colors.ink },
+    bars: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
+    col: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "flex-end",
+      height: "100%",
+    },
+    bar: { width: "100%", maxWidth: 26, borderRadius: 8 },
+    labels: { flexDirection: "row", gap: 8, marginTop: 8 },
+    label: {
+      flex: 1,
+      textAlign: "center",
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.muted,
+    },
+    compareLabel: { fontSize: 14, fontWeight: "700", color: colors.ink },
+    compareRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+    compareTrack: {
+      flex: 1,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.surfaceMuted,
+      overflow: "hidden",
+    },
+    compareFill: { height: "100%", borderRadius: 5 },
+    compareValue: {
+      width: 74,
+      textAlign: "right",
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.ink,
+    },
   });

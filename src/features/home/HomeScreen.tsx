@@ -16,7 +16,7 @@ import { useNotifications } from "../notifications/NotificationsProvider";
 import { requestKindMeta, requestStats, requestStatusTone } from "../requests/requestModel";
 import { useMyRequests } from "../requests/useMyRequests";
 import { useResidency } from "../residency/useResidency";
-import { UtilityUsage } from "../utilities/utilityModel";
+import { UtilityUsage } from "../utilities/UtilityUsage";
 import { useUtilities } from "../utilities/useUtilities";
 
 const services: { key: TranslationKey; icon: IconName; href: Href; tone: Tone }[] = [

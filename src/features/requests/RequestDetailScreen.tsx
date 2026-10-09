@@ -10,8 +10,10 @@ import { makeStyles, spacing, useTheme } from "../../shared/theme";
 import { AppHeader, BottomSheet, Button, Callout, Card, EmptyState, Field, FooterBar, IconBadge, InfoRow, PhotoSlots, Screen, SectionHeader, StatusBadge, Timeline, useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { useNotifyRefresh } from "../notifications/NotificationsProvider";
-import { fromCheckout, fromSupport, fromTransfer, RequestDetail, RequestKind, requestKindMeta, requestStatusTone } from "./requestModel";
-import { kindFromId, requestsApi } from "./requestsApi";
+import { fromCheckout, fromSupport, fromTransfer, kindFromId, requestKindMeta, requestStatusTone } from "./requestModel";
+import { RequestDetail } from "../../models/request.model";
+import { RequestKind } from "../../enums/request.enum";
+import { RequestService } from "../../services/request.service";
 
 export function RequestDetailScreen() {
   const params = useLocalSearchParams<{ id: string; kind?: string }>();
@@ -22,7 +24,7 @@ export function RequestDetailScreen() {
   const { tones, colors } = useTheme();
   const styles = useStyles();
   const { request: client } = useAuth();
-  const api = useMemo(() => requestsApi(client), [client]);
+  const api = useMemo(() => new RequestService(client), [client]);
   const [request, setRequest] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);

@@ -3,7 +3,9 @@ import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { Touchable } from "../../shared/ui";
-import { DailyRecord, UtilityMetric, UtilityUsage } from "./utilityModel";
+import { DailyRecord } from "../../models/utilities.model";
+import { UtilityMetric } from "../../enums/utilities.enum";
+import { UtilityUsage } from "./UtilityUsage";
 
 /** Lịch nhiệt theo ngày của một tháng (yyyy-MM): ô càng đậm tiêu thụ càng cao; ngày chưa có số đo để mờ. */
 export function UtilityCalendar({ month, records, metric = "electricity", onSelect }: { month: string; records: DailyRecord[]; metric?: UtilityMetric; onSelect: (record: DailyRecord) => void }) {

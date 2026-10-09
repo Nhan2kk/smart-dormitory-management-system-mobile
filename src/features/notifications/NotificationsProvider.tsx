@@ -4,7 +4,9 @@ import { errorMessage } from "../../shared/api";
 import { useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { useRealtime } from "../realtime/RealtimeProvider";
-import { AppNotification, notificationKindMeta, notificationsApi } from "./notificationsApi";
+import { AppNotification } from "../../models/notification.model";
+import { notificationKindMeta } from "./notificationMeta";
+import { NotificationService } from "../../services/notification.service";
 
 /** Chu kỳ hỏi thông báo mới khi app đang mở nhưng WebSocket chưa kết nối được (dự phòng). */
 const POLL_MS = 30_000;
@@ -27,7 +29,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { request } = useAuth();
   const { notify } = useToast();
   const { connected, notifySignal } = useRealtime();
-  const api = useMemo(() => notificationsApi(request), [request]);
+  const api = useMemo(() => new NotificationService(request), [request]);
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [error, setError] = useState<string | null>(null);

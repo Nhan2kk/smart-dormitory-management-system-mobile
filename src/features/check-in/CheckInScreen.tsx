@@ -31,7 +31,10 @@ import {
 } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { bedLabel } from "../registration/components/BedMap";
-import { assetIcon, CheckInRecord, checkInApi, CheckInSubmitResult, HandoverAsset, ISSUE_TYPES, IssueType } from "./checkInApi";
+import { assetIcon, ISSUE_TYPES } from "./checkInHelpers";
+import { CheckInRecord, CheckInSubmitResult, HandoverAsset } from "../../models/check-in.model";
+import { CheckInService } from "../../services/check-in.service";
+import { IssueType } from "../../enums/check-in.enum";
 
 type Draft = { issueType: IssueType; note: string; photos: EvidencePhoto[] };
 
@@ -41,7 +44,7 @@ export function CheckInScreen() {
   const { colors } = useTheme();
   const styles = useStyles();
   const { request } = useAuth();
-  const api = useMemo(() => checkInApi(request), [request]);
+  const api = useMemo(() => new CheckInService(request), [request]);
   const steps = [t("checkIn.steps.inspect"), t("checkIn.steps.confirm"), t("checkIn.steps.complete")];
   const [record, setRecord] = useState<CheckInRecord | null>(null);
   const [loading, setLoading] = useState(true);

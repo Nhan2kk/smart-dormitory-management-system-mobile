@@ -8,10 +8,13 @@ import { Photos } from "../../../shared/images";
 import { makeStyles, radius, spacing, useTheme } from "../../../shared/theme";
 import { Callout, Card, Checkbox, ChipGroup, DateStrip, DateStripModel, EmptyState, Field, FormSection, Glass, PhotoBackground, Touchable, useToast } from "../../../shared/ui";
 import { useAuth } from "../../auth/AuthProvider";
-import { checkInApi } from "../../check-in/checkInApi";
+import { CheckInService } from "../../../services/check-in.service";
 import { bedLabel } from "../../registration/components/BedMap";
-import { BuildingDto, mapRoom, registrationApi, Room } from "../../registration/registrationApi";
-import { PricePreview, requestsApi, Residency } from "../requestsApi";
+import { BuildingDto, Room } from "../../../models/registration.model";
+import { mapRoom } from "../../registration/registrationHelpers";
+import { RegistrationService } from "../../../services/registration.service";
+import { PricePreview, Residency } from "../../../models/request.model";
+import { RequestService } from "../../../services/request.service";
 import { RequestFormShell } from "./RequestFormShell";
 
 /**
@@ -24,8 +27,8 @@ export function TransferForm({ checkInId }: { checkInId?: string }) {
   const { colors } = useTheme();
   const styles = useStyles();
   const { request } = useAuth();
-  const api = useMemo(() => requestsApi(request), [request]);
-  const facilities = useMemo(() => registrationApi(request), [request]);
+  const api = useMemo(() => new RequestService(request), [request]);
+  const facilities = useMemo(() => new RegistrationService(request), [request]);
   const [residency, setResidency] = useState<Residency | null>(null);
   const [currentFee, setCurrentFee] = useState<number | null>(null);
   const [residencyError, setResidencyError] = useState<string | null>(null);
@@ -122,7 +125,7 @@ export function TransferForm({ checkInId }: { checkInId?: string }) {
       preferredInspectionDate: inspectionDate!,
     };
     try {
-      const created = checkInId ? await checkInApi(request).requestTransfer(checkInId, body) : await api.createTransfer(body);
+      const created = checkInId ? await new CheckInService(request).requestTransfer(checkInId, body) : await api.createTransfer(body);
       return created.id;
     } catch (error) {
       // Giường vừa bị người khác chọn: tải lại danh sách phòng để chọn lại.

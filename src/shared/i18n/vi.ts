@@ -53,11 +53,19 @@ export const vi = {
     weekdays: "CN,T2,T3,T4,T5,T6,T7",
     monthShort: "Th{{month}}",
   },
-  tabs: { home: "Trang chủ", utilities: "Điện nước", create: "Mở Trợ lý AI", assistant: "Trợ lý AI", requests: "Yêu cầu", profile: "Cá nhân" },
+  tabs: {
+    home: "Trang chủ",
+    utilities: "Điện nước",
+    create: "Mở Trợ lý AI",
+    assistant: "Trợ lý AI",
+    requests: "Yêu cầu",
+    profile: "Cá nhân",
+  },
   auth: {
     welcomeTitle1: "Cuộc sống KTX,",
     welcomeTitle2: "gọn trong tầm tay.",
-    welcomeBody: "Quản lý phòng ở, hoá đơn, điện nước và yêu cầu hỗ trợ — tất cả trong một ứng dụng.",
+    welcomeBody:
+      "Quản lý phòng ở, hoá đơn, điện nước và yêu cầu hỗ trợ — tất cả trong một ứng dụng.",
     highlightQr: "Thanh toán QR",
     highlightIot: "Điện nước IoT",
     highlightAi: "Trợ lý AI",
@@ -173,7 +181,8 @@ export const vi = {
     captionRange: "{{from}} – {{to}}",
     captionMonth: "Từ đầu tháng {{month}}",
     unitPrice: "{{amount}} × ≈{{price}}",
-    priceUnavailable: "Chưa có bảng giá điện nước cho tháng này nên chưa tính được tiền.",
+    priceUnavailable:
+      "Chưa có bảng giá điện nước cho tháng này nên chưa tính được tiền.",
     loadError: "Không tải được dữ liệu điện nước.",
     emptyTitle: "Chưa có số đo tháng này",
     emptyBody: "Cảm biến của phòng chưa gửi số điện nước nào trong tháng này.",
@@ -181,14 +190,20 @@ export const vi = {
     noRoomBody: "Khi đã nhận phòng, số điện nước của phòng sẽ hiện ở đây.",
     noReading: "Chưa có",
     liveIncidentTitle: "Phòng đang có cảnh báo",
-    liveIncidentBody: "Hệ thống phát hiện bất thường lúc {{time}}. Xem chi tiết trong Thông báo.",
+    liveIncidentBody:
+      "Hệ thống phát hiện bất thường lúc {{time}}. Xem chi tiết trong Thông báo.",
     insight: {
-      electricityUp: "Điện tăng {{value}}% so với cùng kỳ tháng trước. Kiểm tra các thiết bị bật lâu như điều hoà, bình nóng lạnh.",
-      electricityDown: "Điện giảm {{value}}% so với cùng kỳ tháng trước. Phòng đang tiết kiệm tốt.",
-      waterUp: "Nước tăng {{value}}% so với cùng kỳ tháng trước. Hãy khoá vòi khi không dùng và kiểm tra rò rỉ.",
+      electricityUp:
+        "Điện tăng {{value}}% so với cùng kỳ tháng trước. Kiểm tra các thiết bị bật lâu như điều hoà, bình nóng lạnh.",
+      electricityDown:
+        "Điện giảm {{value}}% so với cùng kỳ tháng trước. Phòng đang tiết kiệm tốt.",
+      waterUp:
+        "Nước tăng {{value}}% so với cùng kỳ tháng trước. Hãy khoá vòi khi không dùng và kiểm tra rò rỉ.",
       waterDown: "Nước giảm {{value}}% so với cùng kỳ tháng trước.",
-      peakHour: "Phòng dùng điện nhiều nhất vào khoảng {{value}}h – {{next}}h mỗi ngày.",
-      stable: "Lượng điện nước tháng này không thay đổi đáng kể so với cùng kỳ tháng trước.",
+      peakHour:
+        "Phòng dùng điện nhiều nhất vào khoảng {{value}}h – {{next}}h mỗi ngày.",
+      stable:
+        "Lượng điện nước tháng này không thay đổi đáng kể so với cùng kỳ tháng trước.",
     },
     insightTitle: {
       electricityUp: "Điện tăng",
@@ -208,7 +223,8 @@ export const vi = {
     rejected: "Từ chối",
     all: "Tất cả",
     emptyTitle: "Chưa có yêu cầu nào",
-    emptyBody: "Khi cần hỗ trợ, chuyển hoặc trả phòng, hãy tạo yêu cầu để BQL xử lý.",
+    emptyBody:
+      "Khi cần hỗ trợ, chuyển hoặc trả phòng, hãy tạo yêu cầu để BQL xử lý.",
     needsConfirm: "Cần bạn xác nhận kết quả sửa chữa",
     needsPayment: "Cần thanh toán để hoàn tất",
     needsCheckIn: "Cần nhận phòng mới",
@@ -219,7 +235,8 @@ export const vi = {
     code: "Mã yêu cầu",
     rejectReason: "Lý do từ chối",
     confirmTitle: "Bạn cần xác nhận",
-    confirmBody: "Kỹ thuật viên báo đã sửa xong. Hãy kiểm tra thực tế và xác nhận kết quả bên dưới.",
+    confirmBody:
+      "Kỹ thuật viên báo đã sửa xong. Hãy kiểm tra thực tế và xác nhận kết quả bên dưới.",
     notDone: "Chưa sửa xong",
     isDone: "Đã sửa xong",
     notDoneTitle: "Chưa sửa xong?",
@@ -238,7 +255,8 @@ export const vi = {
     refundPending: "Chưa hoàn trả",
     refundDone: "Đã hoàn trả",
     refundAccount: "Tiền hoàn sẽ chuyển vào tài khoản {{bank}} · {{account}}",
-    refundNoAccount: "Bạn chưa cập nhật tài khoản ngân hàng nhận hoàn tiền trong hồ sơ.",
+    refundNoAccount:
+      "Bạn chưa cập nhật tài khoản ngân hàng nhận hoàn tiền trong hồ sơ.",
     paid: "Đã thanh toán",
     sheetTitle: "Tạo yêu cầu",
     sheetSubtitle: "Chọn loại yêu cầu bạn muốn gửi đến BQL",
@@ -249,9 +267,12 @@ export const vi = {
       roomCheckout: "Trả phòng",
     },
     kindDescription: {
-      supportMaintenance: "Báo hỏng thiết bị, điện nước, internet trong phòng hoặc khu vực chung.",
-      roomTransfer: "Chuyển sang phòng hoặc giường khác, xem trước chênh lệch giá.",
-      roomCheckout: "Đăng ký trả phòng, hẹn lịch BQL kiểm tra tài sản và tất toán.",
+      supportMaintenance:
+        "Báo hỏng thiết bị, điện nước, internet trong phòng hoặc khu vực chung.",
+      roomTransfer:
+        "Chuyển sang phòng hoặc giường khác, xem trước chênh lệch giá.",
+      roomCheckout:
+        "Đăng ký trả phòng, hẹn lịch BQL kiểm tra tài sản và tất toán.",
     },
     status: {
       pending: "Chờ duyệt",
@@ -274,7 +295,8 @@ export const vi = {
     confirmSubtitle: "Kiểm tra lại thông tin trước khi gửi BQL",
     editAgain: "Sửa lại",
     send: "Gửi yêu cầu",
-    responseTime: "BQL thường phản hồi trong 1–2 ngày làm việc. Bạn sẽ nhận được thông báo khi trạng thái thay đổi.",
+    responseTime:
+      "BQL thường phản hồi trong 1–2 ngày làm việc. Bạn sẽ nhận được thông báo khi trạng thái thay đổi.",
     trackHint: "Bạn có thể theo dõi tiến trình trong mục Yêu cầu.",
     sent: "Đã gửi yêu cầu thành công.",
     issueType: "Loại sự cố",
@@ -282,13 +304,28 @@ export const vi = {
     priority: "Mức độ ưu tiên",
     priorityHint: "Chọn “Cao” nếu sự cố ảnh hưởng an toàn hoặc sinh hoạt.",
     description: "Mô tả chi tiết",
-    descriptionPlaceholder: "Ví dụ: Bóng đèn khu giường 1–4 không sáng từ tối qua…",
+    descriptionPlaceholder:
+      "Ví dụ: Bóng đèn khu giường 1–4 không sáng từ tối qua…",
     characters: "{{count}}/500 ký tự",
     evidence: "Hình ảnh minh chứng",
     evidenceHint: "Tối đa 4 ảnh, giúp kỹ thuật viên chuẩn bị đúng vật tư.",
     images: "Hình ảnh",
-    issue: { electrical: "Điện", plumbing: "Nước", internet: "Internet", doorLock: "Cửa / khoá", appliance: "Thiết bị, nội thất", other: "Khác" },
-    issueHint: { electrical: "Đèn, ổ cắm, quạt", plumbing: "Rò rỉ, tắc, vòi", internet: "WiFi, dây mạng", doorLock: "Cửa, ổ khoá, chìa", appliance: "Giường, tủ, bàn ghế", other: "Sự cố khác" },
+    issue: {
+      electrical: "Điện",
+      plumbing: "Nước",
+      internet: "Internet",
+      doorLock: "Cửa / khoá",
+      appliance: "Thiết bị, nội thất",
+      other: "Khác",
+    },
+    issueHint: {
+      electrical: "Đèn, ổ cắm, quạt",
+      plumbing: "Rò rỉ, tắc, vòi",
+      internet: "WiFi, dây mạng",
+      doorLock: "Cửa, ổ khoá, chìa",
+      appliance: "Giường, tủ, bàn ghế",
+      other: "Sự cố khác",
+    },
     title: "Tiêu đề",
     titlePlaceholder: "Ví dụ: Đèn trần phòng không sáng",
     errTitle: "Vui lòng nhập tiêu đề ngắn cho sự cố.",
@@ -297,8 +334,10 @@ export const vi = {
     optional: "Không bắt buộc",
     fromCheckIn: "Từ biên bản nhận phòng",
     fromCheckInTitle: "Chuyển phòng thay vì nhận phòng này",
-    checkInLockNote: "Sau khi gửi, biên bản nhận phòng sẽ bị khoá: bạn sẽ không nhận phòng hiện tại và các tài sản sự cố sẽ không tạo yêu cầu bảo trì.",
-    checkInReasonPlaceholder: "Ví dụ: Nhiều tài sản trong phòng hư hỏng, ảnh hưởng sinh hoạt…",
+    checkInLockNote:
+      "Sau khi gửi, biên bản nhận phòng sẽ bị khoá: bạn sẽ không nhận phòng hiện tại và các tài sản sự cố sẽ không tạo yêu cầu bảo trì.",
+    checkInReasonPlaceholder:
+      "Ví dụ: Nhiều tài sản trong phòng hư hỏng, ảnh hưởng sinh hoạt…",
     errResidency: "Không tìm thấy hồ sơ lưu trú hiện tại của bạn.",
     errPreview: "Đang tính chênh lệch giá, vui lòng đợi.",
     noRooms: "Tòa này hiện không còn phòng trống.",
@@ -330,11 +369,14 @@ export const vi = {
     errReason: "Vui lòng nhập lý do.",
     errAck: "Vui lòng xác nhận khoản chênh lệch giá phòng.",
     checkoutFlowTitle: "Quy trình trả phòng",
-    checkoutFlow: "BQL kiểm tra tài sản theo biên bản nhận phòng → tất toán công nợ → hoàn tất trả phòng và cập nhật hồ sơ lưu trú.",
+    checkoutFlow:
+      "BQL kiểm tra tài sản theo biên bản nhận phòng → tất toán công nợ → hoàn tất trả phòng và cập nhật hồ sơ lưu trú.",
     checkoutDate: "Ngày dự kiến trả phòng",
     inspectionDate: "Ngày BQL có thể kiểm tra phòng",
-    inspectionHint: "Từ hôm nay và trước ngày trả phòng. BQL có thể điều chỉnh.",
-    transferInspectionHint: "Trước khi chuyển, BQL kiểm tra tài sản phòng hiện tại của bạn. Chọn ngày bạn có mặt, BQL có thể điều chỉnh.",
+    inspectionHint:
+      "Từ hôm nay và trước ngày trả phòng. BQL có thể điều chỉnh.",
+    transferInspectionHint:
+      "Trước khi chuyển, BQL kiểm tra tài sản phòng hiện tại của bạn. Chọn ngày bạn có mặt, BQL có thể điều chỉnh.",
     checkoutReason: "Lý do trả phòng",
     checkoutReasonPlaceholder: "Ví dụ: Kết thúc khoá học, đi thực tập…",
     errCheckoutDate: "Vui lòng chọn ngày dự kiến trả phòng.",
@@ -363,7 +405,8 @@ export const vi = {
     pay: "Thanh toán",
     payBill: "Thanh toán hoá đơn",
     noticeTitle: "Lưu ý",
-    notice: "Thanh toán đúng hạn để yêu cầu được hoàn tất. Sau khi chuyển khoản, bấm \"Tôi đã chuyển khoản\" để xác nhận.",
+    notice:
+      'Thanh toán đúng hạn để yêu cầu được hoàn tất. Sau khi chuyển khoản, bấm "Tôi đã chuyển khoản" để xác nhận.',
     empty: "Chưa có giao dịch",
     receipt: "Biên lai",
     receiptTitle: "Biên lai điện tử",
@@ -374,13 +417,33 @@ export const vi = {
     amount: "Số tiền",
     downloadReceipt: "Tải biên lai",
     receiptDownloaded: "Đã lưu biên lai điện tử.",
-    status: { overdue: "Quá hạn", due: "Đến hạn", upcoming: "Chưa đến hạn", paid: "Đã thanh toán" },
-    type: { room: "Tiền phòng", utilities: "Điện, nước", service: "Phí dịch vụ" },
-    billStatus: { pending: "Chờ thanh toán", paid: "Đã thanh toán", failed: "Thanh toán lỗi", cancelled: "Đã huỷ" },
-    billType: { maintenanceCost: "Chi phí bảo trì", checkoutSettlement: "Quyết toán trả phòng", roomTransferSettlement: "Tất toán chuyển phòng", registration: "Đăng ký KTX" },
+    status: {
+      overdue: "Quá hạn",
+      due: "Đến hạn",
+      upcoming: "Chưa đến hạn",
+      paid: "Đã thanh toán",
+    },
+    type: {
+      room: "Tiền phòng",
+      utilities: "Điện, nước",
+      service: "Phí dịch vụ",
+    },
+    billStatus: {
+      pending: "Chờ thanh toán",
+      paid: "Đã thanh toán",
+      failed: "Thanh toán lỗi",
+      cancelled: "Đã huỷ",
+    },
+    billType: {
+      maintenanceCost: "Chi phí bảo trì",
+      checkoutSettlement: "Quyết toán trả phòng",
+      roomTransferSettlement: "Tất toán chuyển phòng",
+      registration: "Đăng ký KTX",
+    },
     loadError: "Không tải được hoá đơn.",
     allPaid: "Không còn khoản cần thanh toán",
-    allPaidBody: "Các hoá đơn phát sinh (sửa chữa, chuyển phòng, trả phòng) sẽ hiện ở đây.",
+    allPaidBody:
+      "Các hoá đơn phát sinh (sửa chữa, chuyển phòng, trả phòng) sẽ hiện ở đây.",
     noBills: "Chưa có hoá đơn nào",
     billCode: "Mã hoá đơn",
     bankTransfer: "Chuyển khoản",
@@ -397,13 +460,15 @@ export const vi = {
     accountNumber: "Số tài khoản",
     holder: "Chủ tài khoản",
     content: "Nội dung",
-    autoUpdate: "Hệ thống tự động cập nhật trạng thái trong vài giây sau khi nhận được tiền.",
+    autoUpdate:
+      "Hệ thống tự động cập nhật trạng thái trong vài giây sau khi nhận được tiền.",
     transferred: "Tôi đã chuyển khoản",
     checking: "Đang kiểm tra giao dịch…",
     success: "Thanh toán thành công!",
     notFound: "Không tìm thấy khoản thanh toán",
     qrLabel: "Mã QR thanh toán",
-    registrationDone: "Đăng ký KTX đã hoàn tất. Hãy làm thủ tục nhận phòng để bắt đầu lưu trú.",
+    registrationDone:
+      "Đăng ký KTX đã hoàn tất. Hãy làm thủ tục nhận phòng để bắt đầu lưu trú.",
     goCheckIn: "Làm thủ tục nhận phòng",
   },
   notifications: {
@@ -428,9 +493,23 @@ export const vi = {
     open: "Xem chi tiết",
     acknowledge: "Xác nhận đã đọc",
     acknowledged: "Đã xác nhận thông báo.",
-    kind: { info: "Thông tin", success: "Hoàn thành", warning: "Cảnh báo", danger: "Khẩn cấp", system: "Hệ thống" },
-    priority: { NORMAL: "Bình thường", IMPORTANT: "Quan trọng", URGENT: "Khẩn cấp" },
-    sources: { ANNOUNCEMENT: "Thông báo từ Ban quản lý", MANUAL: "Gửi trực tiếp", SYSTEM: "Hệ thống tự động" },
+    kind: {
+      info: "Thông tin",
+      success: "Hoàn thành",
+      warning: "Cảnh báo",
+      danger: "Khẩn cấp",
+      system: "Hệ thống",
+    },
+    priority: {
+      NORMAL: "Bình thường",
+      IMPORTANT: "Quan trọng",
+      URGENT: "Khẩn cấp",
+    },
+    sources: {
+      ANNOUNCEMENT: "Thông báo từ Ban quản lý",
+      MANUAL: "Gửi trực tiếp",
+      SYSTEM: "Hệ thống tự động",
+    },
   },
   residency: {
     title: "Hồ sơ lưu trú",
@@ -459,16 +538,27 @@ export const vi = {
     effective: "Ngày hiệu lực",
     endedDate: "Ngày kết thúc",
     note: "Ghi chú",
-    types: { new: "Nhận phòng mới", room_transfer: "Chuyển phòng", checkout: "Trả phòng" },
+    types: {
+      new: "Nhận phòng mới",
+      room_transfer: "Chuyển phòng",
+      checkout: "Trả phòng",
+    },
     noneTitle: "Chưa có hồ sơ lưu trú",
     noneBody: "Hồ sơ lưu trú được tạo khi bạn nhận phòng KTX.",
     loadError: "Không tải được hồ sơ lưu trú.",
     previousStay: "Nơi ở trước",
-    historyNote: "Hiển thị hồ sơ đang hiệu lực và phòng trước khi chuyển (nếu có).",
+    historyNote:
+      "Hiển thị hồ sơ đang hiệu lực và phòng trước khi chuyển (nếu có).",
   },
   registration: {
     title: "Đăng ký KTX",
-    steps: { building: "Chọn tòa nhà", floor: "Chọn tầng", room: "Chọn phòng", bed: "Chọn giường", confirm: "Xác nhận & gửi" },
+    steps: {
+      building: "Chọn tòa nhà",
+      floor: "Chọn tầng",
+      room: "Chọn phòng",
+      bed: "Chọn giường",
+      confirm: "Xác nhận & gửi",
+    },
     openCampaign: "Đợt đăng ký đang mở",
     upcomingCampaign: "Đợt đăng ký sắp mở",
     noCampaign: "Chưa có đợt đăng ký",
@@ -479,7 +569,8 @@ export const vi = {
     period: "Đăng ký",
     checkIn: "Nhận phòng",
     instructions: "Hướng dẫn nhận phòng",
-    defaultInstructions: "Mang CCCD và thẻ sinh viên đến văn phòng BQL tòa nhà để nhận phòng.",
+    defaultInstructions:
+      "Mang CCCD và thẻ sinh viên đến văn phòng BQL tòa nhà để nhận phòng.",
     myApplications: "Đơn đăng ký của tôi",
     noApplications: "Bạn chưa có đơn đăng ký nào.",
     newApplication: "Tạo đăng ký mới",
@@ -518,10 +609,12 @@ export const vi = {
     submitPay: "Đăng ký & thanh toán",
     submit: "Gửi đăng ký",
     heldTitle: "Đã giữ chỗ thành công!",
-    heldBody: "Giường {{bed}} · Phòng {{room}} · {{building}} đang được giữ cho bạn.",
+    heldBody:
+      "Giường {{bed}} · Phòng {{room}} · {{building}} đang được giữ cho bạn.",
     holdLeft: "Thời gian giữ chỗ còn lại",
     amountDue: "Số tiền cần thanh toán",
-    holdWarning: "Nếu không thanh toán trước {{deadline}}, đơn sẽ bị huỷ và giường được giải phóng.",
+    holdWarning:
+      "Nếu không thanh toán trước {{deadline}}, đơn sẽ bị huỷ và giường được giải phóng.",
     holdExpired: "Đơn đăng ký đã hết hạn thanh toán.",
     cancel: "Huỷ đăng ký",
     cancelTitle: "Huỷ đăng ký KTX?",
@@ -533,13 +626,34 @@ export const vi = {
     cluster: "Cụm {{number}}",
     selected: "Đang chọn",
     bedLabel: "Giường {{code}}, {{status}}",
-    roomStatus: { available: "Còn trống", full: "Đã đầy", maintenance: "Bảo trì" },
-    bedStatus: { available: "Giường trống", occupied: "Đã có người", reserved: "Đang giữ chỗ", maintenance: "Bảo trì" },
-    appStatus: { completed: "Đã trả phòng", pending_payment: "Chờ thanh toán", paid: "Đã thanh toán", approved: "Đã duyệt", rejected: "Bị từ chối", cancelled: "Đã huỷ", expired: "Hết hạn thanh toán" },
+    roomStatus: {
+      available: "Còn trống",
+      full: "Đã đầy",
+      maintenance: "Bảo trì",
+    },
+    bedStatus: {
+      available: "Giường trống",
+      occupied: "Đã có người",
+      reserved: "Đang giữ chỗ",
+      maintenance: "Bảo trì",
+    },
+    appStatus: {
+      completed: "Đã trả phòng",
+      pending_payment: "Chờ thanh toán",
+      paid: "Đã thanh toán",
+      approved: "Đã duyệt",
+      rejected: "Bị từ chối",
+      cancelled: "Đã huỷ",
+      expired: "Hết hạn thanh toán",
+    },
   },
   checkIn: {
     title: "Nhận phòng",
-    steps: { inspect: "Kiểm tra tài sản", confirm: "Xác nhận thông tin", complete: "Hoàn thành" },
+    steps: {
+      inspect: "Kiểm tra tài sản",
+      confirm: "Xác nhận thông tin",
+      complete: "Hoàn thành",
+    },
     receivingRoom: "Phòng nhận",
     assetList: "Danh sách tài sản bàn giao",
     assetHint: "Kiểm tra thực tế và chọn tình trạng cho từng tài sản.",
@@ -553,13 +667,16 @@ export const vi = {
     confirmCheckIn: "Xác nhận nhận phòng",
     requireAll: "Vui lòng kiểm tra toàn bộ tài sản trước khi tiếp tục.",
     meters: "Chỉ số điện nước ban đầu",
-    meterNote: "Chỉ số do BQL ghi nhận lúc bàn giao · bắt đầu tính phí từ {{date}}",
+    meterNote:
+      "Chỉ số do BQL ghi nhận lúc bàn giao · bắt đầu tính phí từ {{date}}",
     summary: "Tổng kết kiểm tra",
     goodAssets: "Tài sản tốt",
     issueAssets: "Có vấn đề",
     lockTitle: "Biên bản sẽ được khoá",
-    lockBody: "Sau khi xác nhận, bạn không thể chỉnh sửa. Mỗi tài sản có vấn đề sẽ tạo một yêu cầu bảo trì riêng.",
-    agree: "Tôi xác nhận đã kiểm tra toàn bộ tài sản và chỉ số điện nước trên là chính xác tại thời điểm bàn giao.",
+    lockBody:
+      "Sau khi xác nhận, bạn không thể chỉnh sửa. Mỗi tài sản có vấn đề sẽ tạo một yêu cầu bảo trì riêng.",
+    agree:
+      "Tôi xác nhận đã kiểm tra toàn bộ tài sản và chỉ số điện nước trên là chính xác tại thời điểm bàn giao.",
     success: "Hoàn tất nhận phòng thành công!",
     welcomeRoom: "Chào mừng về phòng {{room}}!",
     lockedBody: "Biên bản bàn giao đã được khoá để đối chiếu khi trả phòng.",
@@ -574,18 +691,27 @@ export const vi = {
     reportSaved: "Đã lưu báo cáo tài sản.",
     reportRequired: "Vui lòng mô tả chi tiết vấn đề.",
     emptyTitle: "Chưa có biên bản nhận phòng",
-    emptyBody: "Biên bản nhận phòng được tạo tự động sau khi bạn thanh toán đăng ký KTX.",
+    emptyBody:
+      "Biên bản nhận phòng được tạo tự động sau khi bạn thanh toán đăng ký KTX.",
     goRegister: "Đăng ký KTX",
     lockedTitle: "Biên bản đã được khoá",
-    lockedPending: "Biên bản bị khoá vì bạn đã gửi yêu cầu chuyển phòng. Hãy theo dõi yêu cầu ở mục Yêu cầu.",
-    noAssets: "Phòng chưa có tài sản bàn giao, bạn có thể xác nhận nhận phòng ngay.",
+    lockedPending:
+      "Biên bản bị khoá vì bạn đã gửi yêu cầu chuyển phòng. Hãy theo dõi yêu cầu ở mục Yêu cầu.",
+    noAssets:
+      "Phòng chưa có tài sản bàn giao, bạn có thể xác nhận nhận phòng ngay.",
     meterPending: "Chưa ghi nhận",
     expected: "Dự kiến nhận phòng: {{date}}",
     photoPermission: "Cần quyền truy cập thư viện ảnh để đính kèm minh chứng.",
     transferTitle: "Phòng có tài sản sự cố?",
-    transferBody: "Có {{count}} tài sản báo sự cố. Bạn có thể nhận phòng (hệ thống tự tạo yêu cầu bảo trì) hoặc gửi yêu cầu chuyển phòng ngay thay vì nhận phòng này.",
+    transferBody:
+      "Có {{count}} tài sản báo sự cố. Bạn có thể nhận phòng (hệ thống tự tạo yêu cầu bảo trì) hoặc gửi yêu cầu chuyển phòng ngay thay vì nhận phòng này.",
     transferAction: "Yêu cầu chuyển phòng",
-    issue: { damaged: "Hỏng / Không dùng được", missing: "Thiếu tài sản", notWorking: "Không hoạt động", abnormal: "Có dấu hiệu bất thường" },
+    issue: {
+      damaged: "Hỏng / Không dùng được",
+      missing: "Thiếu tài sản",
+      notWorking: "Không hoạt động",
+      abnormal: "Có dấu hiệu bất thường",
+    },
   },
   assistant: {
     title: "Trợ lý AI",
@@ -597,19 +723,22 @@ export const vi = {
     deleteChat: "Xoá cuộc trò chuyện",
     deleted: "Đã xoá cuộc trò chuyện.",
     welcome: "Tôi có thể hỗ trợ gì cho bạn?",
-    welcomeBody: "Hỏi mình về nội quy, thủ tục, thanh toán hay các dịch vụ trong KTX nhé.",
+    welcomeBody:
+      "Hỏi mình về nội quy, thủ tục, thanh toán hay các dịch vụ trong KTX nhé.",
     placeholder: "Nhập câu hỏi của bạn…",
     send: "Gửi câu hỏi",
     thinking: "Đang tìm thông tin…",
     helpful: "Câu trả lời hữu ích",
     notHelpful: "Câu trả lời chưa hữu ích",
     feedbackSaved: "Đã ghi nhận đánh giá của bạn.",
-    disclaimer: "AI có thể chưa hoàn toàn chính xác. Hãy kiểm tra nguồn trích dẫn.",
+    disclaimer:
+      "AI có thể chưa hoàn toàn chính xác. Hãy kiểm tra nguồn trích dẫn.",
     page: "tr.{{page}}",
     messages: "{{count}} tin nhắn",
     offline: "● Tạm ngưng",
     disabledTitle: "Trợ lý AI đang tạm ngưng",
-    disabledBody: "Ban quản lý đã tạm tắt Trợ lý AI. Bạn có thể gửi Yêu cầu hỗ trợ để được phản hồi.",
+    disabledBody:
+      "Ban quản lý đã tạm tắt Trợ lý AI. Bạn có thể gửi Yêu cầu hỗ trợ để được phản hồi.",
     questions: {
       registration: "Thủ tục đăng ký ở KTX như thế nào?",
       curfew: "Giờ giấc ra vào KTX là mấy giờ?",
@@ -683,7 +812,13 @@ export const vi = {
   },
   profileEdit: {
     title: "Thông tin cá nhân",
-    tabs: { contact: "Liên hệ", personal: "Cá nhân", identity: "Định danh", study: "Học tập", account: "Tài khoản" },
+    tabs: {
+      contact: "Liên hệ",
+      personal: "Cá nhân",
+      identity: "Định danh",
+      study: "Học tập",
+      account: "Tài khoản",
+    },
     phone: "Số điện thoại",
     email: "Email",
     emailInvalid: "Email chưa đúng định dạng.",
@@ -705,7 +840,8 @@ export const vi = {
     holder: "Chủ tài khoản",
     branch: "Chi nhánh",
     saved: "Đã cập nhật thông tin cá nhân.",
-    readonlyNote: "Thông tin này do Phòng Công tác sinh viên quản lý. Liên hệ BQL nếu cần điều chỉnh.",
+    readonlyNote:
+      "Thông tin này do Phòng Công tác sinh viên quản lý. Liên hệ BQL nếu cần điều chỉnh.",
     fullName: "Họ và tên",
     birthDate: "Ngày sinh",
     birthPlace: "Nơi sinh",
@@ -753,7 +889,8 @@ export const vi = {
     dark: "Tối",
     system: "Theo máy",
     theme: "Bộ chủ đề",
-    themeHint: "Mỗi bộ gồm màu nền, bề mặt và màu nhấn — có cả bản sáng và tối.",
+    themeHint:
+      "Mỗi bộ gồm màu nền, bề mặt và màu nhấn — có cả bản sáng và tối.",
     presets: {
       sunset: "Hoàng hôn",
       lavender: "Oải hương",
@@ -775,7 +912,12 @@ export const vi = {
     glassOn: "Bật kính trong suốt",
     glassOnSub: "Đẹp hơn, có thể tốn pin hơn một chút",
     wallpaper: "Ảnh nền",
-    wallpapers: { lobby: "Sảnh", campus: "Khuôn viên", dorm: "Ký túc xá", room: "Phòng ở" },
+    wallpapers: {
+      lobby: "Sảnh",
+      campus: "Khuôn viên",
+      dorm: "Ký túc xá",
+      room: "Phòng ở",
+    },
     glassLevel: "Độ trong",
     levels: { soft: "Mờ", medium: "Vừa", clear: "Trong" },
     preview: "Xem trước",
@@ -785,5 +927,4 @@ export const vi = {
     resetDone: "Đã đặt lại giao diện mặc định.",
     savedNote: "Lựa chọn được lưu trên thiết bị này.",
   },
-
 };
