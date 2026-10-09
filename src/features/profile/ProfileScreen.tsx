@@ -15,7 +15,7 @@ import { requestStats } from "../requests/requestModel";
 import { useMyRequests } from "../requests/useMyRequests";
 import { useResidency } from "../residency/useResidency";
 import { AvatarPicker } from "./AvatarPicker";
-import { ProfileRepository } from "./profile.mock";
+import { useProfile } from "./useProfile";
 
 /** Tab Cá nhân: hồ sơ, tài khoản, lưu trú, tuỳ chọn và hỗ trợ (bố cục kiểu trang Settings). */
 export function ProfileScreen() {
@@ -27,8 +27,8 @@ export function ProfileScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const remainingDays = useResidency().overview?.remainingDays() ?? null;
-  const profile = ProfileRepository.get();
-  const name = user?.fullName || profile.fullName;
+  const { profile } = useProfile();
+  const name = profile?.fullName || user?.fullName || "";
   const [avatarSheet, setAvatarSheet] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const processingRequests = requestStats(useMyRequests().requests ?? []).processing;
@@ -77,7 +77,7 @@ export function ProfileScreen() {
         {/* Thẻ hồ sơ */}
         <Card style={styles.profileCard}>
           <Touchable onPress={() => setAvatarSheet(true)} accessibilityLabel={t("profile.changeAvatar")}>
-            <Avatar initials={ProfileRepository.initials(name)} uri={prefs.avatarUri} size={58} ring={false} />
+            <Avatar initials={Formatter.initials(name)} uri={prefs.avatarUri} size={58} ring={false} />
             <View style={[styles.camera, { backgroundColor: colors.primary }]}>
               <Ionicons name="camera" size={11} color={colors.onPrimary} />
             </View>
@@ -87,7 +87,7 @@ export function ProfileScreen() {
               <Text style={styles.name} numberOfLines={1}>
                 {name}
               </Text>
-              <Text style={styles.role}>{t("profile.studentRole", { className: profile.className })}</Text>
+              <Text style={styles.role}>{profile?.className ? t("profile.studentRole", { className: profile.className }) : t("profile.student")}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </Touchable>

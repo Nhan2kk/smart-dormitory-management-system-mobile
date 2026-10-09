@@ -1,80 +1,31 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Linking, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Text, View } from "react-native";
+import { errorMessage } from "../../shared/api";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, spacing, useTheme } from "../../shared/theme";
-import { AppHeader, BottomSheet, Button, Card, ChipGroup, Field, FooterBar, IconBadge, InfoRow, ListRow, Screen, SectionHeader, Touchable, useToast } from "../../shared/ui";
+import { AppHeader, BottomSheet, Button, Callout, Card, ChipGroup, Field, IconBadge, InfoRow, ListRow, Screen, SectionHeader, Touchable, useToast } from "../../shared/ui";
+import { Gender } from "../../enums/profile.enum";
+import type { PasswordDraft, StudentProfileResponse } from "../../models/profile.model";
 import { useAuth } from "../auth/AuthProvider";
-import { EmergencyContact, ProfileRepository } from "./profile.mock";
+import { useProfile } from "./useProfile";
 
 type Tab = "contact" | "personal" | "identity" | "study" | "account";
 
+const EMPTY_PASSWORDS: PasswordDraft = { current: "", next: "", confirm: "" };
+
+/** Thông tin cá nhân của sinh viên (`GET /student/profile`, chỉ xem) và đổi mật khẩu (`POST /auth/change-password`). */
 export function ProfileEditScreen() {
-  const { notify } = useToast();
-  const { t, l } = useI18n();
+  const { t } = useI18n();
   const { colors } = useTheme();
-  const { user } = useAuth();
-  const styles = useStyles();
-  const profile = ProfileRepository.get();
+  const { profile, error, loading, reload, service } = useProfile();
   const params = useLocalSearchParams<{ tab?: Tab }>();
   const [tab, setTab] = useState<Tab>(params.tab ?? "contact");
-  const [phone, setPhone] = useState(profile.phone);
-  const [email, setEmail] = useState(profile.email);
-  const [address, setAddress] = useState(profile.permanentAddress);
-  const [bank, setBank] = useState(profile.bank);
-  const [contacts, setContacts] = useState<EmergencyContact[]>(profile.emergencyContacts);
-  const [contactSheet, setContactSheet] = useState(false);
-  const [draft, setDraft] = useState({ fullName: "", relationship: "", phone: "" });
-  const [passwordSheet, setPasswordSheet] = useState(false);
-  const [passwords, setPasswords] = useState({ current: "", next: "", confirm: "" });
-  const [saving, setSaving] = useState(false);
-  const emailError = email && !/^\S+@\S+\.\S+$/.test(email) ? t("profileEdit.emailInvalid") : undefined;
-  const dirty =
-    phone !== profile.phone ||
-    email !== profile.email ||
-    address !== profile.permanentAddress ||
-    JSON.stringify(bank) !== JSON.stringify(profile.bank) ||
-    contacts.length !== profile.emergencyContacts.length;
-
-  const save = () => {
-    if (emailError) return;
-    setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
-      notify(t("profileEdit.saved"));
-      router.back();
-    }, 600);
-  };
-
-  const addContact = () => {
-    if (!draft.fullName.trim() || !draft.relationship.trim() || !draft.phone.trim()) return notify(t("profileEdit.contactRequired"), "warning");
-    setContacts((current) => [...current, { id: `ec-${Date.now()}`, ...draft }]);
-    setDraft({ fullName: "", relationship: "", phone: "" });
-    setContactSheet(false);
-    notify(t("profileEdit.contactAdded"));
-  };
-
-  const changePassword = () => {
-    if (passwords.next !== passwords.confirm) return notify(t("profileEdit.passwordMismatch"), "warning");
-    if (passwords.next.length < 8 || !/\d/.test(passwords.next) || !/[a-zA-Z]/.test(passwords.next)) return notify(t("profileEdit.passwordWeak"), "warning");
-    setPasswordSheet(false);
-    setPasswords({ current: "", next: "", confirm: "" });
-    notify(t("profileEdit.passwordChanged"));
-  };
 
   return (
-    <Screen
-      header={<AppHeader title={t("profileEdit.title")} />}
-      footer={
-        tab === "contact" ? (
-          <FooterBar>
-            <Button label={t("common.saveChanges")} icon="checkmark" onPress={save} loading={saving} disabled={!dirty || !!emailError} style={{ flex: 1 }} />
-          </FooterBar>
-        ) : undefined
-      }
-    >
+    <Screen header={<AppHeader title={t("profileEdit.title")} />}>
       <ChipGroup<Tab>
         value={tab}
         onChange={setTab}
@@ -86,51 +37,75 @@ export function ProfileEditScreen() {
           { value: "account", label: t("profileEdit.tabs.account"), icon: "lock-closed-outline" },
         ]}
       />
+      {tab === "account" ? (
+        <AccountTab service={service} />
+      ) : loading ? (
+        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+      ) : profile ? (
+        <ProfileTab tab={tab} profile={profile} />
+      ) : (
+        <View style={{ marginTop: spacing.xl }}>
+          <Callout tone="danger" icon="cloud-offline-outline" title={t("profileEdit.loadError")} action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />}>
+            {error}
+          </Callout>
+        </View>
+      )}
+    </Screen>
+  );
+}
 
+function ProfileTab({ tab, profile }: { tab: Exclude<Tab, "account">; profile: StudentProfileResponse }) {
+  const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = useStyles();
+  const date = (value: string | null) => (value ? Formatter.date(value) : null);
+  const gender = profile.gender === Gender.Male || profile.gender === Gender.Female ? t(`common.${profile.gender}`) : null;
+
+  return (
+    <>
       {tab === "contact" && (
         <>
-          <View style={{ gap: spacing.lg, marginTop: spacing.xl }}>
-            <Field label={t("profileEdit.phone")} icon="call-outline" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-            <Field label={t("profileEdit.email")} icon="mail-outline" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" error={emailError} />
-            <Field label={t("profileEdit.permanentAddress")} icon="home-outline" value={address} onChangeText={setAddress} multiline />
-          </View>
+          <ReadonlyCard
+            rows={[
+              [t("profileEdit.phone"), profile.phone],
+              [t("profileEdit.email"), profile.email],
+              [t("profileEdit.permanentAddress"), profile.address],
+              [t("profileEdit.currentAddress"), profile.contactAddress],
+            ]}
+          />
 
-          <SectionHeader title={t("profileEdit.emergency")} action={t("common.add")} onAction={() => setContactSheet(true)} />
-          <View style={{ gap: spacing.md }}>
-            {contacts.map((contact) => (
-              <Card key={contact.id} style={styles.contact}>
-                <IconBadge icon="people-outline" tone="primary" size={44} rounded="circle" />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.contactName}>{contact.fullName}</Text>
-                  <Text style={styles.caption}>
-                    {contact.relationship} · {contact.phone}
-                  </Text>
-                </View>
-                <Touchable onPress={() => Linking.openURL(`tel:${contact.phone.replace(/\s/g, "")}`)} accessibilityLabel={t("profileEdit.call", { name: contact.fullName })} style={[styles.round, { backgroundColor: colors.successSoft }]}>
-                  <Ionicons name="call" size={18} color={colors.success} />
-                </Touchable>
-                <Touchable
-                  onPress={() => {
-                    setContacts((current) => current.filter((item) => item.id !== contact.id));
-                    notify(t("profileEdit.contactRemoved"));
-                  }}
-                  accessibilityLabel={t("profileEdit.removeContact", { name: contact.fullName })}
-                  style={[styles.round, { backgroundColor: colors.dangerSoft }]}
-                >
-                  <Ionicons name="trash-outline" size={17} color={colors.danger} />
-                </Touchable>
-              </Card>
-            ))}
-          </View>
+          <SectionHeader title={t("profileEdit.emergency")} />
+          {profile.emergencyContacts.length === 0 ? (
+            <Text style={styles.caption}>{t("profileEdit.noEmergency")}</Text>
+          ) : (
+            <View style={{ gap: spacing.md }}>
+              {profile.emergencyContacts.map((contact) => (
+                <Card key={contact.id} style={styles.contact}>
+                  <IconBadge icon="people-outline" tone="primary" size={44} rounded="circle" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.contactName}>{contact.fullName}</Text>
+                    <Text style={styles.caption}>
+                      {contact.relationship} · {contact.phone}
+                    </Text>
+                  </View>
+                  <Touchable onPress={() => Linking.openURL(`tel:${contact.phone.replace(/\s/g, "")}`)} accessibilityLabel={t("profileEdit.call", { name: contact.fullName })} style={[styles.round, { backgroundColor: colors.successSoft }]}>
+                    <Ionicons name="call" size={18} color={colors.success} />
+                  </Touchable>
+                </Card>
+              ))}
+            </View>
+          )}
 
           <SectionHeader title={t("profileEdit.bankTitle")} />
-          <Text style={[styles.caption, { marginTop: -spacing.sm, marginBottom: spacing.md }]}>{t("profileEdit.bankHint")}</Text>
-          <View style={{ gap: spacing.lg }}>
-            <Field label={t("profileEdit.bank")} icon="business-outline" value={bank.name} onChangeText={(name) => setBank((current) => ({ ...current, name }))} />
-            <Field label={t("profileEdit.accountNumber")} icon="card-outline" value={bank.accountNumber} keyboardType="number-pad" onChangeText={(accountNumber) => setBank((current) => ({ ...current, accountNumber }))} />
-            <Field label={t("profileEdit.holder")} icon="person-circle-outline" value={bank.holder} autoCapitalize="characters" onChangeText={(holder) => setBank((current) => ({ ...current, holder }))} />
-            <Field label={t("profileEdit.branch")} icon="location-outline" value={bank.branch} onChangeText={(branch) => setBank((current) => ({ ...current, branch }))} />
-          </View>
+          <Text style={[styles.caption, { marginTop: -spacing.sm }]}>{t("profileEdit.bankHint")}</Text>
+          <ReadonlyCard
+            rows={[
+              [t("profileEdit.bank"), profile.bankName],
+              [t("profileEdit.accountNumber"), profile.accountNumber],
+              [t("profileEdit.holder"), profile.accountHolder],
+              [t("profileEdit.branch"), profile.bankBranch],
+            ]}
+          />
         </>
       )}
 
@@ -138,13 +113,12 @@ export function ProfileEditScreen() {
         <ReadonlyCard
           rows={[
             [t("profileEdit.fullName"), profile.fullName],
-            [t("profileEdit.birthDate"), Formatter.date(profile.birthDate)],
-            [t("profileEdit.birthPlace"), l(profile.birthPlace)],
-            [t("profileEdit.gender"), t(`common.${profile.gender}`)],
-            [t("profileEdit.nationality"), l(profile.nationality)],
-            [t("profileEdit.ethnicity"), l(profile.ethnicity)],
-            [t("profileEdit.hometown"), l(profile.hometown)],
-            [t("profileEdit.currentAddress"), l(profile.currentAddress)],
+            [t("profileEdit.birthDate"), date(profile.dateOfBirth)],
+            [t("profileEdit.birthPlace"), profile.placeOfBirth],
+            [t("profileEdit.gender"), gender],
+            [t("profileEdit.nationality"), profile.nationality],
+            [t("profileEdit.ethnicity"), profile.ethnicity],
+            [t("profileEdit.region"), profile.region],
           ]}
         />
       )}
@@ -152,11 +126,11 @@ export function ProfileEditScreen() {
       {tab === "identity" && (
         <ReadonlyCard
           rows={[
-            [t("profileEdit.documentType"), t("profileEdit.citizenId")],
-            [t("profileEdit.documentNumber"), profile.identity.number],
-            [t("profileEdit.issuedAt"), Formatter.date(profile.identity.issuedAt)],
-            [t("profileEdit.issuedBy"), l(profile.identity.issuedBy)],
-            [t("profileEdit.expiresAt"), Formatter.date(profile.identity.expiresAt)],
+            [t("profileEdit.documentType"), profile.documentType ?? (profile.cccd ? t("profileEdit.citizenId") : null)],
+            [t("profileEdit.documentNumber"), profile.cccd],
+            [t("profileEdit.issuedAt"), date(profile.documentIssueDate)],
+            [t("profileEdit.issuedBy"), profile.documentIssuedBy],
+            [t("profileEdit.expiresAt"), date(profile.documentExpiryDate)],
           ]}
         />
       )}
@@ -164,54 +138,75 @@ export function ProfileEditScreen() {
       {tab === "study" && (
         <ReadonlyCard
           rows={[
-            [t("profileEdit.studentCode"), user?.username || profile.studentCode],
+            [t("profileEdit.studentCode"), profile.studentCode],
             [t("profileEdit.className"), profile.className],
-            [t("profileEdit.university"), l(profile.university)],
-            [t("profileEdit.faculty"), l(profile.faculty)],
-            [t("profileEdit.major"), l(profile.major)],
-            [t("profileEdit.program"), l(profile.program)],
-            [t("profileEdit.cohort"), profile.cohort],
-            [t("profileEdit.academicYear"), profile.academicYear],
+            [t("profileEdit.university"), profile.university],
+            [t("profileEdit.faculty"), profile.faculty],
+            [t("profileEdit.major"), profile.major],
+            [t("profileEdit.program"), profile.educationSystem],
+            [t("profileEdit.cohort"), profile.course],
+            [t("profileEdit.academicYear"), profile.currentAcademicYear],
           ]}
         />
       )}
 
-      {tab === "account" && (
-        <>
-          <ReadonlyCard
-            rows={[
-              [t("profileEdit.username"), profile.account.username],
-              [t("profileEdit.lastPasswordChange"), Formatter.dateTime(profile.account.lastPasswordChange)],
-            ]}
-          />
-          <Card style={{ marginTop: spacing.lg, paddingVertical: spacing.xs }}>
-            <ListRow icon="key-outline" tone="primary" title={t("profileEdit.changePassword")} onPress={() => setPasswordSheet(true)} />
-          </Card>
-        </>
-      )}
+      <Text style={styles.note}>{t("profileEdit.readonlyNote")}</Text>
+    </>
+  );
+}
 
-      {tab !== "contact" && tab !== "account" && <Text style={styles.note}>{t("profileEdit.readonlyNote")}</Text>}
+/** Tên đăng nhập và đổi mật khẩu. */
+function AccountTab({ service }: { service: ReturnType<typeof useProfile>["service"] }) {
+  const { t } = useI18n();
+  const { notify } = useToast();
+  const { user } = useAuth();
+  const [sheet, setSheet] = useState(false);
+  const [passwords, setPasswords] = useState<PasswordDraft>(EMPTY_PASSWORDS);
+  const [saving, setSaving] = useState(false);
 
-      <BottomSheet visible={contactSheet} onClose={() => setContactSheet(false)} title={t("profileEdit.addContact")} footer={<Button label={t("common.add")} icon="person-add-outline" onPress={addContact} />}>
-        <Field label={t("profileEdit.contactName")} icon="person-outline" value={draft.fullName} onChangeText={(fullName) => setDraft((current) => ({ ...current, fullName }))} />
-        <Field label={t("profileEdit.relationship")} icon="heart-outline" value={draft.relationship} onChangeText={(relationship) => setDraft((current) => ({ ...current, relationship }))} />
-        <Field label={t("profileEdit.phone")} icon="call-outline" value={draft.phone} keyboardType="phone-pad" onChangeText={(value) => setDraft((current) => ({ ...current, phone: value }))} />
-      </BottomSheet>
+  const changePassword = async () => {
+    if (passwords.next !== passwords.confirm) return notify(t("profileEdit.passwordMismatch"), "warning");
+    if (passwords.next.length < 8 || passwords.next.length > 72 || !/\d/.test(passwords.next) || !/[a-zA-Z]/.test(passwords.next)) return notify(t("profileEdit.passwordWeak"), "warning");
+    setSaving(true);
+    try {
+      await service.changePassword({ currentPassword: passwords.current, newPassword: passwords.next, confirmPassword: passwords.confirm });
+      setSheet(false);
+      setPasswords(EMPTY_PASSWORDS);
+      notify(t("profileEdit.passwordChanged"));
+    } catch (reason) {
+      notify(errorMessage(reason), "danger");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-      <BottomSheet visible={passwordSheet} onClose={() => setPasswordSheet(false)} title={t("profileEdit.changePassword")} subtitle={t("profileEdit.passwordRule")} footer={<Button label={t("profileEdit.changePassword")} icon="checkmark" onPress={changePassword} disabled={!passwords.current || !passwords.next} />}>
+  return (
+    <>
+      <ReadonlyCard rows={[[t("profileEdit.username"), user?.username ?? null]]} />
+      <Card style={{ marginTop: spacing.lg, paddingVertical: spacing.xs }}>
+        <ListRow icon="key-outline" tone="primary" title={t("profileEdit.changePassword")} onPress={() => setSheet(true)} />
+      </Card>
+
+      <BottomSheet
+        visible={sheet}
+        onClose={() => setSheet(false)}
+        title={t("profileEdit.changePassword")}
+        subtitle={t("profileEdit.passwordRule")}
+        footer={<Button label={t("profileEdit.changePassword")} icon="checkmark" onPress={changePassword} loading={saving} disabled={!passwords.current || !passwords.next || !passwords.confirm} />}
+      >
         <Field label={t("profileEdit.currentPassword")} icon="lock-closed-outline" secureTextEntry value={passwords.current} onChangeText={(current) => setPasswords((value) => ({ ...value, current }))} />
         <Field label={t("profileEdit.newPassword")} icon="key-outline" secureTextEntry value={passwords.next} onChangeText={(next) => setPasswords((value) => ({ ...value, next }))} />
         <Field label={t("profileEdit.confirmPassword")} icon="key-outline" secureTextEntry value={passwords.confirm} onChangeText={(confirm) => setPasswords((value) => ({ ...value, confirm }))} />
       </BottomSheet>
-    </Screen>
+    </>
   );
 }
 
-function ReadonlyCard({ rows }: { rows: [string, string][] }) {
+function ReadonlyCard({ rows }: { rows: [string, string | null][] }) {
   return (
     <Card style={{ marginTop: spacing.xl, paddingVertical: spacing.xs }}>
       {rows.map(([label, value], index) => (
-        <InfoRow key={label} label={label} value={value} divider={index < rows.length - 1} />
+        <InfoRow key={label} label={label} value={value || "—"} divider={index < rows.length - 1} />
       ))}
     </Card>
   );

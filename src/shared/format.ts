@@ -103,6 +103,13 @@ export class Formatter {
     return `${date.getFullYear()}-${Formatter.pad(date.getMonth() + 1)}-${Formatter.pad(date.getDate())}`;
   }
 
+  /** "Nguyễn Hoàng Nam" → "HN" (hai chữ đầu của tên đệm cuối và tên) cho ảnh đại diện. */
+  static initials(name: string): string {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "S";
+    return (parts.length > 1 ? parts[parts.length - 2][0] + parts[parts.length - 1][0] : parts[0][0]).toUpperCase();
+  }
+
   private static pad(value: number): string {
     return String(value).padStart(2, "0");
   }

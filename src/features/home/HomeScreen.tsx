@@ -13,7 +13,6 @@ import { Backdrop, BottomSheet, Button, Card, CircleButton, Glass, Gradient, Ico
 import { useAuth } from "../auth/AuthProvider";
 import { DebtRepository } from "../debts/debts.mock";
 import { useNotifications } from "../notifications/NotificationsProvider";
-import { ProfileRepository } from "../profile/profile.mock";
 import { requestKindMeta, requestStats, requestStatusTone } from "../requests/requestModel";
 import { useMyRequests } from "../requests/useMyRequests";
 import { useResidency } from "../residency/useResidency";
@@ -39,7 +38,7 @@ export function HomeScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const [menuOpen, setMenuOpen] = useState(false);
-  const name = user?.fullName || ProfileRepository.get().fullName;
+  const name = user?.fullName ?? "";
   const residence = useResidency().overview;
   const remainingDays = residence?.remainingDays() ?? null;
   const usage = useUtilities().usage;

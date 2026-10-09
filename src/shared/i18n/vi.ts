@@ -622,6 +622,7 @@ export const vi = {
     helpCenter: "Trung tâm trợ giúp",
     helpCenterSub: "Hỏi Trợ lý AI về nội quy, thủ tục",
     logoutSub: "Đăng xuất khỏi tài khoản trên thiết bị này",
+    student: "Sinh viên",
     studentRole: "Sinh viên · {{className}}",
     title: "Cá nhân",
     stayDays: "ngày lưu trú",
@@ -720,6 +721,9 @@ export const vi = {
     passwordMismatch: "Mật khẩu nhập lại không khớp.",
     passwordWeak: "Mật khẩu mới chưa đủ mạnh.",
     passwordChanged: "Đã đổi mật khẩu.",
+    loadError: "Không tải được thông tin cá nhân.",
+    noEmergency: "Chưa có liên hệ khẩn cấp.",
+    region: "Khu vực",
   },
   settings: {
     title: "Giao diện & ngôn ngữ",

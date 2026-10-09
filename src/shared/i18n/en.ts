@@ -624,6 +624,7 @@ export const en: Dictionary = {
     helpCenter: "Help center",
     helpCenterSub: "Ask the AI assistant about rules & procedures",
     logoutSub: "Sign out of your account on this device",
+    student: "Student",
     studentRole: "Student · {{className}}",
     title: "Me",
     stayDays: "days left",
@@ -722,6 +723,9 @@ export const en: Dictionary = {
     passwordMismatch: "Passwords don't match.",
     passwordWeak: "The new password is too weak.",
     passwordChanged: "Password changed.",
+    loadError: "Could not load your profile.",
+    noEmergency: "No emergency contacts yet.",
+    region: "Region",
   },
   settings: {
     title: "Appearance & language",
