@@ -22,7 +22,8 @@ export function CircleButton({
   onPress?: () => void;
   label: string;
   variant?: "surface" | "photo";
-  badge?: boolean;
+  /** `true`: chấm nhỏ; số > 0: huy hiệu đếm (vd. số thông báo chưa đọc, quá 99 hiện "99+"). */
+  badge?: boolean | number;
   size?: number;
 }) {
   const { colors, shadow } = useTheme();
@@ -32,7 +33,15 @@ export function CircleButton({
       <Glass variant={variant} strong={variant === "surface"} style={[styles.circle, { width: size, height: size, borderRadius: size / 2 }]}>
         <Ionicons name={icon} size={size * 0.47} color={variant === "photo" ? colors.white : colors.ink} />
       </Glass>
-      {badge && <View style={styles.badge} />}
+      {typeof badge === "number" ? (
+        badge > 0 && (
+          <View style={styles.countBadge} pointerEvents="none">
+            <Text style={styles.countText}>{badge > 99 ? "99+" : badge}</Text>
+          </View>
+        )
+      ) : (
+        badge && <View style={styles.badge} />
+      )}
     </Touchable>
   );
 }
@@ -93,4 +102,19 @@ const useStyles = makeStyles(({ colors, font }) => ({
     borderWidth: 2,
     borderColor: colors.surface,
   },
+  countBadge: {
+    position: "absolute",
+    top: -4,
+    right: -6,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 5,
+    borderRadius: 10,
+    backgroundColor: colors.danger,
+    borderWidth: 2,
+    borderColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  countText: { color: colors.white, fontSize: 10, fontWeight: "800", lineHeight: 12 },
 }));

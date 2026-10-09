@@ -8,12 +8,12 @@ import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Photos } from "../../shared/images";
 import { usePreferences } from "../../shared/preferences";
 import { makeStyles, radius, spacing, TAB_BAR_SPACE, useTheme } from "../../shared/theme";
-import { Avatar, Backdrop, BottomSheet, Button, Card, IconName, ListRow, PhotoBackground, Touchable, useToast } from "../../shared/ui";
+import { Avatar, Backdrop, BottomSheet, Button, Card, CircleButton, IconName, ListRow, PhotoBackground, Touchable, useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { DebtRepository } from "../debts/debts.mock";
 import { requestStats } from "../requests/requestModel";
 import { useMyRequests } from "../requests/useMyRequests";
-import { ResidencyRepository } from "../residency/residency.mock";
+import { useResidency } from "../residency/useResidency";
 import { AvatarPicker } from "./AvatarPicker";
 import { ProfileRepository } from "./profile.mock";
 
@@ -26,6 +26,7 @@ export function ProfileScreen() {
   const prefs = usePreferences();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const remainingDays = useResidency().overview?.remainingDays() ?? null;
   const profile = ProfileRepository.get();
   const name = user?.fullName || profile.fullName;
   const [avatarSheet, setAvatarSheet] = useState(false);
@@ -53,6 +54,9 @@ export function ProfileScreen() {
     <View style={styles.root}>
       <Backdrop />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + spacing.md, paddingBottom: TAB_BAR_SPACE, paddingHorizontal: spacing.xl }}>
+        <View style={styles.topBar}>
+          <CircleButton icon="chevron-back" label={t("common.back")} onPress={() => (router.canGoBack() ? router.back() : router.navigate("/"))} />
+        </View>
         {/* Tiêu đề + ảnh vòm */}
         <View style={styles.hero}>
           <View style={styles.heroText}>
@@ -89,7 +93,7 @@ export function ProfileScreen() {
           </Touchable>
         </Card>
         <View style={styles.stats}>
-          <Stat value={`${ResidencyRepository.remainingDays()}`} label={t("profile.stayDays")} />
+          <Stat value={remainingDays != null ? `${remainingDays}` : "—"} label={t("profile.stayDays")} />
           <Stat value={Formatter.compactCurrency(DebtRepository.totalUnpaid())} label={t("profile.debt")} />
           <Stat value={`${processingRequests}`} label={t("profile.processing")} />
         </View>
@@ -221,6 +225,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 const useStyles = makeStyles(({ colors, font }) => ({
+  topBar: { flexDirection: "row", marginBottom: spacing.md },
   root: { flex: 1, backgroundColor: colors.background },
   hero: { flexDirection: "row", alignItems: "flex-end", gap: spacing.md, marginBottom: spacing.xl },
   heroText: { flex: 1, paddingBottom: spacing.sm },

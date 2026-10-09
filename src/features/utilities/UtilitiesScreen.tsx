@@ -30,7 +30,7 @@ export function UtilitiesScreen() {
   const { lastIncident } = useRealtime();
   const liveIncident = usage && lastIncident?.status === "OPEN" && lastIncident.roomCode.toUpperCase() === usage.roomCode.toUpperCase() ? lastIncident : null;
   const retry = <Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />;
-  const header = <AppHeader title={t("utilities.title")} subtitle={usage ? t("utilities.subtitle", { room: usage.roomCode }) : undefined} hideBack />;
+  const header = <AppHeader title={t("utilities.title")} subtitle={usage ? t("utilities.subtitle", { room: usage.roomCode }) : undefined} />;
 
   return (
     <Screen inTabs header={header}>

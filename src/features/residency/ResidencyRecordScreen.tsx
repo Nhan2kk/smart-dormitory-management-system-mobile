@@ -1,51 +1,70 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ProgressRing } from "../../shared/charts/DonutChart";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Photos } from "../../shared/images";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
-import { AppHeader, BottomSheet, Button, Card, CircleButton, FooterBar, Glass, InfoRow, LightStatusBar, PhotoBackground, Screen, SectionHeader, StatusBadge, Touchable, useToast } from "../../shared/ui";
-import { ResidencyHistory, ResidencyLocation, ResidencyRepository } from "./residency.mock";
+import { AppHeader, BottomSheet, Button, Callout, Card, CircleButton, EmptyState, Glass, InfoRow, LightStatusBar, PhotoBackground, Screen, SectionHeader, StatusBadge, Touchable, useToast } from "../../shared/ui";
+import { ResidencyRecordType } from "../../enums/residency.enum";
+import type { ResidencyHistory, ResidencyLocation } from "../../models/residency.model";
+import { ResidencyOverview } from "./ResidencyOverview";
+import { useResidency } from "./useResidency";
 
+/** Hồ sơ lưu trú hiện hành của sinh viên (`GET /student/residency-records`). */
 export function ResidencyRecordScreen() {
+  const { t } = useI18n();
+  const { colors } = useTheme();
+  const { overview, none, error, loading, reload } = useResidency();
+
+  if (overview) return <ResidencyContent overview={overview} />;
+  return (
+    <Screen header={<AppHeader title={t("residency.title")} />}>
+      {loading ? (
+        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+      ) : none ? (
+        <EmptyState icon="home-outline" title={t("residency.noneTitle")} description={t("residency.noneBody")} />
+      ) : (
+        <Callout tone="danger" icon="cloud-offline-outline" title={t("residency.loadError")} action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />}>
+          {error}
+        </Callout>
+      )}
+    </Screen>
+  );
+}
+
+function ResidencyContent({ overview }: { overview: ResidencyOverview }) {
   const { notify } = useToast();
-  const { t, l } = useI18n();
+  const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const current = ResidencyRepository.current();
-  const history = ResidencyRepository.history();
+  const history = overview.history();
+  const remaining = overview.remainingDays();
+  const location = overview.location;
   const [selected, setSelected] = useState<ResidencyHistory | null>(null);
-  const place = (location: ResidencyLocation) => `${t("common.building")} ${location.building} · ${location.room} · G${location.bed.slice(-2)}`;
+  const place = (value: ResidencyLocation) => `${value.building} · ${value.room} · ${t("common.bed")} ${value.bed}`;
+  const date = (value: string | null) => (value ? Formatter.date(value) : "—");
 
   const copy = async () => {
-    await Clipboard.setStringAsync(`${current.recordCode} - ${place(current)}`);
+    await Clipboard.setStringAsync(`${overview.recordCode} - ${place(location)}`);
     notify(t("residency.copiedInfo"));
   };
 
   return (
-    <Screen
-      padded={false}
-      edges={[]}
-      footer={
-        <FooterBar>
-          <Button label={t("residency.download")} icon="download-outline" variant="dark" onPress={() => notify(t("residency.downloaded"), "info")} style={{ flex: 1 }} />
-        </FooterBar>
-      }
-    >
+    <Screen padded={false} edges={[]}>
       <LightStatusBar />
       <PhotoBackground source={Photos.bunkBed()} shade style={[styles.hero, { paddingTop: insets.top }]}>
         <AppHeader title={t("residency.title")} onPhoto right={<CircleButton icon="copy-outline" label={t("residency.copyInfo")} variant="photo" onPress={copy} />} />
         <View style={styles.heroBody}>
           <Glass variant="photo" style={styles.pass}>
             <View style={styles.passHead}>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.passLabel}>{t("residency.recordCode")}</Text>
-                <Text style={styles.passCode}>{current.recordCode}</Text>
+                <Text style={styles.passCode}>{overview.recordCode}</Text>
               </View>
               <View style={styles.activeChip}>
                 <View style={styles.activeDot} />
@@ -53,22 +72,24 @@ export function ResidencyRecordScreen() {
               </View>
             </View>
             <View style={styles.location}>
-              <Cell label={t("common.building")} value={current.building} />
-              <Cell label={t("common.floor")} value={`${current.floor}`} />
-              <Cell label={t("common.room")} value={current.room} />
-              <Cell label={t("common.bed")} value={current.bed.slice(-2)} />
+              <Cell label={t("common.building")} value={location.building} />
+              <Cell label={t("common.floor")} value={location.floor ?? "—"} />
+              <Cell label={t("common.room")} value={location.room} />
+              <Cell label={t("common.bed")} value={location.bed} />
             </View>
             <View style={styles.passFoot}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.passLabel}>{t("residency.stayPeriod")}</Text>
                 <Text style={styles.passValue}>
-                  {Formatter.date(current.checkInDate)} → {Formatter.date(current.expiryDate)}
+                  {date(overview.checkInDate)} → {date(overview.expiryDate)}
                 </Text>
               </View>
-              <ProgressRing value={ResidencyRepository.progress()} size={58} thickness={6} color={colors.white} track="rgba(255,255,255,0.25)">
-                <Text style={styles.ringValue}>{ResidencyRepository.remainingDays()}</Text>
-                <Text style={styles.ringLabel}>{t("residency.days")}</Text>
-              </ProgressRing>
+              {remaining != null && (
+                <ProgressRing value={overview.progress()} size={58} thickness={6} color={colors.white} track="rgba(255,255,255,0.25)">
+                  <Text style={styles.ringValue}>{remaining}</Text>
+                  <Text style={styles.ringLabel}>{t("residency.days")}</Text>
+                </ProgressRing>
+              )}
             </View>
           </Glass>
         </View>
@@ -77,10 +98,10 @@ export function ResidencyRecordScreen() {
       <View style={styles.body}>
         <SectionHeader title={t("residency.roomInfo")} />
         <Card style={{ paddingVertical: spacing.xs }}>
-          <InfoRow label={t("residency.roomType")} value={t(`common.${current.roomType}`)} />
-          <InfoRow label={t("residency.occupants")} value={`${current.roommates}/${current.capacity}`} />
-          <InfoRow label={t("residency.price")} value={`${Formatter.currency(current.monthlyFee)}${t("common.perMonth")}`} />
-          <InfoRow label={t("residency.linked")} value={current.linkedRequest} divider={false} />
+          <InfoRow label={t("residency.roomType")} value={overview.roomType ?? "—"} />
+          <InfoRow label={t("residency.occupants")} value={overview.occupants != null && overview.capacity != null ? `${overview.occupants}/${overview.capacity}` : "—"} />
+          <InfoRow label={t("residency.price")} value={overview.price != null ? Formatter.currency(overview.price) : "—"} />
+          <InfoRow label={t("residency.linked")} value={overview.linkedRequest ?? "—"} divider={false} />
         </Card>
 
         <SectionHeader title={t("residency.history")} />
@@ -88,41 +109,40 @@ export function ResidencyRecordScreen() {
           <View key={record.id} style={styles.historyRow}>
             <View style={styles.rail}>
               <View style={[styles.railDot, record.active && styles.railDotActive]}>
-                <Ionicons name={record.type === "room_transfer" ? "swap-horizontal" : record.type === "checkout" ? "exit" : "home"} size={14} color={record.active ? colors.onPrimary : colors.inkSoft} />
+                <Ionicons
+                  name={record.type === ResidencyRecordType.RoomTransfer ? "swap-horizontal" : record.type === ResidencyRecordType.Checkout ? "exit" : "home"}
+                  size={14}
+                  color={record.active ? colors.onPrimary : colors.inkSoft}
+                />
               </View>
               {index < history.length - 1 && <View style={styles.railLine} />}
             </View>
             <Touchable onPress={() => setSelected(record)} accessibilityLabel={`${t(`residency.types.${record.type}`)} ${record.location.room}`} style={{ flex: 1 }} pressScale={0.98}>
               <Card style={styles.historyCard}>
                 <View style={styles.historyHead}>
-                  <Text style={styles.historyType}>{t(`residency.types.${record.type}`)}</Text>
+                  <Text style={styles.historyType}>{record.active ? t(`residency.types.${record.type}`) : t("residency.previousStay")}</Text>
                   <StatusBadge label={record.active ? t("residency.active") : t("residency.ended")} tone={record.active ? "success" : "neutral"} />
                 </View>
                 <Text style={styles.historyRoom}>
                   {record.previous ? `${record.previous.room} → ` : ""}
-                  {record.location.room} · {t("common.bed")} {record.location.bed.slice(-2)}
+                  {record.location.room} · {t("common.bed")} {record.location.bed}
                 </Text>
-                <Text style={styles.caption}>
-                  {record.endedDate
-                    ? t("residency.fromTo", { from: Formatter.date(record.effectiveDate), to: Formatter.date(record.endedDate) })
-                    : t("residency.from", { from: Formatter.date(record.effectiveDate) })}
-                </Text>
+                {record.effectiveDate && <Text style={styles.caption}>{t("residency.from", { from: Formatter.date(record.effectiveDate) })}</Text>}
               </Card>
             </Touchable>
           </View>
         ))}
+        <Text style={[styles.caption, { textAlign: "center", marginTop: spacing.sm }]}>{t("residency.historyNote")}</Text>
       </View>
 
-      <BottomSheet visible={!!selected} onClose={() => setSelected(null)} title={t("residency.detail")} subtitle={selected?.id}>
+      <BottomSheet visible={!!selected} onClose={() => setSelected(null)} title={t("residency.detail")} subtitle={selected?.active ? selected.id : undefined}>
         {selected && (
           <Card style={{ paddingVertical: spacing.xs }}>
-            <InfoRow label={t("residency.type")} value={t(`residency.types.${selected.type}`)} />
+            <InfoRow label={t("residency.type")} value={selected.active ? t(`residency.types.${selected.type}`) : t("residency.previousStay")} />
             <InfoRow label={t("residency.location")} value={place(selected.location)} />
             {selected.previous && <InfoRow label={t("residency.previous")} value={place(selected.previous)} />}
-            <InfoRow label={t("residency.effective")} value={Formatter.date(selected.effectiveDate)} />
-            {selected.endedDate && <InfoRow label={t("residency.endedDate")} value={Formatter.date(selected.endedDate)} />}
-            <InfoRow label={t("residency.linked")} value={selected.linkedRequest} divider={!!selected.note} />
-            {selected.note && <InfoRow label={t("residency.note")} value={l(selected.note)} divider={false} />}
+            <InfoRow label={t("residency.effective")} value={date(selected.effectiveDate)} />
+            <InfoRow label={t("residency.linked")} value={selected.linkedRequest ?? "—"} divider={false} />
           </Card>
         )}
       </BottomSheet>

@@ -30,7 +30,7 @@ export function RequestsScreen() {
   const count = (kind: RequestKind) => all.filter((request) => request.kind === kind).length;
 
   return (
-    <Screen inTabs header={<AppHeader title={t("requests.title")} hideBack right={<CircleButton icon="add" label={t("requests.create")} onPress={() => router.push("/request/new")} />} />}>
+    <Screen inTabs header={<AppHeader title={t("requests.title")} right={<CircleButton icon="add" label={t("requests.create")} onPress={() => router.push("/request/new")} />} />}>
       <Glass strong style={styles.stats}>
         <Stat value={stats.total} label={t("requests.total")} color={colors.ink} />
         <Stat value={stats.processing} label={t("requests.processing")} color={colors.warning} />

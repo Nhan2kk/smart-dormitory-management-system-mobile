@@ -16,7 +16,7 @@ import { useNotifications } from "../notifications/NotificationsProvider";
 import { ProfileRepository } from "../profile/profile.mock";
 import { requestKindMeta, requestStats, requestStatusTone } from "../requests/requestModel";
 import { useMyRequests } from "../requests/useMyRequests";
-import { ResidencyRepository } from "../residency/residency.mock";
+import { useResidency } from "../residency/useResidency";
 import { UtilityUsage } from "../utilities/utilityModel";
 import { useUtilities } from "../utilities/useUtilities";
 
@@ -40,7 +40,8 @@ export function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [menuOpen, setMenuOpen] = useState(false);
   const name = user?.fullName || ProfileRepository.get().fullName;
-  const residence = ResidencyRepository.current();
+  const residence = useResidency().overview;
+  const remainingDays = residence?.remainingDays() ?? null;
   const usage = useUtilities().usage;
   const today = usage?.series("day") ?? null;
   const week = usage?.series("week") ?? null;
@@ -59,7 +60,7 @@ export function HomeScreen() {
         <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
           <View style={styles.topBar}>
             <CircleButton icon="menu-outline" label={t("home.menu")} onPress={() => setMenuOpen(true)} />
-            <CircleButton icon="notifications-outline" label={t("home.notificationsLabel", { count: unread })} badge={unread > 0} onPress={open("/notifications")} />
+            <CircleButton icon="notifications-outline" label={t("home.notificationsLabel", { count: unread })} badge={unread} onPress={open("/notifications")} />
           </View>
           <Text style={styles.headline} accessibilityRole="header">
             {t("home.heroLine1")}
@@ -91,8 +92,8 @@ export function HomeScreen() {
             <Tile
               active
               icon="bed-outline"
-              title={t("home.roomTile", { room: residence.room })}
-              subtitle={t("home.roomTileSub", { days: ResidencyRepository.remainingDays() })}
+              title={t("home.roomTile", { room: residence?.location.room ?? "—" })}
+              subtitle={remainingDays != null ? t("home.roomTileSub", { days: remainingDays }) : t("home.roomTileNone")}
               action="arrow-forward"
               onPress={open("/residency-record")}
             />
