@@ -1,12 +1,13 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { ApiClient } from "../shared/api";
 import type { ChatFeedbackRating } from "../enums/assistant.enum";
 import type {
   ChatAnswerResponse,
   ChatBootstrapResponse,
-  ChatConversation,
+  ChatConversationResponse,
+  ChatHistoryMessageResponse,
 } from "../models/assistant.model";
 
+/** Gọi API Trợ lý AI; lịch sử trò chuyện lưu trên server nên đồng bộ giữa web và mobile. */
 export class AssistantService {
   constructor(private readonly request: ApiClient) {}
 
@@ -32,39 +33,23 @@ export class AssistantService {
       { body: { rating } },
     );
   }
-}
 
-/** Giữ tối đa chừng này cuộc trò chuyện gần nhất trên máy. */
-const MAX_CONVERSATIONS = 30;
-
-/**
- * Lịch sử trò chuyện lưu trên máy theo từng tài khoản (backend không lưu lịch sử; web cũng lưu ở trình duyệt).
- */
-export class ConversationStore {
-  private readonly key: string;
-
-  constructor(username: string) {
-    this.key = `sdms.chat.${username}`;
+  /** Danh sách cuộc trò chuyện của người đang đăng nhập, mới cập nhật trước. */
+  conversations(): Promise<ChatConversationResponse[]> {
+    return this.request<ChatConversationResponse[]>("/chat-ai/conversations");
   }
 
-  async load(): Promise<ChatConversation[]> {
-    try {
-      const raw = await AsyncStorage.getItem(this.key);
-      const parsed = raw ? (JSON.parse(raw) as ChatConversation[]) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
+  /** Các lượt hỏi đáp trong một cuộc trò chuyện, cũ trước. */
+  messages(conversationId: string): Promise<ChatHistoryMessageResponse[]> {
+    return this.request<ChatHistoryMessageResponse[]>(
+      "/chat-ai/conversations/messages",
+      { body: { conversationId } },
+    );
   }
 
-  async save(conversations: ChatConversation[]): Promise<void> {
-    const latest = [...conversations]
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-      .slice(0, MAX_CONVERSATIONS);
-    try {
-      await AsyncStorage.setItem(this.key, JSON.stringify(latest));
-    } catch {
-      // Hết bộ nhớ hoặc lỗi ghi: vẫn dùng được trong phiên hiện tại.
-    }
+  delete(conversationId: string): Promise<void> {
+    return this.request<void>("/chat-ai/conversations/delete", {
+      body: { conversationId },
+    });
   }
 }

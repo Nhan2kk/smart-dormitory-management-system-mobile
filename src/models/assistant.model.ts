@@ -51,10 +51,34 @@ export interface ChatMessage {
   feedback?: ChatFeedbackRating;
 }
 
+export interface ChatConversationRequest {
+  conversationId: string;
+}
+
+export interface ChatConversationResponse {
+  id: string;
+  title: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+  messageCount: number;
+}
+
+export interface ChatHistoryMessageResponse {
+  interactionId: string | null;
+  question: string;
+  answer: string;
+  citations: ChatCitationResponse[];
+  grounded: boolean;
+  feedbackRating: number | null;
+  createdAt: string | null;
+}
+
 export interface ChatConversation {
   id: string;
   aiConversationId: string | null;
   title: string;
   updatedAt: string;
   messages: ChatMessage[];
+  messageCount: number;
+  messagesLoaded: boolean;
 }

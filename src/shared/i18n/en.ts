@@ -727,7 +727,7 @@ export const en: Dictionary = {
     feedbackSaved: "Thanks for your feedback.",
     disclaimer: "AI may be inaccurate. Please check the cited sources.",
     page: "p.{{page}}",
-    messages: "{{count}} messages",
+    messages: "{{count}} questions",
     offline: "● Paused",
     disabledTitle: "The AI assistant is paused",
     disabledBody:
@@ -739,6 +739,7 @@ export const en: Dictionary = {
       guests: "What are the rules for dormitory visitors?",
       maintenance: "How do I report damaged equipment in my room?",
     },
+    loadingChat: "Loading conversation…",
   },
   profile: {
     eyebrow: "Profile",

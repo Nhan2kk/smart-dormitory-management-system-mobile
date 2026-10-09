@@ -734,7 +734,7 @@ export const vi = {
     disclaimer:
       "AI có thể chưa hoàn toàn chính xác. Hãy kiểm tra nguồn trích dẫn.",
     page: "tr.{{page}}",
-    messages: "{{count}} tin nhắn",
+    messages: "{{count}} lượt hỏi đáp",
     offline: "● Tạm ngưng",
     disabledTitle: "Trợ lý AI đang tạm ngưng",
     disabledBody:
@@ -746,6 +746,7 @@ export const vi = {
       guests: "Quy định về khách ra vào KTX?",
       maintenance: "Làm thế nào để báo hỏng thiết bị trong phòng?",
     },
+    loadingChat: "Đang tải cuộc trò chuyện…",
   },
   profile: {
     eyebrow: "Cá nhân",

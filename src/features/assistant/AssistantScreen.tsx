@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRef, useState } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
@@ -26,7 +26,7 @@ export function AssistantScreen() {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useStyles();
-  const { bootstrap, conversations, messages, thinking, send, rate, remove, open, newChat } = useAssistant((message) => notify(message, "danger"));
+  const { bootstrap, conversations, messages, thinking, loadingMessages, send, rate, remove, refreshHistory, open, newChat } = useAssistant((message) => notify(message, "danger"));
   const [input, setInput] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -51,7 +51,17 @@ export function AssistantScreen() {
       <AppHeader
         title={t("assistant.title")}
         subtitle={disabled ? t("assistant.offline") : t("assistant.online")}
-        right={<CircleButton icon="time-outline" label={t("assistant.history")} onPress={() => setHistoryOpen(true)} />}
+        right={
+          <CircleButton
+            icon="time-outline"
+            label={t("assistant.history")}
+            onPress={() => {
+              // Lịch sử dùng chung với web: tải lại để thấy cả cuộc trò chuyện vừa hỏi trên web.
+              void refreshHistory();
+              setHistoryOpen(true);
+            }}
+          />
+        }
       />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={8}>
         <FlatList
@@ -61,7 +71,9 @@ export function AssistantScreen() {
           contentContainerStyle={styles.list}
           onContentSizeChange={() => list.current?.scrollToEnd({ animated: true })}
           keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={disabled ? <EmptyState icon="moon-outline" title={t("assistant.disabledTitle")} description={t("assistant.disabledBody")} /> : <Welcome bootstrap={bootstrap} onPick={ask} />}
+          ListEmptyComponent={loadingMessages ? (
+            <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} accessibilityLabel={t("assistant.loadingChat")} />
+          ) : disabled ? <EmptyState icon="moon-outline" title={t("assistant.disabledTitle")} description={t("assistant.disabledBody")} /> : <Welcome bootstrap={bootstrap} onPick={ask} />}
           ListFooterComponent={thinking ? <Typing /> : null}
           renderItem={({ item }) => (item.role === ChatRole.User ? <UserBubble text={item.text} /> : <BotBubble message={item} onRate={onRate} />)}
         />
@@ -117,13 +129,12 @@ export function AssistantScreen() {
                   {conversation.title}
                 </Text>
                 <Text style={styles.caption}>
-                  {Formatter.relative(conversation.updatedAt, new Date())} · {t("assistant.messages", { count: conversation.messages.length })}
+                  {Formatter.relative(conversation.updatedAt, new Date())} · {t("assistant.messages", { count: conversation.messageCount })}
                 </Text>
               </Touchable>
               <Touchable
-                onPress={() => {
-                  remove(conversation.id);
-                  notify(t("assistant.deleted"));
+                onPress={async () => {
+                  if (await remove(conversation.id)) notify(t("assistant.deleted"));
                 }}
                 accessibilityLabel={t("assistant.deleteChat")}
                 style={styles.delete}
