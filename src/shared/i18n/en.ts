@@ -609,6 +609,16 @@ export const en: Dictionary = {
     disclaimer: "AI may be inaccurate. Please check the cited sources.",
     page: "p.{{page}}",
     messages: "{{count}} messages",
+    offline: "● Paused",
+    disabledTitle: "The AI assistant is paused",
+    disabledBody: "The dorm office has turned the AI assistant off. You can send a support request instead.",
+    questions: {
+      registration: "How do I apply for dormitory accommodation?",
+      curfew: "What are the dormitory entry and exit hours?",
+      utilities: "How are electricity and water fees calculated?",
+      guests: "What are the rules for dormitory visitors?",
+      maintenance: "How do I report damaged equipment in my room?",
+    },
   },
   profile: {
     eyebrow: "Profile",

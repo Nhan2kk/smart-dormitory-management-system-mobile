@@ -4,38 +4,43 @@ import { FlatList, KeyboardAvoidingView, Platform, Text, TextInput, View } from 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
+import type { TranslationKey } from "../../shared/i18n/types";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { AppHeader, Backdrop, BottomSheet, Card, CircleButton, EmptyState, Field, Gradient, Touchable, useToast } from "../../shared/ui";
-import { AssistantMockEngine, ChatMessage, Conversation } from "./assistant.mock";
+import { ChatFeedbackRating, ChatRole } from "../../enums/assistant.enum";
+import type { ChatBootstrapResponse, ChatMessage } from "../../models/assistant.model";
+import { useAssistant } from "./useAssistant";
 
+/** Khoá câu hỏi gợi ý mặc định của backend → khoá bản dịch trên mobile. */
+const QUICK_QUESTION_KEYS: Record<string, TranslationKey> = {
+  "chatAi.questions.registration": "assistant.questions.registration",
+  "chatAi.questions.curfew": "assistant.questions.curfew",
+  "chatAi.questions.utilities": "assistant.questions.utilities",
+  "chatAi.questions.guests": "assistant.questions.guests",
+  "chatAi.questions.maintenance": "assistant.questions.maintenance",
+};
+
+/** Trợ lý AI trả lời theo nội quy KTX (`/chat-ai`); lịch sử trò chuyện lưu trên máy. */
 export function AssistantScreen() {
   const { notify } = useToast();
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useStyles();
-  const [conversations, setConversations] = useState<Conversation[]>(() => AssistantMockEngine.history(lang));
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { bootstrap, conversations, messages, thinking, send, rate, remove, open, newChat } = useAssistant((message) => notify(message, "danger"));
   const [input, setInput] = useState("");
-  const [thinking, setThinking] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [search, setSearch] = useState("");
   const list = useRef<FlatList<ChatMessage>>(null);
+  const disabled = bootstrap?.enabled === false;
 
-  const send = (text: string) => {
-    const question = text.trim();
-    if (!question || thinking) return;
-    setMessages((current) => [...current, { id: `u-${Date.now()}`, role: "user", text: question }]);
+  const ask = (text: string) => {
+    if (!text.trim() || thinking || disabled) return;
     setInput("");
-    setThinking(true);
-    setTimeout(() => {
-      setMessages((current) => [...current, AssistantMockEngine.reply(question, lang)]);
-      setThinking(false);
-    }, 1100);
+    void send(text);
   };
 
-  const rate = (id: string, feedback: "up" | "down") => {
-    setMessages((current) => current.map((message) => (message.id === id ? { ...message, feedback } : message)));
-    notify(t("assistant.feedbackSaved"), "info");
+  const onRate = async (message: ChatMessage, helpful: boolean) => {
+    if (await rate(message, helpful)) notify(t("assistant.feedbackSaved"), "info");
   };
 
   const filtered = conversations.filter((conversation) => conversation.title.toLowerCase().includes(search.trim().toLowerCase()));
@@ -45,7 +50,7 @@ export function AssistantScreen() {
       <Backdrop />
       <AppHeader
         title={t("assistant.title")}
-        subtitle={t("assistant.online")}
+        subtitle={disabled ? t("assistant.offline") : t("assistant.online")}
         right={<CircleButton icon="time-outline" label={t("assistant.history")} onPress={() => setHistoryOpen(true)} />}
       />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={8}>
@@ -56,9 +61,9 @@ export function AssistantScreen() {
           contentContainerStyle={styles.list}
           onContentSizeChange={() => list.current?.scrollToEnd({ animated: true })}
           keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={<Welcome onPick={send} />}
+          ListEmptyComponent={disabled ? <EmptyState icon="moon-outline" title={t("assistant.disabledTitle")} description={t("assistant.disabledBody")} /> : <Welcome bootstrap={bootstrap} onPick={ask} />}
           ListFooterComponent={thinking ? <Typing /> : null}
-          renderItem={({ item }) => (item.role === "user" ? <UserBubble text={item.text} /> : <BotBubble message={item} onRate={rate} />)}
+          renderItem={({ item }) => (item.role === ChatRole.User ? <UserBubble text={item.text} /> : <BotBubble message={item} onRate={onRate} />)}
         />
         <View style={styles.composer}>
           <TextInput
@@ -68,12 +73,14 @@ export function AssistantScreen() {
             placeholderTextColor={colors.muted}
             style={styles.input}
             multiline
+            maxLength={2000}
+            editable={!disabled}
             accessibilityLabel={t("assistant.placeholder")}
-            onSubmitEditing={() => send(input)}
+            onSubmitEditing={() => ask(input)}
             submitBehavior="submit"
             returnKeyType="send"
           />
-          <Touchable onPress={() => send(input)} disabled={!input.trim() || thinking} accessibilityLabel={t("assistant.send")} style={[styles.send, (!input.trim() || thinking) && { backgroundColor: colors.border }]}>
+          <Touchable onPress={() => ask(input)} disabled={!input.trim() || thinking || disabled} accessibilityLabel={t("assistant.send")} style={[styles.send, (!input.trim() || thinking || disabled) && { backgroundColor: colors.border }]}>
             <Ionicons name="arrow-up" size={22} color={colors.onPrimary} />
           </Touchable>
         </View>
@@ -83,7 +90,7 @@ export function AssistantScreen() {
       <BottomSheet visible={historyOpen} onClose={() => setHistoryOpen(false)} title={t("assistant.history")}>
         <Touchable
           onPress={() => {
-            setMessages([]);
+            newChat();
             setHistoryOpen(false);
           }}
           accessibilityLabel={t("assistant.newChat")}
@@ -100,7 +107,7 @@ export function AssistantScreen() {
             <Card key={conversation.id} style={styles.chatRow}>
               <Touchable
                 onPress={() => {
-                  setMessages(conversation.messages);
+                  open(conversation.id);
                   setHistoryOpen(false);
                 }}
                 accessibilityLabel={conversation.title}
@@ -110,12 +117,12 @@ export function AssistantScreen() {
                   {conversation.title}
                 </Text>
                 <Text style={styles.caption}>
-                  {Formatter.relative(conversation.updatedAt)} · {t("assistant.messages", { count: conversation.messages.length })}
+                  {Formatter.relative(conversation.updatedAt, new Date())} · {t("assistant.messages", { count: conversation.messages.length })}
                 </Text>
               </Touchable>
               <Touchable
                 onPress={() => {
-                  setConversations((current) => current.filter((item) => item.id !== conversation.id));
+                  remove(conversation.id);
                   notify(t("assistant.deleted"));
                 }}
                 accessibilityLabel={t("assistant.deleteChat")}
@@ -131,22 +138,27 @@ export function AssistantScreen() {
   );
 }
 
-function Welcome({ onPick }: { onPick: (text: string) => void }) {
+function Welcome({ bootstrap, onPick }: { bootstrap: ChatBootstrapResponse | null; onPick: (text: string) => void }) {
   const styles = useStyles();
   const { colors } = useTheme();
-  const { t, l } = useI18n();
+  const { t } = useI18n();
+  // Câu hỏi BQL cấu hình: khoá mặc định thì dịch theo ngôn ngữ app, câu tự nhập thì hiện nguyên văn.
+  const questions = (bootstrap?.quickQuestions ?? []).map((question) => {
+    const key = QUICK_QUESTION_KEYS[question.textKey];
+    return { id: question.id, text: key ? t(key) : question.textKey };
+  });
   return (
     <View style={styles.welcome}>
       <Gradient style={styles.orb}>
         <Ionicons name="sparkles" size={34} color={colors.white} />
       </Gradient>
       <Text style={styles.welcomeTitle}>{t("assistant.welcome")}</Text>
-      <Text style={styles.welcomeBody}>{t("assistant.welcomeBody")}</Text>
+      <Text style={styles.welcomeBody}>{bootstrap?.welcomeMessage?.trim() || t("assistant.welcomeBody")}</Text>
       <View style={styles.suggestions}>
-        {AssistantMockEngine.suggestions.map((suggestion) => (
-          <Touchable key={suggestion.vi} onPress={() => onPick(l(suggestion))} accessibilityLabel={l(suggestion)} style={styles.suggestion}>
+        {questions.map((question) => (
+          <Touchable key={question.id} onPress={() => onPick(question.text)} accessibilityLabel={question.text} style={styles.suggestion}>
             <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.primary} />
-            <Text style={styles.suggestionText}>{l(suggestion)}</Text>
+            <Text style={styles.suggestionText}>{question.text}</Text>
             <Ionicons name="arrow-forward" size={16} color={colors.muted} />
           </Touchable>
         ))}
@@ -164,10 +176,12 @@ function UserBubble({ text }: { text: string }) {
   );
 }
 
-function BotBubble({ message, onRate }: { message: ChatMessage; onRate: (id: string, feedback: "up" | "down") => void }) {
+function BotBubble({ message, onRate }: { message: ChatMessage; onRate: (message: ChatMessage, helpful: boolean) => void }) {
   const styles = useStyles();
   const { colors, shadow } = useTheme();
   const { t } = useI18n();
+  const helpful = message.feedback === ChatFeedbackRating.Helpful;
+  const notHelpful = message.feedback === ChatFeedbackRating.NotHelpful;
   return (
     <View style={styles.botRow}>
       <View style={styles.botAvatar}>
@@ -176,27 +190,30 @@ function BotBubble({ message, onRate }: { message: ChatMessage; onRate: (id: str
       <View style={{ flex: 1, gap: spacing.sm }}>
         <View style={[styles.bubble, styles.bot, shadow(1)]}>
           <Text style={styles.botText}>{message.text}</Text>
-          {message.sources && (
+          {!!message.citations?.length && (
             <View style={styles.sources}>
-              {message.sources.map((source) => (
-                <View key={`${source.title}-${source.page}`} style={styles.source}>
+              {message.citations.map((citation) => (
+                <View key={citation.sourceId} style={styles.source}>
                   <Ionicons name="document-text-outline" size={12} color={colors.info} />
                   <Text style={styles.sourceText}>
-                    {source.title} · {t("assistant.page", { page: source.page })}
+                    {citation.filename}
+                    {citation.pageNumber != null ? ` · ${t("assistant.page", { page: citation.pageNumber })}` : ""}
                   </Text>
                 </View>
               ))}
             </View>
           )}
         </View>
-        <View style={styles.rate}>
-          <Touchable onPress={() => onRate(message.id, "up")} accessibilityLabel={t("assistant.helpful")} style={styles.rateBtn}>
-            <Ionicons name={message.feedback === "up" ? "thumbs-up" : "thumbs-up-outline"} size={16} color={message.feedback === "up" ? colors.success : colors.muted} />
-          </Touchable>
-          <Touchable onPress={() => onRate(message.id, "down")} accessibilityLabel={t("assistant.notHelpful")} style={styles.rateBtn}>
-            <Ionicons name={message.feedback === "down" ? "thumbs-down" : "thumbs-down-outline"} size={16} color={message.feedback === "down" ? colors.danger : colors.muted} />
-          </Touchable>
-        </View>
+        {message.interactionId && (
+          <View style={styles.rate}>
+            <Touchable onPress={() => onRate(message, true)} accessibilityLabel={t("assistant.helpful")} style={styles.rateBtn}>
+              <Ionicons name={helpful ? "thumbs-up" : "thumbs-up-outline"} size={16} color={helpful ? colors.success : colors.muted} />
+            </Touchable>
+            <Touchable onPress={() => onRate(message, false)} accessibilityLabel={t("assistant.notHelpful")} style={styles.rateBtn}>
+              <Ionicons name={notHelpful ? "thumbs-down" : "thumbs-down-outline"} size={16} color={notHelpful ? colors.danger : colors.muted} />
+            </Touchable>
+          </View>
+        )}
       </View>
     </View>
   );

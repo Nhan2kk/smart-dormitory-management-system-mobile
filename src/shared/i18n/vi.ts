@@ -607,6 +607,16 @@ export const vi = {
     disclaimer: "AI có thể chưa hoàn toàn chính xác. Hãy kiểm tra nguồn trích dẫn.",
     page: "tr.{{page}}",
     messages: "{{count}} tin nhắn",
+    offline: "● Tạm ngưng",
+    disabledTitle: "Trợ lý AI đang tạm ngưng",
+    disabledBody: "Ban quản lý đã tạm tắt Trợ lý AI. Bạn có thể gửi Yêu cầu hỗ trợ để được phản hồi.",
+    questions: {
+      registration: "Thủ tục đăng ký ở KTX như thế nào?",
+      curfew: "Giờ giấc ra vào KTX là mấy giờ?",
+      utilities: "Chi phí điện nước được tính như thế nào?",
+      guests: "Quy định về khách ra vào KTX?",
+      maintenance: "Làm thế nào để báo hỏng thiết bị trong phòng?",
+    },
   },
   profile: {
     eyebrow: "Cá nhân",
