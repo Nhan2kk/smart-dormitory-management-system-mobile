@@ -45,13 +45,17 @@ export async function uploadPhotos(
   return uploaded;
 }
 
-/** Chọn 1 ảnh từ thư viện; `"permission"` nếu bị từ chối quyền, `null` nếu huỷ. */
-export async function pickPhoto(): Promise<string | "permission" | null> {
+export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+
+/** Chọn 1 ảnh từ thư viện; `"permission"` nếu bị từ chối quyền, `"too_large"` nếu quá 5MB, `null` nếu huỷ. */
+export async function pickPhoto(): Promise<string | "permission" | "too_large" | null> {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!permission.granted) return "permission";
   const picked = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ["images"],
     quality: 0.7,
   });
-  return picked.canceled || !picked.assets[0] ? null : picked.assets[0].uri;
+  const asset = picked.canceled ? null : picked.assets[0];
+  if (!asset) return null;
+  return asset.fileSize != null && asset.fileSize > MAX_PHOTO_BYTES ? "too_large" : asset.uri;
 }

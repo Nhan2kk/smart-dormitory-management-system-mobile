@@ -77,6 +77,7 @@ export function RequestDetailScreen() {
   const addPhoto = async () => {
     const uri = await pickPhoto();
     if (uri === "permission") return notify(t("checkIn.photoPermission"), "warning");
+    if (uri === "too_large") return notify(t("checkIn.photoTooLarge"), "warning");
     if (uri) setPhotos((current) => [...current, { uri }]);
   };
 

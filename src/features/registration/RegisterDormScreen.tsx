@@ -40,6 +40,8 @@ import {
   groupFloors,
   isInScope,
   PERIOD_MONTHS,
+  buildingGender,
+  genderAllows,
   primaryAudience,
   roomStatusTone,
 } from "./registrationHelpers";
@@ -147,6 +149,7 @@ export function RegisterDormScreen() {
       <Wizard
         api={api}
         campaign={campaignState.campaign}
+        gender={campaignState.gender ?? null}
         title={t("registration.title")}
         onExit={() => setPhase("overview")}
         onCampaign={setCampaignState}
@@ -404,6 +407,7 @@ function Overview({
 function Wizard({
   api,
   campaign,
+  gender,
   title,
   onExit,
   onCampaign,
@@ -412,6 +416,7 @@ function Wizard({
 }: {
   api: Api;
   campaign: StudentCampaign;
+  gender: string | null;
   title: string;
   onExit: () => void;
   onCampaign: (state: StudentCampaignState) => void;
@@ -485,6 +490,10 @@ function Wizard({
     };
   }, [buildingId, loadFloors, notify]);
 
+  const buildingOpen = (item: BuildingDto) =>
+    genderAllows(gender, buildingGender(item));
+  const noBuildingForGender =
+    !!buildings?.length && !buildings.some(buildingOpen);
   const building = buildings?.find((item) => item.id === buildingId) ?? null;
   const floor = floors?.find((item) => item.id === floorId) ?? null;
   const room = floor?.rooms.find((item) => item.id === roomId) ?? null;
@@ -601,6 +610,12 @@ function Wizard({
           </Text>
           {!buildings ? (
             loader
+          ) : noBuildingForGender ? (
+            <EmptyState
+              icon="male-female-outline"
+              title={t("registration.noBuildingForGender")}
+              description={t("registration.noBuildingForGenderBody")}
+            />
           ) : buildings.length === 0 ? (
             <EmptyState
               icon="business-outline"
@@ -609,6 +624,7 @@ function Wizard({
           ) : (
             <View style={{ gap: spacing.md }}>
               {buildings.map((item, index) => {
+                const open = buildingOpen(item);
                 const selected = item.id === buildingId;
                 const photoKey = item.name.trim().slice(-1).toUpperCase();
                 return (
@@ -622,10 +638,15 @@ function Wizard({
                       setBedId(null);
                     }}
                     accessibilityRole="radio"
-                    accessibilityState={{ selected }}
+                    accessibilityState={{ selected, disabled: !open }}
                     accessibilityLabel={`${item.name}, ${t("registration.floorsCount", { count: item.floors })}`}
                     pressScale={0.98}
-                    style={[styles.buildingShadow, shadow(1)]}
+                    disabled={!open}
+                    style={[
+                      styles.buildingShadow,
+                      shadow(1),
+                      !open && { opacity: 0.5 },
+                    ]}
                   >
                     <PhotoBackground
                       source={Photos.building(
@@ -659,10 +680,16 @@ function Wizard({
                       <Glass variant="photo" strong style={styles.buildingInfo}>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.buildingDesc} numberOfLines={1}>
-                            {t("registration.buildingMeta", {
-                              rooms: item.rooms,
-                              rate: Formatter.decimal(item.occupancyRate),
-                            })}
+                            {!open
+                              ? t(
+                                  buildingGender(item) === "male"
+                                    ? "registration.maleOnly"
+                                    : "registration.femaleOnly",
+                                )
+                              : t("registration.buildingMeta", {
+                                  rooms: item.rooms,
+                                  rate: Formatter.decimal(item.occupancyRate),
+                                })}
                           </Text>
                         </View>
                         {item.baseRoomPrice != null && (
@@ -702,7 +729,8 @@ function Wizard({
           ) : (
             <View style={styles.floors}>
               {floors.map((item) => {
-                const available = floorAvailability(item);
+                const genderOk = genderAllows(gender, item.gender);
+                const available = genderOk ? floorAvailability(item) : 0;
                 const capacity = item.rooms.reduce(
                   (sum, r) => sum + r.capacity,
                   0,
@@ -743,7 +771,13 @@ function Wizard({
                       height={5}
                     />
                     <Text style={styles.floorFree}>
-                      {t("registration.free", { count: available })}
+                      {genderOk
+                        ? t("registration.free", { count: available })
+                        : t(
+                            item.gender === "male"
+                              ? "registration.maleOnly"
+                              : "registration.femaleOnly",
+                          )}
                     </Text>
                   </Touchable>
                 );

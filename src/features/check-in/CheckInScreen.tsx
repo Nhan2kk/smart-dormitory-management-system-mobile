@@ -118,6 +118,7 @@ export function CheckInScreen() {
   const addPhoto = async () => {
     const uri = await pickPhoto();
     if (uri === "permission") return notify(t("checkIn.photoPermission"), "warning");
+    if (uri === "too_large") return notify(t("checkIn.photoTooLarge"), "warning");
     if (uri) setDraft((current) => ({ ...current, photos: [...current.photos, { uri }] }));
   };
 
@@ -210,7 +211,6 @@ export function CheckInScreen() {
         )}
         <View style={{ gap: spacing.md, marginTop: spacing.xxl }}>
           <Button label={t("checkIn.viewResidency")} icon="id-card-outline" onPress={() => router.replace("/residency-record")} />
-          {!!result?.maintenanceRequests.length && <Button label={t("checkIn.requestTransfer")} variant="secondary" icon="swap-horizontal" onPress={() => router.replace("/request/create/roomTransfer")} />}
           <Button label={t("common.home")} variant="ghost" onPress={() => router.dismissTo("/")} />
         </View>
       </Screen>

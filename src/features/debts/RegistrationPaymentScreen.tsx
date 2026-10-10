@@ -1,10 +1,18 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, AppState, Image, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  AppState,
+  Image,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
 import { errorMessage } from "../../shared/api";
 import { Formatter } from "../../shared/format";
-import { makeStyles, spacing } from "../../shared/theme";
+import { makeStyles, spacing, useTheme } from "../../shared/theme";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import {
   AppHeader,
@@ -20,6 +28,11 @@ import { RegistrationService } from "../../services/registration.service";
 import type { PaymentQr } from "../../models/registration-payment.model";
 import type { Registration } from "../../models/registration.model";
 import { bedLabel } from "../registration/components/BedMap";
+import { BankAppPicker } from "./BankAppPicker";
+import {
+  PERIOD_MONTHS,
+  primaryAudience,
+} from "../registration/registrationHelpers";
 import { PaymentSuccessView, type PaymentSuccessRow } from "./PaymentSuccessView";
 
 export function RegistrationPaymentScreen({
@@ -27,7 +40,7 @@ export function RegistrationPaymentScreen({
 }: {
   registrationId: string;
 }) {
-  const { request } = useAuth();
+  const { request, user } = useAuth();
   const service = useMemo(() => new RegistrationService(request), [request]);
   const { notify } = useToast();
   const { t, lang } = useI18n();
@@ -37,6 +50,8 @@ export function RegistrationPaymentScreen({
   const [phase, setPhase] = useState<
     "loading" | "waiting" | "qr_expired" | "paid" | "hold_expired"
   >("loading");
+  const [registration, setRegistration] = useState<Registration | null>(null);
+  const [checkInStart, setCheckInStart] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [now, setNow] = useState(0);
 
@@ -94,6 +109,41 @@ export function RegistrationPaymentScreen({
     const timer = setInterval(() => void checkStatus(), connected ? 4000 : 2000);
     return () => clearInterval(timer);
   }, [connected, phase, checkStatus]);
+
+  // Thông tin đơn (sinh viên, phòng, thời hạn) hiển thị cạnh mã QR; lỗi tải không chặn thanh toán.
+  useEffect(() => {
+    let active = true;
+    service
+      .mine()
+      .then((value) => active && setRegistration(value))
+      .catch(() => undefined);
+    service
+      .currentCampaign()
+      .then((value) => {
+        const start = value.campaign
+          ? primaryAudience(value.campaign)?.checkInStart
+          : null;
+        if (active && start) setCheckInStart(start);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [service]);
+
+  const stayStart = registration
+    ? new Date(
+        checkInStart ?? registration.paymentDeadline ?? registration.createdAt,
+      )
+    : null;
+  const stayEnd =
+    registration && stayStart
+      ? new Date(
+          stayStart.getFullYear(),
+          stayStart.getMonth() + PERIOD_MONTHS[registration.pricingPeriod],
+          stayStart.getDate(),
+        )
+      : null;
 
   const copy = async (label: string, value: string) => {
     await Clipboard.setStringAsync(value);
@@ -235,6 +285,57 @@ export function RegistrationPaymentScreen({
               />
             )}
           </Card>
+          <BankAppPicker qr={qr} />
+          {registration && stayStart && stayEnd && (
+            <Card style={styles.details}>
+              <View style={styles.pairRow}>
+                <View style={styles.pairItem}>
+                  <Detail
+                    label={t("payment.student")}
+                    value={user?.fullName ?? ""}
+                  />
+                </View>
+                <View style={styles.pairItem}>
+                  <Detail
+                    label={t("payment.studentCode")}
+                    value={user?.username ?? ""}
+                  />
+                </View>
+              </View>
+              <View style={styles.pairRow}>
+                <View style={styles.pairItem}>
+                  <Detail
+                    label={t("payment.registeredRoom")}
+                    value={`${registration.roomCode} · ${bedLabel(registration.bedCode)}`}
+                  />
+                </View>
+                <View style={styles.pairItem}>
+                  <Detail
+                    label={t("payment.stayDuration")}
+                    value={t(
+                      registration.pricingPeriod === "1year"
+                        ? "registration.oneYear"
+                        : "registration.sixMonths",
+                    )}
+                  />
+                </View>
+              </View>
+              <View style={styles.pairRow}>
+                <View style={styles.pairItem}>
+                  <Detail
+                    label={t("payment.startDate")}
+                    value={Formatter.date(stayStart)}
+                  />
+                </View>
+                <View style={styles.pairItem}>
+                  <Detail
+                    label={t("payment.expectedEnd")}
+                    value={Formatter.date(stayEnd)}
+                  />
+                </View>
+              </View>
+            </Card>
+          )}
           <Card style={styles.details}>
             <Detail label={t("payment.bank")} value={qr.bankCode} />
             <Detail
@@ -275,6 +376,7 @@ function Detail({
   onCopy?: () => void;
 }) {
   const { t } = useI18n();
+  const { colors } = useTheme();
   return (
     <View
       style={{
@@ -283,12 +385,19 @@ function Detail({
         justifyContent: "space-between",
       }}
     >
-      <View>
+      <View style={{ flex: 1 }}>
         <Text>{label}</Text>
         <Text style={{ fontWeight: "700" }}>{value}</Text>
       </View>
       {onCopy && (
-        <Button label={t("common.copy")} variant="ghost" onPress={onCopy} />
+        <Pressable
+          onPress={onCopy}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.copy")}
+        >
+          <Ionicons name="copy-outline" size={22} color={colors.primary} />
+        </Pressable>
       )}
     </View>
   );
@@ -319,4 +428,6 @@ const useStyles = makeStyles(({ colors }) => ({
   qrImage: { width: "100%", maxWidth: 320, aspectRatio: 540 / 714 },
   centerText: { textAlign: "center", color: colors.ink },
   details: { gap: spacing.md },
+  pairRow: { flexDirection: "row", gap: spacing.md },
+  pairItem: { flex: 1 },
 }));

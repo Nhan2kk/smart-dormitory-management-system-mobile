@@ -1,10 +1,33 @@
-import type { BedStatus, PricingPeriod, RegistrationStatus, RoomStatus } from "../../enums/registration.enum";
-import type { Bed, CampaignAudience, Floor, FloorDto, Room, RoomDto, StudentCampaign } from "../../models/registration.model";
+import type {
+  BedStatus,
+  PricingPeriod,
+  RegistrationStatus,
+  RoomStatus,
+} from "../../enums/registration.enum";
+import type {
+  Bed,
+  CampaignAudience,
+  Floor,
+  BuildingDto,
+  FloorDto,
+  Room,
+  RoomDto,
+  StudentCampaign,
+} from "../../models/registration.model";
 
-export const PERIOD_MONTHS: Record<PricingPeriod, number> = { "6months": 6, "1year": 12 };
+export const PERIOD_MONTHS: Record<PricingPeriod, number> = {
+  "6months": 6,
+  "1year": 12,
+};
 
-export const roomStatusTone: Record<RoomStatus, "success" | "danger" | "neutral"> = { available: "success", full: "danger", maintenance: "neutral" };
-export const applicationTone: Record<RegistrationStatus, "success" | "warning" | "neutral" | "danger" | "info"> = {
+export const roomStatusTone: Record<
+  RoomStatus,
+  "success" | "danger" | "neutral"
+> = { available: "success", full: "danger", maintenance: "neutral" };
+export const applicationTone: Record<
+  RegistrationStatus,
+  "success" | "warning" | "neutral" | "danger" | "info"
+> = {
   pending_payment: "warning",
   paid: "info",
   approved: "success",
@@ -15,9 +38,18 @@ export const applicationTone: Record<RegistrationStatus, "success" | "warning" |
 };
 
 /** Đăng ký còn hiệu lực chặn việc tạo đăng ký mới (BE trả 409 nếu tạo thêm). */
-export const ACTIVE_STATUSES: RegistrationStatus[] = ["pending_payment", "paid", "approved"];
+export const ACTIVE_STATUSES: RegistrationStatus[] = [
+  "pending_payment",
+  "paid",
+  "approved",
+];
 
-const BED_STATUSES: BedStatus[] = ["available", "occupied", "reserved", "maintenance"];
+const BED_STATUSES: BedStatus[] = [
+  "available",
+  "occupied",
+  "reserved",
+  "maintenance",
+];
 
 function floorNumber(floor: FloorDto): number | null {
   const match = (floor.symbol ?? "").match(/\d+/) ?? floor.name.match(/\d+/);
@@ -30,12 +62,33 @@ export function mapRoom(room: RoomDto): Room {
     .map((bed, index) => ({
       id: bed.id,
       code: bed.code,
-      status: BED_STATUSES.includes(bed.status as BedStatus) ? (bed.status as BedStatus) : "maintenance",
-      ...(room.hasBunkBeds ? { level: (index % 2 === 0 ? 1 : 2) as 1 | 2 } : {}),
+      status: BED_STATUSES.includes(bed.status as BedStatus)
+        ? (bed.status as BedStatus)
+        : "maintenance",
+      ...(room.hasBunkBeds
+        ? { level: (index % 2 === 0 ? 1 : 2) as 1 | 2 }
+        : {}),
     }));
   const available = beds.filter((bed) => bed.status === "available").length;
-  const status: RoomStatus = room.status === "maintenance" || (beds.length > 0 && beds.every((bed) => bed.status === "maintenance")) ? "maintenance" : available > 0 ? "available" : "full";
-  return { id: room.id, code: room.code, floorId: room.floorId, type: room.type, capacity: room.capacity, available, status, price: Number(room.price ?? 0), hasBunkBeds: room.hasBunkBeds, beds };
+  const status: RoomStatus =
+    room.status === "maintenance" ||
+    (beds.length > 0 && beds.every((bed) => bed.status === "maintenance"))
+      ? "maintenance"
+      : available > 0
+        ? "available"
+        : "full";
+  return {
+    id: room.id,
+    code: room.code,
+    floorId: room.floorId,
+    type: room.type,
+    capacity: room.capacity,
+    available,
+    status,
+    price: Number(room.price ?? 0),
+    hasBunkBeds: room.hasBunkBeds,
+    beds,
+  };
 }
 
 /** Ghép phòng theo tầng, sắp tầng theo số tầng. */
@@ -46,23 +99,63 @@ export function groupFloors(floors: FloorDto[], rooms: RoomDto[]): Floor[] {
       name: floor.name,
       number: floorNumber(floor),
       status: floor.status,
+      gender: floor.gender ?? null,
       rooms: rooms
         .filter((room) => room.floorId === floor.id)
         .map(mapRoom)
-        .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })),
+        .sort((a, b) =>
+          a.code.localeCompare(b.code, undefined, { numeric: true }),
+        ),
     }))
-    .sort((a, b) => (a.number ?? 0) - (b.number ?? 0) || a.name.localeCompare(b.name));
+    .sort(
+      (a, b) =>
+        (a.number ?? 0) - (b.number ?? 0) || a.name.localeCompare(b.name),
+    );
 }
 
 export function floorAvailability(floor: Floor): number {
-  return floor.status === "active" || floor.status === "empty" ? floor.rooms.reduce((sum, room) => sum + (room.status === "available" ? room.available : 0), 0) : 0;
+  return floor.status === "active" || floor.status === "empty"
+    ? floor.rooms.reduce(
+        (sum, room) => sum + (room.status === "available" ? room.available : 0),
+        0,
+      )
+    : 0;
 }
 
 /** Nhóm đối tượng hiện chỉ có "ALL" (xem FE_REGISTRATION_CAMPAIGN_INTEGRATION.md). */
-export function primaryAudience(campaign: StudentCampaign): CampaignAudience | null {
-  return campaign.audiences.find((item) => item.audienceCode.toUpperCase() === "ALL") ?? campaign.audiences[0] ?? null;
+export function primaryAudience(
+  campaign: StudentCampaign,
+): CampaignAudience | null {
+  return (
+    campaign.audiences.find(
+      (item) => item.audienceCode.toUpperCase() === "ALL",
+    ) ??
+    campaign.audiences[0] ??
+    null
+  );
 }
 
-export function isInScope(campaign: StudentCampaign | null, buildingId: string): boolean {
-  return !campaign || campaign.scopeType !== "SELECTED_BUILDINGS" || campaign.selectedBuildingIds.includes(buildingId);
+export function isInScope(
+  campaign: StudentCampaign | null,
+  buildingId: string,
+): boolean {
+  return (
+    !campaign ||
+    campaign.scopeType !== "SELECTED_BUILDINGS" ||
+    campaign.selectedBuildingIds.includes(buildingId)
+  );
+}
+
+/** Khu/tầng không phân khu, hoặc hồ sơ chưa có giới tính (để BE quyết định), thì cho đăng ký. */
+export function genderAllows(
+  studentGender: string | null | undefined,
+  areaGender: string | null | undefined,
+): boolean {
+  return !areaGender || !studentGender || areaGender === studentGender;
+}
+
+/** Tòa chỉ dành cho một giới tính khác thì không đăng ký được; tòa "mixed" còn tầng hợp giới tính. */
+export function buildingGender(building: BuildingDto): string | null {
+  const value = building.gender ?? building.genderSummary ?? null;
+  return value === "male" || value === "female" ? value : null;
 }

@@ -32,6 +32,8 @@ export interface StudentCampaignState {
   state: CampaignState;
   message: string | null;
   campaign: StudentCampaign | null;
+  /** Giới tính hồ sơ sinh viên ("male" | "female"), null nếu chưa có. */
+  gender?: string | null;
 }
 
 export interface PageResponse<T> {
@@ -52,6 +54,10 @@ export interface BuildingDto {
   occupancyRate: number;
   status: string;
   baseRoomPrice: number | null;
+  /** Giới tính cấp tòa ("male" | "female"), null nếu phân theo từng tầng/chưa phân khu. */
+  gender?: string | null;
+  /** "male" | "female" | "mixed" | null: tổng hợp phân khu các tầng. */
+  genderSummary?: string | null;
 }
 
 export interface FloorDto {
@@ -64,6 +70,7 @@ export interface FloorDto {
   occupancyRate: number;
   status: string;
   baseRoomPrice: number | null;
+  gender?: string | null;
 }
 
 export interface BedDto {
@@ -143,5 +150,6 @@ export interface Floor {
   name: string;
   number: number | null;
   status: string;
+  gender: string | null;
   rooms: Room[];
 }

@@ -560,7 +560,7 @@ const useStyles = makeStyles(({ colors, font, shadow }) => ({
     color: colors.muted,
   },
   headline: {
-    fontSize: 30,
+    fontSize: 28,
     lineHeight: 38,
     fontWeight: "800",
     color: colors.ink,
