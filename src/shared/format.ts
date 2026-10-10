@@ -121,6 +121,17 @@ export class Formatter {
       : `${Formatter.pad(m)}:${Formatter.pad(s)}`;
   }
 
+  /** "Thứ Bảy" / "Saturday" theo ngôn ngữ đang chọn. */
+  static weekdayLong(value: Date): string {
+    const names = (Formatter.dictionary?.time.weekdaysLong ?? "Chủ Nhật,Thứ Hai,Thứ Ba,Thứ Tư,Thứ Năm,Thứ Sáu,Thứ Bảy").split(",");
+    return names[value.getDay()];
+  }
+
+  /** Tên gọi thân mật: `words` chữ cuối của họ tên ("Nguyễn Văn Nhân" → "Văn Nhân"). */
+  static callName(fullName: string, words = 2): string {
+    return fullName.trim().split(/\s+/).filter(Boolean).slice(-words).join(" ");
+  }
+
   static greeting(hour: number = new Date().getHours()): string {
     if (hour < 11) return Formatter.text("morning");
     if (hour < 14) return Formatter.text("noon");

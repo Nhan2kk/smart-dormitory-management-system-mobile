@@ -2,6 +2,7 @@ import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useSt
 import { AppState } from "react-native";
 import { RealtimeConnection } from "../../shared/realtime";
 import type { RoomIncident, TelemetryUpdate } from "../../models/realtime.model";
+import type { RegistrationPaymentEvent } from "../../models/registration-payment.model";
 import { useAuth } from "../auth/AuthProvider";
 
 type RealtimeValue = {
@@ -10,6 +11,7 @@ type RealtimeValue = {
   notifySignal: number;
   lastIncident: RoomIncident | null;
   lastTelemetry: TelemetryUpdate | null;
+  lastRegistrationPayment: RegistrationPaymentEvent | null;
 };
 
 const RealtimeContext = createContext<RealtimeValue | null>(null);
@@ -25,6 +27,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const [notifySignal, setNotifySignal] = useState(0);
   const [lastIncident, setLastIncident] = useState<RoomIncident | null>(null);
   const [lastTelemetry, setLastTelemetry] = useState<TelemetryUpdate | null>(null);
+  const [lastRegistrationPayment, setLastRegistrationPayment] = useState<RegistrationPaymentEvent | null>(null);
   /** Token đã thử làm mới: lỗi STOMP lặp lại với token mới thì không làm mới nữa (tránh vòng lặp). */
   const refreshedFor = useRef<string | null>(null);
 
@@ -41,6 +44,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       accessToken,
       [
         { destination: "/user/queue/notifies", onMessage: bump },
+        { destination: "/user/queue/registration-payments", onMessage: (body) => setLastRegistrationPayment(body as RegistrationPaymentEvent) },
         { destination: "/user/queue/iot/incidents", onMessage: (body) => setLastIncident(body as RoomIncident) },
         { destination: "/user/queue/iot/telemetry", onMessage: (body) => setLastTelemetry(body as TelemetryUpdate) },
       ],
@@ -60,7 +64,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
 
   // App ở nền thì coi như chưa kết nối (để thông báo quay về hỏi định kỳ khi mở lại cho tới lúc nối xong).
   const live = connected && active;
-  const value = useMemo(() => ({ connected: live, notifySignal, lastIncident, lastTelemetry }), [live, notifySignal, lastIncident, lastTelemetry]);
+  const value = useMemo(() => ({ connected: live, notifySignal, lastIncident, lastTelemetry, lastRegistrationPayment }), [live, notifySignal, lastIncident, lastTelemetry, lastRegistrationPayment]);
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;
 }
 

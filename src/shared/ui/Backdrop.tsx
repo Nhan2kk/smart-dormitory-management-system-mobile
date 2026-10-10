@@ -53,6 +53,7 @@ export function Backdrop({ ambient = true }: { ambient?: boolean }) {
       <Gradient
         colors={[withAlpha(colors.background, 0.1), colors.background]}
         direction="vertical"
+        eased
         style={StyleSheet.absoluteFill}
       />
     </View>

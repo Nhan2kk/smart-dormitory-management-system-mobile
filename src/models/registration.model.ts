@@ -97,6 +97,7 @@ export interface Registration {
   totalAmount: number;
   status: RegistrationStatus;
   paymentDeadline: string | null;
+  paidAt: string | null;
   processedNote: string | null;
   createdAt: string;
 }

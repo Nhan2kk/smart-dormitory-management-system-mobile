@@ -1,4 +1,5 @@
 import type { ApiClient } from "../shared/api";
+import type { PaymentQr, PaymentStatus } from "../models/registration-payment.model";
 import type {
   BuildingDto,
   FloorDto,
@@ -55,9 +56,15 @@ export class RegistrationService {
     return this.request<Registration>("/student/registrations", { body });
   }
 
-  pay(id: string): Promise<Registration> {
-    return this.request<Registration>(
-      `/student/registrations/${encodeURIComponent(id)}/payment`,
+  initPayment(id: string): Promise<PaymentQr> {
+    return this.request<PaymentQr>(
+      `/student/registrations/${encodeURIComponent(id)}/payment-init`,
+    );
+  }
+
+  paymentStatus(id: string): Promise<PaymentStatus> {
+    return this.request<PaymentStatus>(
+      `/student/registrations/${encodeURIComponent(id)}/payment-status`,
     );
   }
 

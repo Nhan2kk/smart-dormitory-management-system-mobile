@@ -10,27 +10,31 @@ import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import { AppHeader, Button, Card, CircleButton, EmptyState, FooterBar, Screen, Touchable, useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
-import { RegistrationService } from "../../services/registration.service";
 import type { Payable } from "../../models/debt.model";
 import { DebtService } from "../../services/debt.service";
 import { DebtLedger, PAYMENT_ACCOUNT } from "./DebtLedger";
+import { RegistrationPaymentScreen } from "./RegistrationPaymentScreen";
 
 const QR_LIFETIME = 15 * 60;
 
 /**
- * Màn hình thanh toán bằng mã QR chuyển khoản. Xác nhận chuyển khoản gọi API thật cho:
- * - đơn đăng ký KTX (`registrationId`): `POST /student/registrations/{id}/payment` — BE hoàn tất đăng ký và tạo biên bản nhận phòng;
+ * Màn hình thanh toán bằng mã QR chuyển khoản:
+ * - đơn đăng ký KTX (`registrationId`): chuyển sang `RegistrationPaymentScreen` — QR SePay thật, BE xác nhận qua webhook;
  * - hoá đơn (`billId`, vd. tất toán chuyển/trả phòng, chi phí sửa chữa): `POST /student/bills/{id}/payment`.
  * Màn mở với tham số `amount`/`title`; nếu thiếu (vd. mở từ thông báo) thì tải hoá đơn theo `billId`.
  */
 export function PaymentScreen() {
+  const { registrationId } = useLocalSearchParams<{ registrationId?: string }>();
+  return registrationId ? <RegistrationPaymentScreen registrationId={String(registrationId)} /> : <BillPaymentScreen />;
+}
+
+function BillPaymentScreen() {
   const { id, amount, title, registrationId, billId } = useLocalSearchParams<{ id: string; amount?: string; title?: string; registrationId?: string; billId?: string }>();
   const { notify } = useToast();
   const { t } = useI18n();
   const { shadow } = useTheme();
   const styles = useStyles();
   const { request, user } = useAuth();
-  const api = useMemo(() => new RegistrationService(request), [request]);
   const bills = useMemo(() => new DebtService(request), [request]);
   // Khoản phát sinh ngay trong app (vd. đăng ký KTX) truyền số tiền qua tham số.
   const fromParams: Payable | null = amount && title ? { id: String(id), amount: Number(amount), title: String(title) } : null;
@@ -112,8 +116,7 @@ export function PaymentScreen() {
   const confirmTransfer = async () => {
     setPhase("checking");
     try {
-      if (registrationId) await api.pay(String(registrationId));
-      else await bills.pay(String(billId ?? item.id));
+      await bills.pay(String(billId ?? item.id));
       setPhase("done");
     } catch (error) {
       notify(errorMessage(error), "danger");

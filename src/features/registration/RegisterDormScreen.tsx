@@ -44,7 +44,7 @@ type DebtBlock = { message: string; actionPath?: string };
 
 const DEBT_CODE = "DORM_DEBT_UNSETTLED";
 
-/** Mở màn thanh toán QR cho đơn đăng ký; xác nhận chuyển khoản sẽ gọi API thanh toán đơn. */
+/** Mở màn thanh toán QR SePay cho đơn đăng ký; BE tự xác nhận khi nhận webhook tiền vào. */
 function openPayment(registration: Registration, title: string) {
   router.push({
     pathname: "/debts/pay/[id]",
