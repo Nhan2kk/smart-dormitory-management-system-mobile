@@ -392,6 +392,20 @@ export const en: Dictionary = {
     errInspection: "Please choose an inspection date.",
   },
   debts: {
+    chargeTypeLabel: "Charge",
+    chargeType: {
+      registration: "Dorm registration fee",
+      maintenanceCost: "Repair cost",
+      checkoutSettlement: "Checkout settlement",
+      roomTransferSettlement: "Room transfer settlement",
+    },
+    methods: {
+      transfer: "Bank transfer",
+      cash: "Cash",
+      other: "Other",
+    },
+    paymentCode: "Payment code",
+    holdExpired: "Hold expired",
     nextDue: "Next due {{date}} · {{title}}",
     payOverdue: "Pay overdue item",
     payNext: "Pay next item",
@@ -415,7 +429,7 @@ export const en: Dictionary = {
     payBill: "Pay bill",
     noticeTitle: "Note",
     notice:
-      'Pay on time so your request can be completed. After transferring, tap "I have transferred" to confirm.',
+      "Pay on time so your requests can be completed. Scan the QR code and the payment is confirmed automatically.",
     empty: "No transactions yet",
     receipt: "Receipt",
     receiptTitle: "E-receipt",
@@ -454,6 +468,11 @@ export const en: Dictionary = {
     bankTransfer: "Bank transfer",
   },
   payment: {
+    billTitle: "Pay bill",
+    billPaid: "The bill has been paid. You can find the receipt under Debts → History.",
+    billClosed: "This bill is no longer awaiting payment.",
+    bill: "Bill",
+    backToDebts: "Back to Debts",
     title: "Payment",
     registrationTitle: "Dorm registration payment",
     registrationPaid: "Dorm registration complete. Please wait for check-in.",

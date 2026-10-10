@@ -1,65 +1,52 @@
-import { BillStatus, DebtStatus } from "../../enums/debt.enum";
-import type { BillResponse, Debt, PaymentAccount } from "../../models/debt.model";
-
-const DAY = 86_400_000;
-/** Còn trong chừng này ngày thì coi là "đến hạn". */
-const DUE_WINDOW_DAYS = 7;
+import { DebtStatus, LedgerStatus } from "../../enums/debt.enum";
+import type { BillResponse, Debt, StudentDebt, StudentDebtSummary } from "../../models/debt.model";
 
 /**
- * Tài khoản nhận chuyển khoản của KTX. Backend chưa có API trả tài khoản nhận tiền,
- * nên dùng thông tin cố định (cùng ngân hàng, số tài khoản với web `MOCK_STUDENT_PAYMENT_ACCOUNT`).
+ * Sổ công nợ của sinh viên dựng từ dữ liệu backend (`/student/debts/*`): tổng hợp do server tính,
+ * khoản còn nợ (đã sắp xếp quá hạn → hạn gần nhất), lịch sử đã trả và danh sách hoá đơn phát sinh.
  */
-export const PAYMENT_ACCOUNT: PaymentAccount = { bank: "Techcombank", accountNumber: "1903 1234 5678 9012", holder: "KY TUC XA DN" };
-
-/** Sổ công nợ của sinh viên dựng từ danh sách hoá đơn: khoản cần trả, đã trả, tổng theo mức hạn. */
 export class DebtLedger {
-  readonly bills: BillResponse[];
-  private readonly debts: Debt[];
+  constructor(
+    readonly summary: StudentDebtSummary,
+    private readonly outstanding: StudentDebt[],
+    private readonly history: StudentDebt[],
+    readonly bills: BillResponse[],
+  ) {}
 
-  constructor(bills: BillResponse[], now: Date = new Date()) {
-    this.bills = [...bills].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    this.debts = this.bills.map((bill) => DebtLedger.toDebt(bill, today));
-  }
-
-  /** Khoản chờ thanh toán (kể cả thanh toán lỗi), hạn gần nhất lên trước. */
+  /** Khoản còn nợ (gồm phí đăng ký đang giữ chỗ), quá hạn và hạn gần nhất lên trước. */
   unpaid(): Debt[] {
-    return this.debts
-      .filter((debt) => debt.status !== DebtStatus.Paid && debt.bill.status !== BillStatus.Cancelled)
-      .sort((a, b) => (a.daysLeft ?? Number.MAX_SAFE_INTEGER) - (b.daysLeft ?? Number.MAX_SAFE_INTEGER));
+    return this.outstanding.map((item) => ({ item, status: DebtLedger.levelOf(item) }));
   }
 
   /** Khoản đã thanh toán, mới nhất lên trước. */
-  paid(): Debt[] {
-    return this.debts.filter((debt) => debt.status === DebtStatus.Paid).sort((a, b) => (b.bill.paidAt ?? "").localeCompare(a.bill.paidAt ?? ""));
+  paid(): StudentDebt[] {
+    return this.history;
   }
 
   totalUnpaid(): number {
-    return this.unpaid().reduce((sum, debt) => sum + debt.bill.amount, 0);
+    return this.summary.outstandingAmount;
   }
 
   sumBy(status: DebtStatus): number {
-    return this.unpaid()
-      .filter((debt) => debt.status === status)
-      .reduce((sum, debt) => sum + debt.bill.amount, 0);
+    switch (status) {
+      case DebtStatus.Overdue:
+        return this.summary.overdueAmount;
+      case DebtStatus.Due:
+        return this.summary.dueSoonAmount;
+      case DebtStatus.Upcoming:
+        return Math.max(0, this.summary.outstandingAmount - this.summary.overdueAmount - this.summary.dueSoonAmount);
+      default:
+        return this.summary.paidAmount;
+    }
   }
 
   hasOverdue(): boolean {
-    return this.unpaid().some((debt) => debt.status === DebtStatus.Overdue);
+    return this.summary.overdueCount > 0;
   }
 
-  /** Nội dung chuyển khoản để BQL đối soát: mã hoá đơn + mã sinh viên. */
-  static transferContent(billId: string, studentCode: string | null | undefined): string {
-    return `KTXDN ${billId}${studentCode ? ` ${studentCode}` : ""}`;
-  }
-
-  private static toDebt(bill: BillResponse, today: number): Debt {
-    if (bill.status === BillStatus.Paid) return { bill, status: DebtStatus.Paid, daysLeft: null };
-    if (!bill.dueDate) return { bill, status: DebtStatus.Due, daysLeft: null };
-    const due = new Date(bill.dueDate);
-    const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
-    const daysLeft = Math.round((dueDay - today) / DAY);
-    const status = daysLeft < 0 ? DebtStatus.Overdue : daysLeft <= DUE_WINDOW_DAYS ? DebtStatus.Due : DebtStatus.Upcoming;
-    return { bill, status, daysLeft };
+  private static levelOf(item: StudentDebt): DebtStatus {
+    if (item.status === LedgerStatus.Paid) return DebtStatus.Paid;
+    if (item.status === LedgerStatus.Overdue) return DebtStatus.Overdue;
+    return item.dueSoon ? DebtStatus.Due : DebtStatus.Upcoming;
   }
 }

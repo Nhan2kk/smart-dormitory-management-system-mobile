@@ -20,3 +20,33 @@ export enum DebtStatus {
   Upcoming = "upcoming",
   Paid = "paid",
 }
+
+/** Nhóm khoản trên màn công nợ (`POST /student/debts/search`, trường `group`). */
+export enum DebtGroup {
+  Outstanding = "outstanding",
+  Overdue = "overdue",
+  DueSoon = "dueSoon",
+  Paid = "paid",
+  All = "all",
+}
+
+/** Trạng thái khoản công nợ do backend tính (`StudentDebt.status`). */
+export enum LedgerStatus {
+  Paid = "paid",
+  Unpaid = "unpaid",
+  Overdue = "overdue",
+}
+
+/** Loại khoản công nợ (`StudentDebt.chargeType`). */
+export enum ChargeType {
+  Registration = "registration",
+  MaintenanceCost = "maintenanceCost",
+  CheckoutSettlement = "checkoutSettlement",
+  RoomTransferSettlement = "roomTransferSettlement",
+}
+
+/** Khoản được trả qua đơn đăng ký KTX hay qua hoá đơn phát sinh. */
+export enum DebtSource {
+  Registration = "REGISTRATION",
+  Bill = "BILL",
+}

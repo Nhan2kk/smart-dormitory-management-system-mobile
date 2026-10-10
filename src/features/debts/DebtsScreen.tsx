@@ -7,8 +7,8 @@ import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import type { Tone } from "../../shared/theme";
 import { AppHeader, BottomSheet, Button, Callout, Card, EmptyState, Gradient, IconBadge, IconName, InfoRow, Screen, SegmentedControl, StatusBadge, Touchable } from "../../shared/ui";
-import { BillStatus, BillType, DebtStatus } from "../../enums/debt.enum";
-import type { BillResponse, Debt } from "../../models/debt.model";
+import { BillStatus, BillType, ChargeType, DebtSource, DebtStatus } from "../../enums/debt.enum";
+import type { BillResponse, Debt, StudentDebt } from "../../models/debt.model";
 import { DebtLedger } from "./DebtLedger";
 import { useDebts } from "./useDebts";
 
@@ -21,13 +21,27 @@ const billTypeMeta: Record<BillType, { icon: IconName; tone: Tone }> = {
   checkoutSettlement: { icon: "exit-outline", tone: "violet" },
   roomTransferSettlement: { icon: "swap-horizontal-outline", tone: "primary" },
 };
+const chargeTypeMeta: Record<ChargeType, { icon: IconName; tone: Tone }> = {
+  registration: { icon: "bed-outline", tone: "info" },
+  ...billTypeMeta,
+};
 
-/** Mở màn QR thanh toán cho một hoá đơn; xác nhận sẽ gọi `POST /student/bills/{id}/payment`. */
-function openPayment(bill: BillResponse) {
-  router.push({ pathname: "/debts/pay/[id]", params: { id: bill.id, billId: bill.id, amount: String(bill.amount), title: bill.title } });
+/** Mở màn QR SePay cho một khoản: phí đăng ký KTX đi qua đơn đăng ký, còn lại là hoá đơn. */
+function openPayment(debt: StudentDebt) {
+  router.push({
+    pathname: "/debts/pay/[id]",
+    params:
+      debt.sourceType === DebtSource.Registration
+        ? { id: debt.id, registrationId: debt.id }
+        : { id: debt.id, billId: debt.id, title: debt.title },
+  });
 }
 
-/** Công nợ của sinh viên = các hoá đơn (`GET /student/bills`). */
+function openBillPayment(bill: BillResponse) {
+  router.push({ pathname: "/debts/pay/[id]", params: { id: bill.id, billId: bill.id, title: bill.title } });
+}
+
+/** Công nợ của sinh viên: phí đăng ký KTX đang giữ chỗ và hoá đơn phát sinh (`/student/debts/*`). */
 export function DebtsScreen() {
   const { t } = useI18n();
   const { colors } = useTheme();
@@ -52,14 +66,15 @@ function DebtsContent({ ledger }: { ledger: DebtLedger }) {
   const { colors, shadow } = useTheme();
   const styles = useStyles();
   const [tab, setTab] = useState<Tab>("unpaid");
-  const [receipt, setReceipt] = useState<BillResponse | null>(null);
+  const [receipt, setReceipt] = useState<StudentDebt | null>(null);
   const overdue = ledger.sumBy(DebtStatus.Overdue);
   const due = ledger.sumBy(DebtStatus.Due);
   const upcoming = ledger.sumBy(DebtStatus.Upcoming);
   const unpaid = ledger.unpaid();
   const paid = ledger.paid();
-  const next = unpaid.find((debt) => debt.status !== DebtStatus.Overdue);
-  const focus = unpaid.find((debt) => debt.status === DebtStatus.Overdue) ?? next;
+  const payable = unpaid.filter((debt) => debt.item.payable);
+  const next = payable.find((debt) => debt.status !== DebtStatus.Overdue);
+  const focus = payable.find((debt) => debt.status === DebtStatus.Overdue) ?? next;
 
   return (
     <>
@@ -78,7 +93,7 @@ function DebtsContent({ ledger }: { ledger: DebtLedger }) {
             </View>
           </View>
           <Text style={styles.heroAmount}>{Formatter.currency(ledger.totalUnpaid())}</Text>
-          {next?.bill.dueDate && <Text style={styles.heroSub}>{t("debts.nextDue", { date: Formatter.date(next.bill.dueDate), title: next.bill.title })}</Text>}
+          {next?.item.dueDate && <Text style={styles.heroSub}>{t("debts.nextDue", { date: Formatter.date(next.item.dueDate), title: next.item.title })}</Text>}
 
           {unpaid.length > 0 && (
             <View style={styles.panel}>
@@ -98,12 +113,12 @@ function DebtsContent({ ledger }: { ledger: DebtLedger }) {
           )}
 
           {focus && (
-            <Touchable onPress={() => openPayment(focus.bill)} accessibilityLabel={focus.status === DebtStatus.Overdue ? t("debts.payOverdue") : t("debts.payNext")} style={styles.heroCta}>
+            <Touchable onPress={() => openPayment(focus.item)} accessibilityLabel={focus.status === DebtStatus.Overdue ? t("debts.payOverdue") : t("debts.payNext")} style={styles.heroCta}>
               <Ionicons name="qr-code-outline" size={18} color={colors.primary} />
               <Text style={[styles.heroCtaText, { color: colors.primary }]} numberOfLines={1}>
                 {focus.status === DebtStatus.Overdue ? t("debts.payOverdue") : t("debts.payNext")}
               </Text>
-              <Text style={[styles.heroCtaAmount, { color: colors.primary }]}>{Formatter.compactCurrency(focus.bill.amount)}</Text>
+              <Text style={[styles.heroCtaAmount, { color: colors.primary }]}>{Formatter.compactCurrency(focus.item.amount)}</Text>
               <Ionicons name="arrow-forward" size={18} color={colors.primary} />
             </Touchable>
           )}
@@ -127,7 +142,7 @@ function DebtsContent({ ledger }: { ledger: DebtLedger }) {
         ) : (
           <View style={{ gap: spacing.md }}>
             {unpaid.map((debt) => (
-              <DebtCard key={debt.bill.id} debt={debt} />
+              <DebtCard key={`${debt.item.sourceType}-${debt.item.id}`} debt={debt} />
             ))}
             <Callout tone="warning" icon="alarm-outline" title={t("debts.noticeTitle")}>
               {t("debts.notice")}
@@ -155,7 +170,7 @@ function DebtsContent({ ledger }: { ledger: DebtLedger }) {
                   <StatusBadge label={t(`debts.billStatus.${bill.status}`)} tone={billStatusTone[bill.status]} />
                   <Text style={styles.amount}>{Formatter.currency(bill.amount)}</Text>
                 </View>
-                {(bill.status === BillStatus.Pending || bill.status === BillStatus.Failed) && <Button label={t("debts.payBill")} size="md" icon="qr-code-outline" onPress={() => openPayment(bill)} />}
+                {(bill.status === BillStatus.Pending || bill.status === BillStatus.Failed) && <Button label={t("debts.payBill")} size="md" icon="qr-code-outline" onPress={() => openBillPayment(bill)} />}
               </Card>
             ))}
           </View>
@@ -166,23 +181,23 @@ function DebtsContent({ ledger }: { ledger: DebtLedger }) {
           <EmptyState icon="receipt-outline" title={t("debts.empty")} />
         ) : (
           <Card style={{ paddingVertical: spacing.xs }}>
-            {paid.map(({ bill }, index, list) => (
-              <Touchable key={bill.id} onPress={() => setReceipt(bill)} accessibilityLabel={`${t("debts.receipt")} ${bill.title}`} pressScale={0.99}>
+            {paid.map((item, index, list) => (
+              <Touchable key={`${item.sourceType}-${item.id}`} onPress={() => setReceipt(item)} accessibilityLabel={`${t("debts.receipt")} ${item.title}`} pressScale={0.99}>
                 <View style={[styles.history, index < list.length - 1 && styles.divider]}>
                   <View style={styles.historyIcon}>
                     <Ionicons name="checkmark" size={18} color={colors.success} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.title} numberOfLines={1}>
-                      {bill.title}
+                      {item.title}
                     </Text>
                     <Text style={styles.caption}>
-                      {bill.paidAt ? Formatter.dateTime(bill.paidAt) : ""}
-                      {bill.paymentMethod ? ` · ${paymentMethodLabel(bill.paymentMethod, t)}` : ""}
+                      {item.paidAt ? Formatter.dateTime(item.paidAt) : ""}
+                      {item.method ? ` · ${t(`debts.methods.${item.method}`)}` : ""}
                     </Text>
                   </View>
                   <View style={{ alignItems: "flex-end", gap: 4 }}>
-                    <Text style={styles.amountSmall}>−{Formatter.currency(bill.amount)}</Text>
+                    <Text style={styles.amountSmall}>−{Formatter.currency(item.amount)}</Text>
                     <Text style={styles.link}>{t("debts.receipt")}</Text>
                   </View>
                 </View>
@@ -191,7 +206,7 @@ function DebtsContent({ ledger }: { ledger: DebtLedger }) {
           </Card>
         ))}
 
-      <BottomSheet visible={!!receipt} onClose={() => setReceipt(null)} title={t("debts.receiptTitle")} subtitle={receipt?.id}>
+      <BottomSheet visible={!!receipt} onClose={() => setReceipt(null)} title={t("debts.receiptTitle")} subtitle={receipt?.code}>
         {receipt && (
           <>
             <View style={styles.receiptHead}>
@@ -203,9 +218,11 @@ function DebtsContent({ ledger }: { ledger: DebtLedger }) {
             </View>
             <Card style={{ paddingVertical: spacing.xs }}>
               <InfoRow label={t("debts.content")} value={receipt.title} />
-              <InfoRow label={t("debts.billCode")} value={receipt.id} />
+              <InfoRow label={t("debts.chargeTypeLabel")} value={t(`debts.chargeType.${receipt.chargeType}`)} />
               <InfoRow label={t("debts.paidAt")} value={receipt.paidAt ? Formatter.dateTime(receipt.paidAt) : "—"} />
-              <InfoRow label={t("debts.method")} value={receipt.paymentMethod ? paymentMethodLabel(receipt.paymentMethod, t) : "—"} divider={false} />
+              <InfoRow label={t("debts.method")} value={receipt.method ? t(`debts.methods.${receipt.method}`) : "—"} />
+              {receipt.referenceCode && <InfoRow label={t("debts.paymentCode")} value={receipt.referenceCode} />}
+              <InfoRow label={t("debts.transactionCode")} value={receipt.transactionCode ?? receipt.code} divider={false} />
             </Card>
           </>
         )}
@@ -214,34 +231,38 @@ function DebtsContent({ ledger }: { ledger: DebtLedger }) {
   );
 }
 
-function paymentMethodLabel(method: string, t: ReturnType<typeof useI18n>["t"]): string {
-  return method === "bank_transfer" ? t("debts.bankTransfer") : method;
-}
-
 function DebtCard({ debt }: { debt: Debt }) {
   const { t } = useI18n();
   const { tones } = useTheme();
   const styles = useStyles();
-  const type = billTypeMeta[debt.bill.billType] ?? { icon: "receipt-outline" as IconName, tone: "violet" as Tone };
+  const { item } = debt;
+  const type = chargeTypeMeta[item.chargeType] ?? { icon: "receipt-outline" as IconName, tone: "violet" as Tone };
   const tone = debtStatusTone[debt.status];
-  const days = debt.daysLeft;
+  const days = item.daysLeft;
   const hint = days == null ? null : days < 0 ? t("debts.overdueDays", { count: Math.abs(days) }) : days === 0 ? t("debts.dueToday") : t("debts.daysLeft", { count: days });
   return (
     <Card style={[{ gap: spacing.md }, debt.status === DebtStatus.Overdue && { borderColor: tones.danger.fg, borderWidth: 1.5 }]}>
       <View style={styles.row}>
         <IconBadge icon={type.icon} tone={type.tone} size={46} />
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>{debt.bill.title}</Text>
-          <Text style={styles.caption}>{debt.bill.dueDate ? t("debts.dueOn", { date: Formatter.date(debt.bill.dueDate) }) : t(`debts.billType.${debt.bill.billType}`)}</Text>
+          <Text style={styles.title}>{item.title}</Text>
+          <Text style={styles.caption}>
+            {t(`debts.chargeType.${item.chargeType}`)}
+            {item.dueDate ? ` · ${t("debts.dueOn", { date: Formatter.date(item.dueDate) })}` : ""}
+          </Text>
         </View>
-        <StatusBadge label={debt.bill.status === BillStatus.Failed ? t("debts.billStatus.failed") : t(`debts.status.${debt.status}`)} tone={debt.bill.status === BillStatus.Failed ? "danger" : tone} />
+        <StatusBadge label={t(`debts.status.${debt.status}`)} tone={tone} />
       </View>
       <View style={styles.debtFoot}>
         <View>
-          <Text style={styles.amount}>{Formatter.currency(debt.bill.amount)}</Text>
+          <Text style={styles.amount}>{Formatter.currency(item.amount)}</Text>
           {hint && <Text style={[styles.hint, { color: tones[tone].fg }]}>{hint}</Text>}
         </View>
-        <Button label={t("debts.pay")} size="md" icon="qr-code-outline" onPress={() => openPayment(debt.bill)} variant={debt.status === DebtStatus.Upcoming ? "secondary" : "primary"} />
+        {item.payable ? (
+          <Button label={t("debts.pay")} size="md" icon="qr-code-outline" onPress={() => openPayment(item)} variant={debt.status === DebtStatus.Upcoming ? "secondary" : "primary"} />
+        ) : (
+          <Text style={[styles.hint, { color: tones.danger.fg }]}>{t("debts.holdExpired")}</Text>
+        )}
       </View>
     </Card>
   );

@@ -388,6 +388,20 @@ export const vi = {
     errInspection: "Vui lòng chọn ngày BQL có thể kiểm tra phòng.",
   },
   debts: {
+    chargeTypeLabel: "Loại khoản",
+    chargeType: {
+      registration: "Phí đăng ký KTX",
+      maintenanceCost: "Chi phí sửa chữa",
+      checkoutSettlement: "Tất toán trả phòng",
+      roomTransferSettlement: "Tất toán chuyển phòng",
+    },
+    methods: {
+      transfer: "Chuyển khoản",
+      cash: "Tiền mặt",
+      other: "Khác",
+    },
+    paymentCode: "Mã thanh toán",
+    holdExpired: "Hết hạn giữ chỗ",
     nextDue: "Hạn gần nhất {{date}} · {{title}}",
     payOverdue: "Thanh toán quá hạn",
     payNext: "Thanh toán gần nhất",
@@ -411,7 +425,7 @@ export const vi = {
     payBill: "Thanh toán hoá đơn",
     noticeTitle: "Lưu ý",
     notice:
-      'Thanh toán đúng hạn để yêu cầu được hoàn tất. Sau khi chuyển khoản, bấm "Tôi đã chuyển khoản" để xác nhận.',
+      "Thanh toán đúng hạn để yêu cầu được hoàn tất. Quét mã QR, hệ thống tự xác nhận khi nhận được tiền.",
     empty: "Chưa có giao dịch",
     receipt: "Biên lai",
     receiptTitle: "Biên lai điện tử",
@@ -454,6 +468,11 @@ export const vi = {
     bankTransfer: "Chuyển khoản",
   },
   payment: {
+    billTitle: "Thanh toán hoá đơn",
+    billPaid: "Hoá đơn đã được thanh toán. Biên lai nằm trong mục Lịch sử của Công nợ.",
+    billClosed: "Hoá đơn không còn ở trạng thái chờ thanh toán.",
+    bill: "Hoá đơn",
+    backToDebts: "Về Công nợ",
     title: "Thanh toán",
     registrationTitle: "Thanh toán đăng ký KTX",
     registrationPaid: "Đã đăng ký KTX. Vui lòng chờ nhận phòng.",

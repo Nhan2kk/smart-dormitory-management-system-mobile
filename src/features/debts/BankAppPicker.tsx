@@ -1,7 +1,7 @@
 import * as Clipboard from "expo-clipboard";
 import { useEffect, useState } from "react";
 import { Image, Linking, Platform, Pressable, Text, View } from "react-native";
-import type { PaymentQr } from "../../models/registration-payment.model";
+import type { TransferInfo } from "../../models/debt.model";
 import { makeStyles, radius, spacing } from "../../shared/theme";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Card, useToast } from "../../shared/ui";
@@ -50,7 +50,7 @@ async function loadBankApps(): Promise<BankApp[]> {
  * Chọn ngân hàng để thanh toán như app bán lẻ: bấm vào ngân hàng thì mở app đó với
  * số tài khoản, số tiền và nội dung chuyển khoản đã điền sẵn (VietQR deep link).
  */
-export function BankAppPicker({ qr }: { qr: PaymentQr }) {
+export function BankAppPicker({ qr }: { qr: TransferInfo }) {
   const { t } = useI18n();
   const { notify } = useToast();
   const styles = useStyles();

@@ -1,10 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { router } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  AppState,
   Image,
   Pressable,
   Text,
@@ -34,6 +33,7 @@ import {
   primaryAudience,
 } from "../registration/registrationHelpers";
 import { PaymentSuccessView, type PaymentSuccessRow } from "./PaymentSuccessView";
+import { formatCountdown, useSepayPayment } from "./useSepayPayment";
 
 export function RegistrationPaymentScreen({
   registrationId,
@@ -46,69 +46,42 @@ export function RegistrationPaymentScreen({
   const { t, lang } = useI18n();
   const { connected, lastRegistrationPayment } = useRealtime();
   const styles = useStyles();
-  const [qr, setQr] = useState<PaymentQr | null>(null);
-  const [phase, setPhase] = useState<
-    "loading" | "waiting" | "qr_expired" | "paid" | "hold_expired"
-  >("loading");
   const [registration, setRegistration] = useState<Registration | null>(null);
   const [checkInStart, setCheckInStart] = useState<string | null>(null);
-  const [offset, setOffset] = useState(0);
-  const [now, setNow] = useState(0);
-
-  const checkStatus = useCallback(async () => {
-    try {
+  const liveState =
+    lastRegistrationPayment?.registrationId === registrationId
+      ? lastRegistrationPayment.status === "PAID"
+        ? "paid"
+        : "closed"
+      : null;
+  const {
+    qr,
+    phase: currentPhase,
+    createQr,
+    qrRemaining: remain,
+    deadlineRemaining,
+  } = useSepayPayment<PaymentQr>({
+    key: registrationId,
+    init: () => service.initPayment(registrationId),
+    status: async () => {
       const status = await service.paymentStatus(registrationId);
-      setOffset(new Date(status.serverTime).getTime() - Date.now());
-      if (status.registrationStatus === "APPROVED") setPhase("paid");
-      else if (
-        ["EXPIRED", "CANCELLED", "REJECTED"].includes(status.registrationStatus)
-      )
-        setPhase("hold_expired");
-      else if (
-        !status.qrExpiresAt ||
-        new Date(status.qrExpiresAt).getTime() <=
-          new Date(status.serverTime).getTime()
-      )
-        setPhase("qr_expired");
-    } catch (error) {
-      notify(errorMessage(error), "danger");
-    }
-  }, [service, registrationId, notify]);
-
-  const createQr = useCallback(async () => {
-    setPhase("loading");
-    try {
-      const next = await service.initPayment(registrationId);
-      setQr(next);
-      setOffset(new Date(next.serverTime).getTime() - Date.now());
-      setPhase("waiting");
-    } catch (error) {
-      notify(errorMessage(error), "danger");
-      await checkStatus();
-    }
-  }, [service, registrationId, notify, checkStatus]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => void createQr(), 0);
-    return () => clearTimeout(timer);
-  }, [createQr]);
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-  useEffect(() => {
-    const listener = AppState.addEventListener("change", (state) => {
-      if (state === "active") void checkStatus();
-    });
-    return () => listener.remove();
-  }, [checkStatus]);
-  // Socket báo kết quả tức thì; vẫn hỏi lại trạng thái trong lúc chờ vì socket bị ngắt khi
-  // sinh viên chuyển sang app ngân hàng để trả tiền, sự kiện gửi lúc đó sẽ bị lỡ.
-  useEffect(() => {
-    if (phase !== "waiting" && phase !== "qr_expired") return;
-    const timer = setInterval(() => void checkStatus(), connected ? 4000 : 2000);
-    return () => clearInterval(timer);
-  }, [connected, phase, checkStatus]);
+      return {
+        state:
+          status.registrationStatus === "APPROVED"
+            ? "paid"
+            : ["EXPIRED", "CANCELLED", "REJECTED"].includes(status.registrationStatus)
+              ? "closed"
+              : "open",
+        qrExpiresAt: status.qrExpiresAt,
+        serverTime: status.serverTime,
+      };
+    },
+    deadlineOf: (value) => value.paymentDeadline,
+    liveState,
+    connected,
+    onError: (message) => notify(message, "danger"),
+  });
+  const hold = deadlineRemaining ?? 0;
 
   // Thông tin đơn (sinh viên, phòng, thời hạn) hiển thị cạnh mã QR; lỗi tải không chặn thanh toán.
   useEffect(() => {
@@ -149,35 +122,7 @@ export function RegistrationPaymentScreen({
     await Clipboard.setStringAsync(value);
     notify(t("payment.copiedValue", { label }));
   };
-  const remain = qr
-    ? Math.max(0, new Date(qr.qrExpiresAt).getTime() - now - offset)
-    : 0;
-  const hold = qr
-    ? Math.max(0, new Date(qr.paymentDeadline).getTime() - now - offset)
-    : 0;
-  const eventPhase =
-    lastRegistrationPayment?.registrationId === registrationId
-      ? lastRegistrationPayment.status === "PAID"
-        ? "paid"
-        : "hold_expired"
-      : null;
-  const currentPhase =
-    eventPhase ??
-    (phase === "waiting" && qr && now > 0
-      ? hold === 0
-        ? "hold_expired"
-        : remain === 0
-          ? "qr_expired"
-          : "waiting"
-      : phase);
-  const clock = (ms: number) => {
-    const total = Math.floor(ms / 1000);
-    const pad = (value: number) => value.toString().padStart(2, "0");
-    const minutes = `${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
-    return total >= 3600
-      ? `${pad(Math.floor(total / 3600))}:${minutes}`
-      : minutes;
-  };
+  const clock = formatCountdown;
   const [paidRegistration, setPaidRegistration] = useState<Registration | null>(null);
   useEffect(() => {
     if (currentPhase !== "paid" || paidRegistration) return;
@@ -233,7 +178,7 @@ export function RegistrationPaymentScreen({
           onClose={() => router.back()}
         />
       )}
-      {currentPhase === "hold_expired" && (
+      {currentPhase === "closed" && (
         <View style={styles.center}>
           <Text style={styles.title}>{t("payment.holdExpired")}</Text>
           <Button

@@ -1,20 +1,43 @@
 import type { ApiClient } from "../shared/api";
+import type { DebtGroup } from "../enums/debt.enum";
 import type {
   BillPageResponse,
-  BillPayRequest,
+  BillPaymentQr,
+  BillPaymentStatus,
   BillResponse,
+  StudentDebt,
+  StudentDebtPage,
+  StudentDebtSummary,
 } from "../models/debt.model";
 
 const PAGE_SIZE = 100;
 /** Chặn vòng lặp nếu BE trả sai cờ `last`. */
 const MAX_PAGES = 20;
 
-/** Gọi API hoá đơn của sinh viên (không đổi hợp đồng backend). */
+/** Gọi API công nợ và hoá đơn của sinh viên. */
 export class DebtService {
   constructor(private readonly request: ApiClient) {}
 
-  /** Toàn bộ hoá đơn của sinh viên (gộp các trang). */
-  async mine(): Promise<BillResponse[]> {
+  /** Tổng hợp công nợ: còn nợ, quá hạn, đến hạn 7 ngày, đã trả. */
+  summary(): Promise<StudentDebtSummary> {
+    return this.request<StudentDebtSummary>("/student/debts/summary");
+  }
+
+  /** Mọi khoản thuộc một nhóm (gộp các trang); BE đã sắp xếp: quá hạn và hạn gần nhất lên trước. */
+  async debts(group: DebtGroup): Promise<StudentDebt[]> {
+    const items: StudentDebt[] = [];
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const result = await this.request<StudentDebtPage>("/student/debts/search", {
+        body: { page, size: PAGE_SIZE, group },
+      });
+      items.push(...result.content);
+      if (result.last || result.content.length < PAGE_SIZE) break;
+    }
+    return items;
+  }
+
+  /** Toàn bộ hoá đơn của sinh viên (gộp các trang), kể cả hoá đơn đã huỷ. */
+  async bills(): Promise<BillResponse[]> {
     const bills: BillResponse[] = [];
     for (let page = 0; page < MAX_PAGES; page++) {
       const result = await this.request<BillPageResponse>(
@@ -27,21 +50,17 @@ export class DebtService {
     return bills;
   }
 
-  get(id: string): Promise<BillResponse> {
-    return this.request<BillResponse>(
-      `/student/bills/${encodeURIComponent(id)}`,
-      { method: "GET" },
+  /** Lấy QR SePay còn hạn hoặc tạo QR mới (15 phút) để trả hoá đơn. */
+  initPayment(billId: string): Promise<BillPaymentQr> {
+    return this.request<BillPaymentQr>(
+      `/student/bills/${encodeURIComponent(billId)}/payment-init`,
     );
   }
 
-  /** Xác nhận đã chuyển khoản; BE đánh dấu hoá đơn đã thanh toán. */
-  pay(
-    id: string,
-    body: BillPayRequest = { paymentMethod: "bank_transfer" },
-  ): Promise<BillResponse> {
-    return this.request<BillResponse>(
-      `/student/bills/${encodeURIComponent(id)}/payment`,
-      { body },
+  paymentStatus(billId: string): Promise<BillPaymentStatus> {
+    return this.request<BillPaymentStatus>(
+      `/student/bills/${encodeURIComponent(billId)}/payment-status`,
     );
   }
 }
+

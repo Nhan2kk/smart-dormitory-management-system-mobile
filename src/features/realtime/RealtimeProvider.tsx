@@ -13,6 +13,7 @@ import type {
   RoomIncident,
   TelemetryUpdate,
 } from "../../models/realtime.model";
+import type { BillPaymentEvent } from "../../models/debt.model";
 import type { RegistrationPaymentEvent } from "../../models/registration-payment.model";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -23,6 +24,7 @@ type RealtimeValue = {
   lastIncident: RoomIncident | null;
   lastTelemetry: TelemetryUpdate | null;
   lastRegistrationPayment: RegistrationPaymentEvent | null;
+  lastBillPayment: BillPaymentEvent | null;
 };
 
 const RealtimeContext = createContext<RealtimeValue | null>(null);
@@ -42,6 +44,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   );
   const [lastRegistrationPayment, setLastRegistrationPayment] =
     useState<RegistrationPaymentEvent | null>(null);
+  const [lastBillPayment, setLastBillPayment] = useState<BillPaymentEvent | null>(null);
   /** Token đã thử làm mới: lỗi STOMP lặp lại với token mới thì không làm mới nữa (tránh vòng lặp). */
   const refreshedFor = useRef<string | null>(null);
 
@@ -70,6 +73,10 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
           destination: "/user/queue/registration-payments",
           onMessage: (body) =>
             setLastRegistrationPayment(body as RegistrationPaymentEvent),
+        },
+        {
+          destination: "/user/queue/bill-payments",
+          onMessage: (body) => setLastBillPayment(body as BillPaymentEvent),
         },
         {
           destination: "/user/queue/iot/incidents",
@@ -103,8 +110,9 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       lastIncident,
       lastTelemetry,
       lastRegistrationPayment,
+      lastBillPayment,
     }),
-    [live, notifySignal, lastIncident, lastTelemetry, lastRegistrationPayment],
+    [live, notifySignal, lastIncident, lastTelemetry, lastRegistrationPayment, lastBillPayment],
   );
   return (
     <RealtimeContext.Provider value={value}>
