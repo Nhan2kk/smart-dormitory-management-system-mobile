@@ -8,7 +8,17 @@ import { QrCode } from "../../shared/charts/QrCode";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
-import { AppHeader, Button, Card, CircleButton, EmptyState, FooterBar, Screen, Touchable, useToast } from "../../shared/ui";
+import {
+  AppHeader,
+  Button,
+  Card,
+  CircleButton,
+  EmptyState,
+  FooterBar,
+  Screen,
+  Touchable,
+  useToast,
+} from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import type { Payable } from "../../models/debt.model";
 import { DebtService } from "../../services/debt.service";
@@ -24,12 +34,24 @@ const QR_LIFETIME = 15 * 60;
  * Màn mở với tham số `amount`/`title`; nếu thiếu (vd. mở từ thông báo) thì tải hoá đơn theo `billId`.
  */
 export function PaymentScreen() {
-  const { registrationId } = useLocalSearchParams<{ registrationId?: string }>();
-  return registrationId ? <RegistrationPaymentScreen registrationId={String(registrationId)} /> : <BillPaymentScreen />;
+  const { registrationId } = useLocalSearchParams<{
+    registrationId?: string;
+  }>();
+  return registrationId ? (
+    <RegistrationPaymentScreen registrationId={String(registrationId)} />
+  ) : (
+    <BillPaymentScreen />
+  );
 }
 
 function BillPaymentScreen() {
-  const { id, amount, title, registrationId, billId } = useLocalSearchParams<{ id: string; amount?: string; title?: string; registrationId?: string; billId?: string }>();
+  const { id, amount, title, registrationId, billId } = useLocalSearchParams<{
+    id: string;
+    amount?: string;
+    title?: string;
+    registrationId?: string;
+    billId?: string;
+  }>();
   const { notify } = useToast();
   const { t } = useI18n();
   const { shadow } = useTheme();
@@ -37,10 +59,15 @@ function BillPaymentScreen() {
   const { request, user } = useAuth();
   const bills = useMemo(() => new DebtService(request), [request]);
   // Khoản phát sinh ngay trong app (vd. đăng ký KTX) truyền số tiền qua tham số.
-  const fromParams: Payable | null = amount && title ? { id: String(id), amount: Number(amount), title: String(title) } : null;
+  const fromParams: Payable | null =
+    amount && title
+      ? { id: String(id), amount: Number(amount), title: String(title) }
+      : null;
   const needsFetch = !fromParams && !!billId;
   // undefined = đang tải hoá đơn, null = không có / không tìm thấy.
-  const [loaded, setLoaded] = useState<Payable | null | undefined>(needsFetch ? undefined : null);
+  const [loaded, setLoaded] = useState<Payable | null | undefined>(
+    needsFetch ? undefined : null,
+  );
   const item = fromParams ?? loaded ?? undefined;
 
   // Mở thiếu số tiền / nội dung (vd. từ thông báo): lấy hoá đơn từ BE.
@@ -49,33 +76,54 @@ function BillPaymentScreen() {
     let active = true;
     bills
       .get(String(billId))
-      .then((bill) => active && setLoaded({ id: bill.id, amount: bill.amount, title: bill.title }))
+      .then(
+        (bill) =>
+          active &&
+          setLoaded({ id: bill.id, amount: bill.amount, title: bill.title }),
+      )
       .catch(() => active && setLoaded(null));
     return () => {
       active = false;
     };
   }, [billId, bills, needsFetch]);
   const [seconds, setSeconds] = useState(QR_LIFETIME);
-  const [phase, setPhase] = useState<"waiting" | "checking" | "done">("waiting");
+  const [phase, setPhase] = useState<"waiting" | "checking" | "done">(
+    "waiting",
+  );
 
   useEffect(() => {
     if (phase !== "waiting") return;
-    const timer = setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    const timer = setInterval(
+      () => setSeconds((value) => Math.max(0, value - 1)),
+      1000,
+    );
     return () => clearInterval(timer);
   }, [phase]);
 
-  const close = <CircleButton icon="close" label={t("common.close")} onPress={() => router.back()} />;
+  const close = (
+    <CircleButton
+      icon="close"
+      label={t("common.close")}
+      onPress={() => router.back()}
+    />
+  );
 
   if (!item && loaded === undefined)
     return (
-      <Screen edges={["top", "bottom"]} header={<AppHeader title={t("payment.title")} hideBack right={close} />}>
+      <Screen
+        edges={["top", "bottom"]}
+        header={<AppHeader title={t("payment.title")} hideBack right={close} />}
+      >
         <ActivityIndicator style={{ marginTop: spacing.xl }} />
       </Screen>
     );
 
   if (!item)
     return (
-      <Screen edges={["top", "bottom"]} header={<AppHeader title={t("payment.title")} hideBack right={close} />}>
+      <Screen
+        edges={["top", "bottom"]}
+        header={<AppHeader title={t("payment.title")} hideBack right={close} />}
+      >
         <EmptyState icon="search-outline" title={t("payment.notFound")} />
       </Screen>
     );
@@ -89,7 +137,11 @@ function BillPaymentScreen() {
 
   if (phase === "done")
     return (
-      <Screen edges={["top", "bottom"]} scroll={false} contentStyle={styles.doneWrap}>
+      <Screen
+        edges={["top", "bottom"]}
+        scroll={false}
+        contentStyle={styles.doneWrap}
+      >
         <View style={[styles.doneIcon, shadow(2)]}>
           <Ionicons name="checkmark" size={48} color="#FFFFFF" />
         </View>
@@ -98,17 +150,39 @@ function BillPaymentScreen() {
         <Text style={styles.doneBody}>{item.title}</Text>
         <Card variant="outline" style={styles.receipt}>
           <ReceiptRow label={t("debts.billCode")} value={item.id} />
-          <ReceiptRow label={t("debts.paidAt")} value={Formatter.dateTime(new Date())} />
-          <ReceiptRow label={t("debts.method")} value={`QR · ${account.bank}`} />
+          <ReceiptRow
+            label={t("debts.paidAt")}
+            value={Formatter.dateTime(new Date())}
+          />
+          <ReceiptRow
+            label={t("debts.method")}
+            value={`QR · ${account.bank}`}
+          />
         </Card>
         {registrationId ? (
           <>
-            <Text style={[styles.doneBody, { marginTop: spacing.lg }]}>{t("payment.registrationDone")}</Text>
-            <Button label={t("payment.goCheckIn")} icon="key-outline" onPress={() => router.replace("/check-in")} style={{ alignSelf: "stretch", marginTop: spacing.xl }} />
-            <Button label={t("common.done")} variant="ghost" onPress={() => router.back()} style={{ alignSelf: "stretch", marginTop: spacing.sm }} />
+            <Text style={[styles.doneBody, { marginTop: spacing.lg }]}>
+              {t("payment.registrationDone")}
+            </Text>
+            <Button
+              label={t("payment.goCheckIn")}
+              icon="key-outline"
+              onPress={() => router.replace("/check-in")}
+              style={{ alignSelf: "stretch", marginTop: spacing.xl }}
+            />
+            <Button
+              label={t("common.done")}
+              variant="ghost"
+              onPress={() => router.back()}
+              style={{ alignSelf: "stretch", marginTop: spacing.sm }}
+            />
           </>
         ) : (
-          <Button label={t("common.done")} onPress={() => router.back()} style={{ alignSelf: "stretch", marginTop: spacing.xxl }} />
+          <Button
+            label={t("common.done")}
+            onPress={() => router.back()}
+            style={{ alignSelf: "stretch", marginTop: spacing.xxl }}
+          />
         )}
       </Screen>
     );
@@ -127,11 +201,22 @@ function BillPaymentScreen() {
   return (
     <Screen
       edges={["top"]}
-      header={<AppHeader title={t("payment.title")} subtitle={item.id} hideBack right={close} />}
+      header={
+        <AppHeader
+          title={t("payment.title")}
+          subtitle={item.id}
+          hideBack
+          right={close}
+        />
+      }
       footer={
         <FooterBar>
           <Button
-            label={phase === "checking" ? t("payment.checking") : t("payment.transferred")}
+            label={
+              phase === "checking"
+                ? t("payment.checking")
+                : t("payment.transferred")
+            }
             icon="checkmark-done"
             loading={phase === "checking"}
             disabled={seconds === 0}
@@ -166,27 +251,58 @@ function BillPaymentScreen() {
         <Text style={styles.qrHint}>{t("payment.scanHint")}</Text>
         {seconds > 0 ? (
           <View style={styles.timer}>
-            <Ionicons name="time-outline" size={16} color={styles.timerText.color} />
-            <Text style={styles.timerText}>{t("payment.expiresIn", { time: Formatter.countdown(seconds) })}</Text>
+            <Ionicons
+              name="time-outline"
+              size={16}
+              color={styles.timerText.color}
+            />
+            <Text style={styles.timerText}>
+              {t("payment.expiresIn", { time: Formatter.countdown(seconds) })}
+            </Text>
           </View>
         ) : (
-          <Button label={t("payment.newQr")} size="md" variant="secondary" icon="refresh" onPress={() => setSeconds(QR_LIFETIME)} />
+          <Button
+            label={t("payment.newQr")}
+            size="md"
+            variant="secondary"
+            icon="refresh"
+            onPress={() => setSeconds(QR_LIFETIME)}
+          />
         )}
       </Card>
 
       <Text style={styles.manualTitle}>{t("payment.manual")}</Text>
       <Card style={{ paddingVertical: spacing.xs }}>
         <CopyRow label={t("payment.bank")} value={account.bank} />
-        <CopyRow label={t("payment.accountNumber")} value={account.accountNumber} onCopy={copy} />
+        <CopyRow
+          label={t("payment.accountNumber")}
+          value={account.accountNumber}
+          onCopy={copy}
+        />
         <CopyRow label={t("payment.holder")} value={account.holder} />
-        <CopyRow label={t("payment.content")} value={content} onCopy={copy} last />
+        <CopyRow
+          label={t("payment.content")}
+          value={content}
+          onCopy={copy}
+          last
+        />
       </Card>
       <Text style={styles.footnote}>{t("payment.autoUpdate")}</Text>
     </Screen>
   );
 }
 
-function CopyRow({ label, value, onCopy, last }: { label: string; value: string; onCopy?: (label: string, value: string) => void; last?: boolean }) {
+function CopyRow({
+  label,
+  value,
+  onCopy,
+  last,
+}: {
+  label: string;
+  value: string;
+  onCopy?: (label: string, value: string) => void;
+  last?: boolean;
+}) {
   const styles = useStyles();
   const { t } = useI18n();
   const { colors } = useTheme();
@@ -197,7 +313,11 @@ function CopyRow({ label, value, onCopy, last }: { label: string; value: string;
         <Text style={styles.copyValue}>{value}</Text>
       </View>
       {onCopy && (
-        <Touchable onPress={() => onCopy(label, value)} accessibilityLabel={`${t("common.copy")} ${label}`} style={styles.copyBtn}>
+        <Touchable
+          onPress={() => onCopy(label, value)}
+          accessibilityLabel={`${t("common.copy")} ${label}`}
+          style={styles.copyBtn}
+        >
           <Ionicons name="copy-outline" size={16} color={colors.primary} />
           <Text style={styles.copyText}>{t("common.copy")}</Text>
         </Touchable>
@@ -219,27 +339,103 @@ function ReceiptRow({ label, value }: { label: string; value: string }) {
 const useStyles = makeStyles(({ colors, font }) => ({
   caption: { ...font.caption, fontSize: 12 },
   amountBox: { alignItems: "center", paddingVertical: spacing.md },
-  amount: { fontSize: 36, fontWeight: "800", color: colors.ink, marginTop: 4, letterSpacing: -0.5 },
+  amount: {
+    fontSize: 36,
+    fontWeight: "800",
+    color: colors.ink,
+    marginTop: 4,
+    letterSpacing: -0.5,
+  },
   amountFor: { ...font.body, fontSize: 14, marginTop: 2, textAlign: "center" },
-  qrCard: { alignItems: "center", gap: spacing.md, marginTop: spacing.md, paddingVertical: spacing.xl },
-  qrFrame: { padding: 12, borderRadius: radius.lg, borderWidth: 2, borderColor: colors.primarySoft, backgroundColor: "#FFFFFF" },
-  qrExpired: { width: 200, height: 200, alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#F1ECE6", borderRadius: radius.md },
+  qrCard: {
+    alignItems: "center",
+    gap: spacing.md,
+    marginTop: spacing.md,
+    paddingVertical: spacing.xl,
+  },
+  qrFrame: {
+    padding: 12,
+    borderRadius: radius.lg,
+    borderWidth: 2,
+    borderColor: colors.primarySoft,
+    backgroundColor: "#FFFFFF",
+  },
+  qrExpired: {
+    width: 200,
+    height: 200,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#F1ECE6",
+    borderRadius: radius.md,
+  },
   expiredText: { fontSize: 14, fontWeight: "600", color: "#8C837B" },
-  qrChecking: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(255,255,255,0.8)", alignItems: "center", justifyContent: "center", borderRadius: radius.lg },
+  qrChecking: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(255,255,255,0.8)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.lg,
+  },
   qrHint: { ...font.body, fontSize: 14, textAlign: "center" },
-  timer: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.primarySoft, paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill },
+  timer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+  },
   timerText: { color: colors.primary, fontWeight: "700", fontSize: 13 },
-  manualTitle: { ...font.heading, fontSize: 16, marginTop: spacing.xxl, marginBottom: spacing.md },
-  copyRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.md },
-  divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  manualTitle: {
+    ...font.heading,
+    fontSize: 16,
+    marginTop: spacing.xxl,
+    marginBottom: spacing.md,
+  },
+  copyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  divider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
   copyValue: { ...font.label, fontSize: 15, marginTop: 2 },
-  copyBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, height: 36, borderRadius: radius.pill, backgroundColor: colors.primarySoft },
+  copyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    height: 36,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primarySoft,
+  },
   copyText: { color: colors.primary, fontWeight: "700", fontSize: 12 },
   footnote: { ...font.caption, textAlign: "center", marginTop: spacing.lg },
-  doneWrap: { alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.xxl },
-  doneIcon: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.success, alignItems: "center", justifyContent: "center" },
+  doneWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xxl,
+  },
+  doneIcon: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: colors.success,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   doneTitle: { ...font.title, marginTop: spacing.xl },
-  doneAmount: { fontSize: 32, fontWeight: "800", color: colors.success, marginTop: spacing.sm },
+  doneAmount: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: colors.success,
+    marginTop: spacing.sm,
+  },
   doneBody: { ...font.body, marginTop: 4, textAlign: "center" },
   receipt: { alignSelf: "stretch", marginTop: spacing.xl, gap: spacing.sm },
   receiptRow: { flexDirection: "row", justifyContent: "space-between" },

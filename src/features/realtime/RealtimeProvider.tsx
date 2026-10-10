@@ -1,7 +1,18 @@
-import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { AppState } from "react-native";
 import { RealtimeConnection } from "../../shared/realtime";
-import type { RoomIncident, TelemetryUpdate } from "../../models/realtime.model";
+import type {
+  RoomIncident,
+  TelemetryUpdate,
+} from "../../models/realtime.model";
 import type { RegistrationPaymentEvent } from "../../models/registration-payment.model";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -26,27 +37,48 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const [connected, setConnected] = useState(false);
   const [notifySignal, setNotifySignal] = useState(0);
   const [lastIncident, setLastIncident] = useState<RoomIncident | null>(null);
-  const [lastTelemetry, setLastTelemetry] = useState<TelemetryUpdate | null>(null);
-  const [lastRegistrationPayment, setLastRegistrationPayment] = useState<RegistrationPaymentEvent | null>(null);
+  const [lastTelemetry, setLastTelemetry] = useState<TelemetryUpdate | null>(
+    null,
+  );
+  const [lastRegistrationPayment, setLastRegistrationPayment] =
+    useState<RegistrationPaymentEvent | null>(null);
   /** Token đã thử làm mới: lỗi STOMP lặp lại với token mới thì không làm mới nữa (tránh vòng lặp). */
   const refreshedFor = useRef<string | null>(null);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", (state) => setActive(state === "active"));
+    const subscription = AppState.addEventListener("change", (state) =>
+      setActive(state === "active"),
+    );
     return () => subscription.remove();
   }, []);
 
   useEffect(() => {
     // Đóng kết nối (cleanup) sẽ gọi onConnected(false) nên không cần đặt lại trạng thái ở đây.
-    if (!active || !accessToken || accessToken === "mock" || !RealtimeConnection.configured) return;
+    if (
+      !active ||
+      !accessToken ||
+      accessToken === "mock" ||
+      !RealtimeConnection.configured
+    )
+      return;
     const bump = () => setNotifySignal((value) => value + 1);
     return RealtimeConnection.open(
       accessToken,
       [
         { destination: "/user/queue/notifies", onMessage: bump },
-        { destination: "/user/queue/registration-payments", onMessage: (body) => setLastRegistrationPayment(body as RegistrationPaymentEvent) },
-        { destination: "/user/queue/iot/incidents", onMessage: (body) => setLastIncident(body as RoomIncident) },
-        { destination: "/user/queue/iot/telemetry", onMessage: (body) => setLastTelemetry(body as TelemetryUpdate) },
+        {
+          destination: "/user/queue/registration-payments",
+          onMessage: (body) =>
+            setLastRegistrationPayment(body as RegistrationPaymentEvent),
+        },
+        {
+          destination: "/user/queue/iot/incidents",
+          onMessage: (body) => setLastIncident(body as RoomIncident),
+        },
+        {
+          destination: "/user/queue/iot/telemetry",
+          onMessage: (body) => setLastTelemetry(body as TelemetryUpdate),
+        },
       ],
       {
         onConnected: setConnected,
@@ -64,8 +96,21 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
 
   // App ở nền thì coi như chưa kết nối (để thông báo quay về hỏi định kỳ khi mở lại cho tới lúc nối xong).
   const live = connected && active;
-  const value = useMemo(() => ({ connected: live, notifySignal, lastIncident, lastTelemetry, lastRegistrationPayment }), [live, notifySignal, lastIncident, lastTelemetry, lastRegistrationPayment]);
-  return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;
+  const value = useMemo(
+    () => ({
+      connected: live,
+      notifySignal,
+      lastIncident,
+      lastTelemetry,
+      lastRegistrationPayment,
+    }),
+    [live, notifySignal, lastIncident, lastTelemetry, lastRegistrationPayment],
+  );
+  return (
+    <RealtimeContext.Provider value={value}>
+      {children}
+    </RealtimeContext.Provider>
+  );
 }
 
 export function useRealtime() {

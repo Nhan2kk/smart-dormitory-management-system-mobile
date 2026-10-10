@@ -1,4 +1,7 @@
-import type { PaymentAttemptStatus, RegistrationPaymentEventStatus } from "../enums/payment.enum";
+import type {
+  PaymentAttemptStatus,
+  RegistrationPaymentEventStatus,
+} from "../enums/payment.enum";
 
 export interface PaymentQr {
   registrationId: string;

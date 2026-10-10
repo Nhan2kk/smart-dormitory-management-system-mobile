@@ -1,5 +1,8 @@
 import type { ApiClient } from "../shared/api";
-import type { PaymentQr, PaymentStatus } from "../models/registration-payment.model";
+import type {
+  PaymentQr,
+  PaymentStatus,
+} from "../models/registration-payment.model";
 import type {
   BuildingDto,
   FloorDto,

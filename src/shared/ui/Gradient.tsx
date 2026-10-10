@@ -22,7 +22,10 @@ type Rgba = [number, number, number, number];
 export class EasedGradient {
   private static readonly STEPS = 16;
 
-  static stops(from: string, to: string): { colors: string[]; locations: number[] } | null {
+  static stops(
+    from: string,
+    to: string,
+  ): { colors: string[]; locations: number[] } | null {
     const start = EasedGradient.parse(from);
     const end = EasedGradient.parse(to);
     if (!start || !end) return null;
@@ -34,9 +37,12 @@ export class EasedGradient {
       // Màu trong suốt mượn RGB của màu đặc để không ngả xám/đen khi pha.
       const rgbFrom = start[3] === 0 ? end : start;
       const rgbTo = end[3] === 0 ? start : end;
-      const channel = (i: number) => Math.round(rgbFrom[i] + (rgbTo[i] - rgbFrom[i]) * t);
+      const channel = (i: number) =>
+        Math.round(rgbFrom[i] + (rgbTo[i] - rgbFrom[i]) * t);
       const alpha = start[3] + (end[3] - start[3]) * t;
-      colors.push(`rgba(${channel(0)}, ${channel(1)}, ${channel(2)}, ${alpha.toFixed(4)})`);
+      colors.push(
+        `rgba(${channel(0)}, ${channel(1)}, ${channel(2)}, ${alpha.toFixed(4)})`,
+      );
       locations.push(position);
     }
     return { colors, locations };
@@ -74,9 +80,18 @@ export function Gradient({
 }: Props) {
   const theme = useTheme();
   const source = colors ?? theme.gradients.accent;
-  const smooth = eased && source.length === 2 ? EasedGradient.stops(source[0], source[1]) : null;
-  const stops = (smooth?.colors ?? source) as unknown as readonly [string, string, ...string[]];
-  const locations = smooth?.locations as unknown as readonly [number, number, ...number[]] | undefined;
+  const smooth =
+    eased && source.length === 2
+      ? EasedGradient.stops(source[0], source[1])
+      : null;
+  const stops = (smooth?.colors ?? source) as unknown as readonly [
+    string,
+    string,
+    ...string[],
+  ];
+  const locations = smooth?.locations as unknown as
+    | readonly [number, number, ...number[]]
+    | undefined;
   return (
     <LinearGradient
       colors={stops}

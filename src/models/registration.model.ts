@@ -1,4 +1,11 @@
-import type { BedStatus, CampaignState, PricingPeriod, RegistrationStatus, RoomStatus, ScopeType } from "../enums/registration.enum";
+import type {
+  BedStatus,
+  CampaignState,
+  PricingPeriod,
+  RegistrationStatus,
+  RoomStatus,
+  ScopeType,
+} from "../enums/registration.enum";
 
 export interface CampaignAudience {
   audienceCode: string;

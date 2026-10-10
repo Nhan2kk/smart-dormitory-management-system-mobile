@@ -614,7 +614,8 @@ export const vi = {
     payNowBody: "Quét QR, thanh toán xong là hoàn tất đăng ký ngay.",
     recommended: "Khuyên dùng",
     payLater: "Thanh toán sau",
-    payLaterBody: "Giữ chỗ 24 giờ, thanh toán bằng QR bất kỳ lúc nào trong thời gian này.",
+    payLaterBody:
+      "Giữ chỗ 24 giờ, thanh toán bằng QR bất kỳ lúc nào trong thời gian này.",
     submitPay: "Đăng ký & thanh toán",
     submit: "Gửi đăng ký",
     heldTitle: "Đã giữ chỗ thành công!",

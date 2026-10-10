@@ -611,7 +611,8 @@ export const en: Dictionary = {
     payNowBody: "Scan a QR code — registration completes as soon as you pay.",
     recommended: "Recommended",
     payLater: "Pay later",
-    payLaterBody: "Your bed is held for 24 hours. Pay by QR at any time during this period.",
+    payLaterBody:
+      "Your bed is held for 24 hours. Pay by QR at any time during this period.",
     submitPay: "Register & pay",
     submit: "Submit",
     heldTitle: "Your bed is on hold!",

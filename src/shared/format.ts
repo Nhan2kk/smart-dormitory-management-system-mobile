@@ -123,7 +123,10 @@ export class Formatter {
 
   /** "Thứ Bảy" / "Saturday" theo ngôn ngữ đang chọn. */
   static weekdayLong(value: Date): string {
-    const names = (Formatter.dictionary?.time.weekdaysLong ?? "Chủ Nhật,Thứ Hai,Thứ Ba,Thứ Tư,Thứ Năm,Thứ Sáu,Thứ Bảy").split(",");
+    const names = (
+      Formatter.dictionary?.time.weekdaysLong ??
+      "Chủ Nhật,Thứ Hai,Thứ Ba,Thứ Tư,Thứ Năm,Thứ Sáu,Thứ Bảy"
+    ).split(",");
     return names[value.getDay()];
   }
 
