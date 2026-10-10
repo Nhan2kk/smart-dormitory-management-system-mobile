@@ -479,6 +479,7 @@ export const vi = {
     registrationDone:
       "Đăng ký KTX đã hoàn tất. Hãy làm thủ tục nhận phòng để bắt đầu lưu trú.",
     goCheckIn: "Làm thủ tục nhận phòng",
+    paymentCode: "Mã thanh toán",
   },
   notifications: {
     title: "Thông báo",

@@ -479,6 +479,7 @@ export const en: Dictionary = {
     registrationDone:
       "Your dorm registration is complete. Check in to start your stay.",
     goCheckIn: "Go to check-in",
+    paymentCode: "Payment code",
   },
   notifications: {
     title: "Notifications",

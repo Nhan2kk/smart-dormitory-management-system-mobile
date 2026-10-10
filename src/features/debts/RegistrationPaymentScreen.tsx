@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -19,6 +18,9 @@ import { useAuth } from "../auth/AuthProvider";
 import { useRealtime } from "../realtime/RealtimeProvider";
 import { RegistrationService } from "../../services/registration.service";
 import type { PaymentQr } from "../../models/registration-payment.model";
+import type { Registration } from "../../models/registration.model";
+import { bedLabel } from "../registration/components/BedMap";
+import { PaymentSuccessView, type PaymentSuccessRow } from "./PaymentSuccessView";
 
 export function RegistrationPaymentScreen({
   registrationId,
@@ -126,6 +128,28 @@ export function RegistrationPaymentScreen({
       ? `${pad(Math.floor(total / 3600))}:${minutes}`
       : minutes;
   };
+  const [paidRegistration, setPaidRegistration] = useState<Registration | null>(null);
+  useEffect(() => {
+    if (currentPhase !== "paid" || paidRegistration) return;
+    service
+      .mine()
+      .then(setPaidRegistration)
+      .catch((error: unknown) => notify(errorMessage(error), "danger"));
+  }, [currentPhase, paidRegistration, service, notify]);
+  const paidRows: PaymentSuccessRow[] = [
+    ...(paidRegistration
+      ? [
+          { label: t("common.room"), value: paidRegistration.roomCode },
+          { label: t("common.bed"), value: bedLabel(paidRegistration.bedCode) },
+        ]
+      : []),
+    ...(qr
+      ? [
+          { label: t("payment.amount"), value: Formatter.currency(qr.amount) },
+          { label: t("payment.paymentCode"), value: qr.paymentCode },
+        ]
+      : []),
+  ];
   const close = (
     <CircleButton
       icon="close"
@@ -139,11 +163,7 @@ export function RegistrationPaymentScreen({
       edges={["top", "bottom"]}
       header={
         <AppHeader
-          title={
-            currentPhase === "paid"
-              ? t("payment.success")
-              : t("payment.registrationTitle")
-          }
+          title={t("payment.registrationTitle")}
           hideBack
           right={close}
         />
@@ -153,15 +173,15 @@ export function RegistrationPaymentScreen({
         <ActivityIndicator style={{ marginTop: spacing.xl }} />
       )}
       {currentPhase === "paid" && (
-        <View style={styles.center}>
-          <Ionicons name="checkmark-circle" size={80} color="#20804E" />
-          <Text style={styles.title}>{t("payment.success")}</Text>
-          <Text>{t("payment.registrationPaid")}</Text>
-          <Button
-            label={t("payment.goCheckIn")}
-            onPress={() => router.replace("/check-in")}
-          />
-        </View>
+        <PaymentSuccessView
+          title={t("payment.success")}
+          hint={t("payment.registrationPaid")}
+          rows={paidRows}
+          actionLabel={t("payment.goCheckIn")}
+          closeLabel={t("common.close")}
+          onAction={() => router.replace("/check-in")}
+          onClose={() => router.back()}
+        />
       )}
       {currentPhase === "hold_expired" && (
         <View style={styles.center}>
@@ -295,7 +315,8 @@ const useStyles = makeStyles(({ colors }) => ({
     gap: spacing.md,
     paddingVertical: spacing.lg,
   },
-  qrImage: { width: 240, height: 240 },
+  // Ảnh VietQR mẫu compact (khung SePay/Napas/ngân hàng) có tỉ lệ 540×714.
+  qrImage: { width: "100%", maxWidth: 320, aspectRatio: 540 / 714 },
   centerText: { textAlign: "center", color: colors.ink },
   details: { gap: spacing.md },
 }));

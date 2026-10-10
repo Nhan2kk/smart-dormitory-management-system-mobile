@@ -12,6 +12,7 @@ type Props = {
   /** Phủ lớp tối dần xuống dưới để chữ trắng dễ đọc. */
   shade?: boolean;
   blurRadius?: number;
+  transitionMs?: number;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 };
@@ -22,6 +23,7 @@ export function PhotoBackground({
   anchor = "center",
   shade,
   blurRadius,
+  transitionMs = 300,
   style,
   children,
 }: Props) {
@@ -34,7 +36,7 @@ export function PhotoBackground({
         placeholderContentFit="cover"
         contentFit="cover"
         contentPosition={anchor}
-        transition={300}
+        transition={transitionMs}
         blurRadius={blurRadius}
         style={StyleSheet.absoluteFill}
         accessibilityIgnoresInvertColors
