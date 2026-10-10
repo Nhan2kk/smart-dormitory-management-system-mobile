@@ -291,6 +291,10 @@ export const vi = {
   },
   requestForm: {
     newRequest: "Tạo yêu cầu mới",
+    notResidentTitle: "Bạn chưa ở KTX",
+    notResidentBody:
+      "Cần đăng ký và nhận phòng KTX trước khi tạo yêu cầu chuyển phòng, trả phòng hoặc hỗ trợ bảo trì.",
+    registerDorm: "Đăng ký KTX",
     invalidKind: "Loại yêu cầu không hợp lệ",
     confirmTitle: "Xác nhận gửi yêu cầu",
     confirmSubtitle: "Kiểm tra lại thông tin trước khi gửi BQL",

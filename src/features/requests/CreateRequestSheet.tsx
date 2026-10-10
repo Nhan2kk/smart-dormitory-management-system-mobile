@@ -5,7 +5,8 @@ import { Animated, Platform, Pressable, StyleSheet, Text, View } from "react-nat
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
-import { CircleButton, IconBadge, Touchable } from "../../shared/ui";
+import { Button, Callout, CircleButton, IconBadge, Touchable } from "../../shared/ui";
+import { useResidency } from "../residency/useResidency";
 import { RequestKind } from "../../enums/request.enum";
 import { requestKindMeta } from "./requestModel";
 
@@ -18,6 +19,8 @@ export function CreateRequestSheet() {
   const { colors } = useTheme();
   const { t } = useI18n();
   const [slide] = useState(() => new Animated.Value(0));
+  // Chưa ở KTX thì không cho chọn loại yêu cầu (chuyển phòng, trả phòng, bảo trì).
+  const { resident } = useResidency();
 
   useEffect(() => {
     Animated.spring(slide, { toValue: 1, useNativeDriver: Platform.OS !== "web", friction: 9, tension: 70 }).start();
@@ -39,21 +42,32 @@ export function CreateRequestSheet() {
           </View>
           <CircleButton icon="close" label={t("common.close")} onPress={() => router.back()} />
         </View>
-        <View style={{ gap: spacing.md }}>
-          {kinds.map((kind) => {
-            const meta = requestKindMeta[kind];
-            return (
-              <Touchable key={kind} onPress={() => router.replace(`/request/create/${kind}`)} accessibilityLabel={t(`requests.kind.${kind}`)} style={styles.option} pressScale={0.98}>
-                <IconBadge icon={meta.icon} tone={meta.tone} size={52} />
-                <View style={{ flex: 1, gap: 3 }}>
-                  <Text style={styles.optionTitle}>{t(`requests.kind.${kind}`)}</Text>
-                  <Text style={styles.optionBody}>{t(`requests.kindDescription.${kind}`)}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-              </Touchable>
-            );
-          })}
-        </View>
+        {resident === false ? (
+          <Callout
+            tone="warning"
+            icon="home-outline"
+            title={t("requestForm.notResidentTitle")}
+            action={<Button label={t("requestForm.registerDorm")} size="md" icon="bed-outline" onPress={() => router.replace("/register-dorm")} />}
+          >
+            {t("requestForm.notResidentBody")}
+          </Callout>
+        ) : (
+          <View style={{ gap: spacing.md }}>
+            {kinds.map((kind) => {
+              const meta = requestKindMeta[kind];
+              return (
+                <Touchable key={kind} onPress={() => router.replace(`/request/create/${kind}`)} accessibilityLabel={t(`requests.kind.${kind}`)} style={styles.option} pressScale={0.98}>
+                  <IconBadge icon={meta.icon} tone={meta.tone} size={52} />
+                  <View style={{ flex: 1, gap: 3 }}>
+                    <Text style={styles.optionTitle}>{t(`requests.kind.${kind}`)}</Text>
+                    <Text style={styles.optionBody}>{t(`requests.kindDescription.${kind}`)}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+                </Touchable>
+              );
+            })}
+          </View>
+        )}
         <Touchable onPress={() => router.replace("/assistant")} accessibilityLabel={t("requests.askAiFirst")} style={styles.ai}>
           <Ionicons name="sparkles" size={18} color={colors.violet} />
           <Text style={styles.aiText}>{t("requests.askAiFirst")}</Text>

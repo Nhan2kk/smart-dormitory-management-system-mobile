@@ -17,6 +17,8 @@ export class ResidencyOverview {
   readonly linkedRequest: string | null;
   readonly checkInDate: string | null;
   readonly expiryDate: string | null;
+  /** Đang ở KTX: hồ sơ hiện hành không phải trả phòng và có phòng. */
+  readonly active: boolean;
 
   constructor(
     private readonly record: ResidencyRecordResponse,
@@ -37,6 +39,7 @@ export class ResidencyOverview {
     this.linkedRequest = record.roomTransferRequestId ?? record.registrationId ?? record.roomCheckoutRequestId;
     this.checkInDate = stay?.startDate ?? record.effectiveDate;
     this.expiryDate = stay?.endDate ?? null;
+    this.active = record.recordType !== ResidencyRecordType.Checkout && !!record.roomId;
   }
 
   /** Số ngày còn lại tới hết hạn ở; null khi chưa có ngày hết hạn. */

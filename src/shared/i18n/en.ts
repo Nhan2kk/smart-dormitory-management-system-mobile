@@ -295,6 +295,10 @@ export const en: Dictionary = {
   },
   requestForm: {
     newRequest: "New request",
+    notResidentTitle: "You are not living in the dorm",
+    notResidentBody:
+      "Register and check in to a dorm room before creating room transfer, checkout or maintenance requests.",
+    registerDorm: "Register for dorm",
     invalidKind: "Invalid request type",
     confirmTitle: "Confirm your request",
     confirmSubtitle: "Review the details before sending",

@@ -44,5 +44,8 @@ export function useResidency() {
     }, [reload]),
   );
 
-  return { overview, none, error, loading: overview === null && !none && !error, reload };
+  const loading = overview === null && !none && !error;
+  /** Đã có chỗ ở KTX; null khi đang tải hoặc lỗi (không xác định được). */
+  const resident = loading || error ? null : !!overview?.active;
+  return { overview, none, error, loading, resident, reload };
 }
