@@ -85,9 +85,11 @@ export function RegistrationPaymentScreen({
     });
     return () => listener.remove();
   }, [checkStatus]);
+  // Socket báo kết quả tức thì; vẫn hỏi lại trạng thái trong lúc chờ vì socket bị ngắt khi
+  // sinh viên chuyển sang app ngân hàng để trả tiền, sự kiện gửi lúc đó sẽ bị lỡ.
   useEffect(() => {
-    if (connected || phase === "paid" || phase === "hold_expired") return;
-    const timer = setInterval(() => void checkStatus(), 5000);
+    if (phase !== "waiting" && phase !== "qr_expired") return;
+    const timer = setInterval(() => void checkStatus(), connected ? 4000 : 2000);
     return () => clearInterval(timer);
   }, [connected, phase, checkStatus]);
 
@@ -137,7 +139,11 @@ export function RegistrationPaymentScreen({
       edges={["top", "bottom"]}
       header={
         <AppHeader
-          title={t("payment.registrationTitle")}
+          title={
+            currentPhase === "paid"
+              ? t("payment.success")
+              : t("payment.registrationTitle")
+          }
           hideBack
           right={close}
         />
