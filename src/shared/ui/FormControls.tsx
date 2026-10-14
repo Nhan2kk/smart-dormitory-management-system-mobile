@@ -196,7 +196,7 @@ export function PhotoSlots({
   count,
   onAdd,
   onRemove,
-  max = 4,
+  max = 10,
   uris,
 }: {
   count: number;

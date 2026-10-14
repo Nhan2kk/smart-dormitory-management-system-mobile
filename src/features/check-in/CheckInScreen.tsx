@@ -3,7 +3,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { errorMessage, isNotFound } from "../../shared/api";
-import { EvidencePhoto, pickPhoto, uploadPhotos } from "../../shared/attachments";
+import { EvidencePhoto, pickPhotos, uploadPhotos } from "../../shared/attachments";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Photos } from "../../shared/images";
@@ -116,10 +116,10 @@ export function CheckInScreen() {
   };
 
   const addPhoto = async () => {
-    const uri = await pickPhoto();
-    if (uri === "permission") return notify(t("checkIn.photoPermission"), "warning");
-    if (uri === "too_large") return notify(t("checkIn.photoTooLarge"), "warning");
-    if (uri) setDraft((current) => ({ ...current, photos: [...current.photos, { uri }] }));
+    const uris = await pickPhotos(10 - draft.photos.length);
+    if (uris === "permission") return notify(t("checkIn.photoPermission"), "warning");
+    if (uris === "too_large") return notify(t("checkIn.photoTooLarge"), "warning");
+    if (uris) setDraft((current) => ({ ...current, photos: [...current.photos, ...uris.map(uri => ({ uri }))].slice(0, 10) }));
   };
 
   const saveIssue = async () => {

@@ -3,7 +3,7 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { errorMessage, isNotFound } from "../../shared/api";
-import { EvidencePhoto, pickPhoto, uploadPhotos } from "../../shared/attachments";
+import { EvidencePhoto, pickPhotos, uploadPhotos } from "../../shared/attachments";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, spacing, useTheme } from "../../shared/theme";
@@ -75,10 +75,10 @@ export function RequestDetailScreen() {
   };
 
   const addPhoto = async () => {
-    const uri = await pickPhoto();
-    if (uri === "permission") return notify(t("checkIn.photoPermission"), "warning");
-    if (uri === "too_large") return notify(t("checkIn.photoTooLarge"), "warning");
-    if (uri) setPhotos((current) => [...current, { uri }]);
+    const uris = await pickPhotos(10 - photos.length);
+    if (uris === "permission") return notify(t("checkIn.photoPermission"), "warning");
+    if (uris === "too_large") return notify(t("checkIn.photoTooLarge"), "warning");
+    if (uris) setPhotos((current) => [...current, ...uris.map(uri => ({ uri }))].slice(0, 10));
   };
 
   if (loading || !request)

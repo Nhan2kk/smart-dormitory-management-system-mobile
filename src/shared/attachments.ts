@@ -36,13 +36,24 @@ export async function uploadPhotos(
   request: ApiClient,
   photos: EvidencePhoto[],
 ): Promise<Required<EvidencePhoto>[]> {
-  const uploaded: Required<EvidencePhoto>[] = [];
-  for (const photo of photos)
-    uploaded.push({
-      uri: photo.uri,
-      id: photo.id ?? (await uploadAttachment(request, photo.uri)).id,
-    });
-  return uploaded;
+  const pending = photos.filter(photo => !photo.id);
+  if (!pending.length) return photos as Required<EvidencePhoto>[];
+  if (pending.length > 10) throw new Error("Mỗi lần tối đa 10 ảnh");
+  const form = new FormData();
+  for (const photo of pending) {
+    const name = photo.uri.split("/").pop()?.split("?")[0] || `evidence.jpg`;
+    if (Platform.OS === "web") {
+      const blob = await (await fetch(photo.uri)).blob();
+      form.append("files", blob, name);
+    } else {
+      const type = /\.png$/i.test(name) ? "image/png" : /\.webp$/i.test(name) ? "image/webp" : "image/jpeg";
+      form.append("files", { uri: photo.uri, name, type } as unknown as Blob);
+    }
+  }
+  const records = await request<Attachment[]>("/attachments/batch", { form });
+  if (records.length !== pending.length) throw new Error("Số ảnh tải lên không khớp");
+  let index = 0;
+  return photos.map(photo => ({ uri: photo.uri, id: photo.id ?? records[index++].id }));
 }
 
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -58,4 +69,21 @@ export async function pickPhoto(): Promise<string | "permission" | "too_large" |
   const asset = picked.canceled ? null : picked.assets[0];
   if (!asset) return null;
   return asset.fileSize != null && asset.fileSize > MAX_PHOTO_BYTES ? "too_large" : asset.uri;
+}
+
+/** SDK 57 multi-selection with picker compression; validate the compressed asset sizes. */
+export async function pickPhotos(limit = 10): Promise<string[] | "permission" | "too_large" | null> {
+  if (limit <= 0) return null;
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) return "permission";
+  const picked = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ["images"], quality: 0.7, allowsMultipleSelection: true,
+    preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
+    orderedSelection: true,
+    selectionLimit: Math.min(10, limit),
+  });
+  if (picked.canceled) return null;
+  const assets = picked.assets.slice(0, limit);
+  if (assets.some(asset => asset.fileSize != null && asset.fileSize > MAX_PHOTO_BYTES)) return "too_large";
+  return assets.map(asset => asset.uri);
 }
