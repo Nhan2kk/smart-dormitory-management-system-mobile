@@ -1,3 +1,4 @@
+import { RoomUtilityBills } from "./RoomUtilityBills";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
@@ -36,6 +37,7 @@ export function UtilitiesScreen() {
 
   return (
     <Screen inTabs header={header}>
+      <RoomUtilityBills />
       {liveIncident && (
         <View style={{ marginBottom: spacing.lg }}>
           <Callout tone={liveIncident.severity === "DANGER" ? "danger" : "warning"} icon="warning-outline" title={t("utilities.liveIncidentTitle")}>

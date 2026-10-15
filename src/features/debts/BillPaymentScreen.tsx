@@ -1,3 +1,5 @@
+import { roomUtilityError } from "../../shared/i18n/room-utility-messages";
+import { RoomUtilityService } from "../../services/room-utility.service";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { router } from "expo-router";
@@ -19,27 +21,28 @@ import { formatCountdown, useSepayPayment } from "./useSepayPayment";
  * Thanh toán hoá đơn phát sinh bằng QR SePay (mỗi mã hiệu lực 15 phút). Chỉ webhook SePay xác nhận tiền
  * mới chuyển hoá đơn sang đã thanh toán; màn tự chuyển sang thành công qua socket hoặc lần hỏi trạng thái.
  */
-export function BillPaymentScreen({ billId, title }: { billId: string; title?: string }) {
+export function BillPaymentScreen({ billId, title, roomUtility=false }: { billId: string; title?: string; roomUtility?:boolean }) {
   const { request } = useAuth();
   const service = useMemo(() => new DebtService(request), [request]);
+  const roomService=useMemo(()=>new RoomUtilityService(request),[request]);
   const { notify } = useToast();
   const { t } = useI18n();
   const { connected, lastBillPayment } = useRealtime();
   const styles = useStyles();
   const { qr, phase, createQr, qrRemaining } = useSepayPayment<BillPaymentQr>({
     key: billId,
-    init: () => service.initPayment(billId),
+    init: () => roomUtility ? roomService.payment(billId) : service.initPayment(billId),
     status: async () => {
-      const status = await service.paymentStatus(billId);
+      const status = await (roomUtility ? roomService.status(billId) : service.paymentStatus(billId));
       return {
         state: status.billStatus === "PAID" ? "paid" : status.billStatus === "CANCELLED" ? "closed" : "open",
         qrExpiresAt: status.qrExpiresAt,
         serverTime: status.serverTime,
       };
     },
-    liveState: lastBillPayment?.billId === billId ? "paid" : null,
+    liveState: !roomUtility && lastBillPayment?.billId === billId ? "paid" : null,
     connected,
-    onError: (message) => notify(message, "danger"),
+    onError: (message) => notify(roomUtility ? roomUtilityError(message,t) : message, "danger"),
   });
 
   const copy = async (label: string, value: string) => {
@@ -54,7 +57,7 @@ export function BillPaymentScreen({ billId, title }: { billId: string; title?: s
       {phase === "paid" && (
         <PaymentSuccessView
           title={t("payment.success")}
-          hint={t("payment.billPaid")}
+          hint={t(roomUtility ? "roomUtility.paidHint" : "payment.billPaid")}
           rows={[
             ...(title ? [{ label: t("payment.bill"), value: title }] : []),
             ...(qr
@@ -64,16 +67,16 @@ export function BillPaymentScreen({ billId, title }: { billId: string; title?: s
                 ]
               : []),
           ]}
-          actionLabel={t("payment.backToDebts")}
+          actionLabel={t(roomUtility ? "utilities.title" : "payment.backToDebts")}
           closeLabel={t("common.close")}
-          onAction={() => router.replace("/debts")}
+          onAction={() => router.replace(roomUtility ? "/utilities" : "/debts")}
           onClose={() => router.back()}
         />
       )}
       {phase === "closed" && (
         <View style={styles.center}>
           <Text style={styles.title}>{t("payment.billClosed")}</Text>
-          <Button label={t("payment.backToDebts")} onPress={() => router.replace("/debts")} />
+          <Button label={t(roomUtility ? "utilities.title" : "payment.backToDebts")} onPress={() => router.replace(roomUtility ? "/utilities" : "/debts")} />
         </View>
       )}
       {!qr && phase === "qr_expired" && (

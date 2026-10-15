@@ -9,15 +9,16 @@ import { RegistrationPaymentScreen } from "./RegistrationPaymentScreen";
  * Chỉ webhook SePay đã xác thực mới xác nhận thanh toán; sinh viên không tự xác nhận.
  */
 export function PaymentScreen() {
-  const { id, registrationId, billId, title } = useLocalSearchParams<{
+  const { id, registrationId, billId, title, roomUtility } = useLocalSearchParams<{
     id: string;
     registrationId?: string;
     billId?: string;
     title?: string;
+    roomUtility?: string;
   }>();
   return registrationId ? (
     <RegistrationPaymentScreen registrationId={String(registrationId)} />
   ) : (
-    <BillPaymentScreen billId={String(billId ?? id)} title={title ? String(title) : undefined} />
+    <BillPaymentScreen roomUtility={roomUtility === "true"} billId={String(billId ?? id)} title={title ? String(title) : undefined} />
   );
 }
