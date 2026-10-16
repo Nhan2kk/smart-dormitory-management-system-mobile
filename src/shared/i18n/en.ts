@@ -723,6 +723,12 @@ export const en: Dictionary = {
     occupants: "Occupants",
     price: "Rent",
     linked: "Linked request",
+    registrationTerm: "Registration term",
+    expectedEnd: "Expected end of stay",
+    periods: {
+      "6months": "6 months",
+      "1year": "1 year",
+    },
     history: "History & changes",
     active: "Active",
     ended: "Ended",

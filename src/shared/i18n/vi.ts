@@ -727,6 +727,12 @@ export const vi = {
     occupants: "Số người đang ở",
     price: "Giá phòng",
     linked: "Đơn liên kết",
+    registrationTerm: "Thời hạn đăng ký",
+    expectedEnd: "Dự kiến kết thúc lưu trú",
+    periods: {
+      "6months": "6 tháng",
+      "1year": "1 năm",
+    },
     history: "Lịch sử & biến động",
     active: "Đang hiệu lực",
     ended: "Đã kết thúc",

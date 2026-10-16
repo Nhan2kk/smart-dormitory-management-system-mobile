@@ -5,7 +5,8 @@ const DAY = 86_400_000;
 
 /**
  * Hồ sơ lưu trú của sinh viên: vị trí hiện tại, thông tin phòng, thời hạn ở và các mốc biến động.
- * Thời hạn lấy từ hồ sơ sinh viên (startDate/endDate); thiếu thì dùng ngày hiệu lực của hồ sơ.
+ * Ngày hết hạn là ngày kết thúc lưu trú dự kiến của hồ sơ (ngày thanh toán + thời hạn đăng ký);
+ * ngày vào lấy từ hồ sơ sinh viên, thiếu thì dùng ngày hiệu lực của hồ sơ.
  */
 export class ResidencyOverview {
   readonly recordCode: string;
@@ -17,6 +18,7 @@ export class ResidencyOverview {
   readonly linkedRequest: string | null;
   readonly checkInDate: string | null;
   readonly expiryDate: string | null;
+  readonly pricingPeriod: ResidencyRecordResponse["pricingPeriod"];
   /** Đang ở KTX: hồ sơ hiện hành không phải trả phòng và có phòng. */
   readonly active: boolean;
 
@@ -38,7 +40,9 @@ export class ResidencyOverview {
     this.price = room?.price ?? null;
     this.linkedRequest = record.roomTransferRequestId ?? record.registrationId ?? record.roomCheckoutRequestId;
     this.checkInDate = stay?.startDate ?? record.effectiveDate;
-    this.expiryDate = stay?.endDate ?? null;
+    // Ngày kết thúc dự kiến tính từ ngày thanh toán + thời hạn đăng ký; hồ sơ cũ chưa có thì dùng hồ sơ sinh viên.
+    this.expiryDate = record.expectedEndDate ?? stay?.endDate ?? null;
+    this.pricingPeriod = record.pricingPeriod;
     this.active = record.recordType !== ResidencyRecordType.Checkout && !!record.roomId;
   }
 

@@ -21,6 +21,10 @@ export interface ResidencyRecordResponse {
   roomCheckoutRequestId: string | null;
   effectiveDate: string | null;
   endedReason: string | null;
+  /** Thời hạn đăng ký của lần ở: 6months | 1year. */
+  pricingPeriod: "6months" | "1year" | null;
+  /** Ngày kết thúc lưu trú dự kiến = ngày thanh toán đăng ký + thời hạn đăng ký. */
+  expectedEndDate: string | null;
 }
 
 export interface ResidencyRoomResponse {
