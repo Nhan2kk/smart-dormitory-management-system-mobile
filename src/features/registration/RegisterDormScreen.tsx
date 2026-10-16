@@ -33,9 +33,13 @@ import {
 } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { BedMap, bedLabel } from "./components/BedMap";
+import { HoldLostReason, useBedAvailability } from "./useBedAvailability";
+import { HoldCountdown } from "./components/HoldCountdown";
 import {
   ACTIVE_STATUSES,
   applicationTone,
+  applyBedStatus,
+  withHolds,
   floorAvailability,
   groupFloors,
   isInScope,
@@ -445,6 +449,59 @@ function Wizard({
   const [payment, setPayment] = useState<"now" | "later">("now");
   const [submitting, setSubmitting] = useState(false);
 
+  // Chọn giường realtime: giường người khác vừa đặt/giữ bị khoá ngay; phòng/tầng/tòa hết chỗ bị ẩn.
+  const bedIdRef = useRef(bedId);
+  const stepRef = useRef(step);
+  useEffect(() => {
+    bedIdRef.current = bedId;
+    stepRef.current = step;
+  });
+  const dropTakenBed = useCallback(
+    (takenId: string, reason: HoldLostReason = "taken") => {
+      if (bedIdRef.current !== takenId) return;
+      setBedId(null);
+      if (stepRef.current > 3) setStep(3);
+      notify(
+        t(
+          reason === "expired"
+            ? "registration.bedHoldExpired"
+            : "registration.bedTaken",
+        ),
+        "warning",
+      );
+    },
+    [notify, t],
+  );
+  const availability = useBedAvailability({
+    api,
+    gender,
+    onEvent: (event) => {
+      const status = event.status;
+      if (status === "held") return;
+      setFloors((prev) =>
+        prev
+          ? applyBedStatus(prev, event.roomId, event.bedId, status)
+          : prev,
+      );
+      if (event.status !== "available") dropTakenBed(event.bedId);
+    },
+    onHoldLost: dropTakenBed,
+  });
+  const { counts, heldBedIds, myHoldBedId } = availability;
+  const holdDeadline =
+    bedId && bedId === myHoldBedId ? availability.holdDeadline : null;
+  const hasBeds = (map: Record<string, number> | undefined, id: string) =>
+    !map || (map[id] ?? 0) > 0;
+
+  /** Bấm chọn giường là giữ tạm ngay trên server: sinh viên khác thấy giường bị khoá tức thì. */
+  const selectBed = (id: string) => {
+    setBedId(id);
+    availability.hold(id).catch((error: unknown) => {
+      setBedId((current) => (current === id ? null : current));
+      notify(errorMessage(error), "warning");
+    });
+  };
+
   useEffect(() => {
     let alive = true;
     api
@@ -496,7 +553,18 @@ function Wizard({
     !!buildings?.length && !buildings.some(buildingOpen);
   const building = buildings?.find((item) => item.id === buildingId) ?? null;
   const floor = floors?.find((item) => item.id === floorId) ?? null;
-  const room = floor?.rooms.find((item) => item.id === roomId) ?? null;
+  const rawRoom = floor?.rooms.find((item) => item.id === roomId) ?? null;
+  const room = rawRoom ? withHolds(rawRoom, heldBedIds, myHoldBedId) : null;
+  // Ẩn tòa/tầng/phòng đã hết giường (vẫn giữ mục đang chọn để không mất lựa chọn giữa chừng).
+  const visibleBuildings = buildings?.filter(
+    (item) => item.id === buildingId || hasBeds(counts?.buildings, item.id),
+  );
+  const visibleFloors = floors?.filter(
+    (item) => item.id === floorId || hasBeds(counts?.floors, item.id),
+  );
+  const visibleRooms = (floor?.rooms ?? [])
+    .filter((item) => item.id === roomId || hasBeds(counts?.rooms, item.id))
+    .map((item) => withHolds(item, heldBedIds, myHoldBedId));
   const bed = room?.beds.find((item) => item.id === bedId) ?? null;
   const months = PERIOD_MONTHS[period];
   const total = room ? room.price * months : 0;
@@ -514,6 +582,7 @@ function Wizard({
     } catch {
       // giữ dữ liệu cũ nếu tải lại thất bại
     }
+    availability.release();
     setBedId(null);
     setStep(3);
   };
@@ -542,6 +611,7 @@ function Wizard({
           ? t("registration.held")
           : t("registration.heldLater"),
       );
+      availability.forget();
       onCreated(created, payment === "now");
     } catch (error) {
       if (error instanceof ApiError && error.code === DEBT_CODE)
@@ -616,14 +686,14 @@ function Wizard({
               title={t("registration.noBuildingForGender")}
               description={t("registration.noBuildingForGenderBody")}
             />
-          ) : buildings.length === 0 ? (
+          ) : !visibleBuildings?.length ? (
             <EmptyState
               icon="business-outline"
               title={t("registration.noBuildings")}
             />
           ) : (
             <View style={{ gap: spacing.md }}>
-              {buildings.map((item, index) => {
+              {(visibleBuildings ?? []).map((item, index) => {
                 const open = buildingOpen(item);
                 const selected = item.id === buildingId;
                 const photoKey = item.name.trim().slice(-1).toUpperCase();
@@ -631,7 +701,10 @@ function Wizard({
                   <Touchable
                     key={item.id}
                     onPress={() => {
-                      if (item.id !== buildingId) setFloors(null);
+                      if (item.id !== buildingId) {
+                        setFloors(null);
+                        availability.release();
+                      }
                       setBuildingId(item.id);
                       setFloorId(null);
                       setRoomId(null);
@@ -728,7 +801,7 @@ function Wizard({
             loader
           ) : (
             <View style={styles.floors}>
-              {floors.map((item) => {
+              {(visibleFloors ?? []).map((item) => {
                 const genderOk = genderAllows(gender, item.gender);
                 const available = genderOk ? floorAvailability(item) : 0;
                 const capacity = item.rooms.reduce(
@@ -741,6 +814,7 @@ function Wizard({
                     key={item.id}
                     disabled={available === 0}
                     onPress={() => {
+                      if (item.id !== floorId) availability.release();
                       setFloorId(item.id);
                       setRoomId(null);
                       setBedId(null);
@@ -792,11 +866,11 @@ function Wizard({
           <Text style={styles.stepTitle}>
             {t("registration.chooseRoom", { floor: floorTitle(floor) })}
           </Text>
-          {floor.rooms.length === 0 ? (
+          {visibleRooms.length === 0 ? (
             <EmptyState icon="grid-outline" title={t("registration.noRooms")} />
           ) : (
             <View style={{ gap: spacing.sm }}>
-              {floor.rooms.map((item) => {
+              {visibleRooms.map((item) => {
                 const selected = item.id === roomId;
                 const disabled =
                   item.status !== "available" || item.available === 0;
@@ -805,6 +879,7 @@ function Wizard({
                     key={item.id}
                     disabled={disabled}
                     onPress={() => {
+                      if (item.id !== roomId) availability.release();
                       setRoomId(item.id);
                       setBedId(null);
                     }}
@@ -866,14 +941,16 @@ function Wizard({
           {room.beds.length === 0 ? (
             <EmptyState icon="bed-outline" title={t("registration.noBeds")} />
           ) : (
-            <BedMap beds={room.beds} value={bedId} onChange={setBedId} />
+            <BedMap beds={room.beds} value={bedId} onChange={selectBed} />
           )}
+          {holdDeadline && <HoldCountdown deadline={holdDeadline} />}
         </>
       )}
 
       {step === 4 && building && floor && room && bed && (
         <>
           <Text style={styles.stepTitle}>{t("registration.review")}</Text>
+          {holdDeadline && <HoldCountdown deadline={holdDeadline} />}
           <PhotoBackground
             source={Photos.building(
               building.name.trim().slice(-1).toUpperCase(),

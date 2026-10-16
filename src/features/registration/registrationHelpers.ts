@@ -113,6 +113,62 @@ export function groupFloors(floors: FloorDto[], rooms: RoomDto[]): Floor[] {
     );
 }
 
+function withBeds(room: Room, beds: Bed[]): Room {
+  const available = beds.filter((bed) => bed.status === "available").length;
+  const status: RoomStatus =
+    room.status === "maintenance"
+      ? "maintenance"
+      : available > 0
+        ? "available"
+        : "full";
+  return { ...room, beds, available, status };
+}
+
+/** Sự kiện realtime đổi trạng thái giường (đặt/huỷ/nhận phòng…): cập nhật sơ đồ đang xem. */
+export function applyBedStatus(
+  floors: Floor[],
+  roomId: string,
+  bedId: string,
+  status: BedStatus,
+): Floor[] {
+  return floors.map((floor) =>
+    floor.rooms.some((room) => room.id === roomId)
+      ? {
+          ...floor,
+          rooms: floor.rooms.map((room) =>
+            room.id === roomId
+              ? withBeds(
+                  room,
+                  room.beds.map((bed) =>
+                    bed.id === bedId ? { ...bed, status } : bed,
+                  ),
+                )
+              : room,
+          ),
+        }
+      : floor,
+  );
+}
+
+/** Giường người khác đang giữ hiển thị như "đã giữ chỗ" và không tính là còn trống. */
+export function withHolds(
+  room: Room,
+  heldBedIds: Set<string>,
+  myHoldBedId: string | null,
+): Room {
+  const heldByOther = (bed: Bed) =>
+    bed.status === "available" &&
+    heldBedIds.has(bed.id) &&
+    bed.id !== myHoldBedId;
+  if (!room.beds.some(heldByOther)) return room;
+  return withBeds(
+    room,
+    room.beds.map((bed) =>
+      heldByOther(bed) ? { ...bed, status: "reserved" as const } : bed,
+    ),
+  );
+}
+
 export function floorAvailability(floor: Floor): number {
   return floor.status === "active" || floor.status === "empty"
     ? floor.rooms.reduce(

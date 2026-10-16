@@ -4,6 +4,8 @@ import type {
   PaymentStatus,
 } from "../models/registration-payment.model";
 import type {
+  BedAvailabilitySnapshot,
+  BedHold,
   BuildingDto,
   FloorDto,
   PageResponse,
@@ -75,6 +77,24 @@ export class RegistrationService {
     return this.request<Registration>(
       `/student/registrations/${encodeURIComponent(id)}/cancellation`,
     );
+  }
+
+  /** Số giường còn chọn được + giường người khác đang giữ (cập nhật tiếp qua WebSocket). */
+  availability(): Promise<BedAvailabilitySnapshot> {
+    return this.request<BedAvailabilitySnapshot>(
+      "/student/registrations/availability",
+    );
+  }
+
+  /** Giữ tạm giường vừa chọn; `renew` = tự gia hạn (lượt quá thời gian tối đa thì BE báo BED_HOLD_EXPIRED). */
+  holdBed(bedId: string, renew = false): Promise<BedHold> {
+    return this.request<BedHold>("/student/registrations/bed-holds", {
+      body: { bedId, renew },
+    });
+  }
+
+  releaseBedHold(): Promise<void> {
+    return this.request<void>("/student/registrations/bed-holds/release");
   }
 
   private async allPages<T>(

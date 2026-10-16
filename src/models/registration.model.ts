@@ -153,3 +153,38 @@ export interface Floor {
   gender: string | null;
   rooms: Room[];
 }
+
+/** Giường sinh viên đang giữ tạm khi chọn (chưa tạo đăng ký). */
+export interface BedHold {
+  bedId: string;
+  roomId: string;
+  floorId: string;
+  buildingId: string;
+  /** Hạn nếu ngừng gia hạn (app vào nền, mất mạng). */
+  expiresAt: string;
+  /** Mốc giữ tối đa kể từ lúc bấm chọn (mặc định 10 phút); quá mốc thì tự nhả. */
+  holdDeadline: string;
+}
+
+/** Số giường còn chọn được theo phòng/tầng/tòa; id vắng mặt nghĩa là đã hết chỗ. */
+export interface BedAvailabilitySnapshot {
+  heldBedIds: string[];
+  myHold: BedHold | null;
+  rooms: Record<string, number>;
+  floors: Record<string, number>;
+  buildings: Record<string, number>;
+  at: string;
+}
+
+/** Sự kiện `/topic/registration/beds`. */
+export interface BedAvailabilityEvent {
+  bedId: string;
+  roomId: string;
+  floorId: string;
+  buildingId: string;
+  status: "available" | "held" | "reserved" | "occupied" | "maintenance";
+  roomAvailable: number;
+  floorAvailable: number;
+  buildingAvailable: { all: number; male: number; female: number };
+  at: string;
+}
