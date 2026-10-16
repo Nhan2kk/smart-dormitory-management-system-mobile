@@ -509,7 +509,14 @@ function Wizard({
       .then(
         (items) =>
           alive &&
-          setBuildings(items.filter((item) => isInScope(campaign, item.id))),
+          // Tòa sắp theo tên tăng dần (A → Z, số theo giá trị: Tòa 2 trước Tòa 10).
+          setBuildings(
+            items
+              .filter((item) => isInScope(campaign, item.id))
+              .sort((a, b) =>
+                a.name.localeCompare(b.name, undefined, { numeric: true }),
+              ),
+          ),
       )
       .catch((error: unknown) => {
         if (!alive) return;

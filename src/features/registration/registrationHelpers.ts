@@ -109,7 +109,8 @@ export function groupFloors(floors: FloorDto[], rooms: RoomDto[]): Floor[] {
     }))
     .sort(
       (a, b) =>
-        (a.number ?? 0) - (b.number ?? 0) || a.name.localeCompare(b.name),
+        (a.number ?? 0) - (b.number ?? 0) ||
+        a.name.localeCompare(b.name, undefined, { numeric: true }),
     );
 }
 
