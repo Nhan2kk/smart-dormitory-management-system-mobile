@@ -25,6 +25,26 @@ export type RoomUtilityBill = {
   paidAt: string | null;
   canPay: boolean;
   pricingSnapshot: string;
+  /** 0 chưa cảnh báo, 1 sắp tới hạn, 2 quá hạn, 3 đề nghị kỷ luật. */
+  warningLevel: 0 | 1 | 2 | 3;
+  overdueDays: number;
+  violationRecordedAt: string | null;
+  violationTarget: "ROOM" | "REPRESENTATIVE" | null;
+  /** Mốc hệ thống ghi lỗi nếu phòng vẫn chưa đóng. */
+  violationAt: string;
+  canReport: boolean;
+  reported: boolean;
+  paymentMethod: "SEPAY" | "CASH" | "ZERO" | null;
+  cashReceiptNo: string | null;
+};
+export type RoomUtilityViolation = {
+  id: string;
+  billId: string;
+  roomCode: string;
+  reason: "ROOM_UNPAID" | "REPRESENTATIVE_COLLECTED";
+  amount: number;
+  overdueDays: number;
+  createdAt: string;
 };
 export type RoomUtilitySchedule = {
   id: string;

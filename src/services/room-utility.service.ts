@@ -3,6 +3,7 @@ import type {
   RoomUtilityAccount,
   RoomUtilityBill,
   RoomUtilityHandover,
+  RoomUtilityViolation,
 } from "../models/room-utility.model";
 import type { BillPaymentQr } from "../models/debt.model";
 export class RoomUtilityService {
@@ -43,6 +44,17 @@ export class RoomUtilityService {
     return this.request<BillPaymentQr>("/student/room-utilities/payment", {
       body: { id },
     });
+  }
+  /** Báo trưởng phòng đã thu tiền mà chưa đóng (hóa đơn quá hạn, trước mốc ghi lỗi). */
+  report(billId: string, content: string) {
+    return this.request<unknown>("/student/room-utilities/report", {
+      body: { billId, content },
+    });
+  }
+  violations() {
+    return this.request<RoomUtilityViolation[]>(
+      "/student/room-utilities/violations",
+    );
   }
   status(id: string) {
     return this.request<{

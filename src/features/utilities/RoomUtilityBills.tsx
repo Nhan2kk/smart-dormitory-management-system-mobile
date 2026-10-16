@@ -8,9 +8,18 @@ import type {
   RoomUtilityAccount,
   RoomUtilityBill,
   RoomUtilityHandover,
+  RoomUtilityViolation,
 } from "../../models/room-utility.model";
 import { useI18n } from "../../shared/i18n/I18nProvider";
-import { Button, Card, InfoRow, BottomSheet, useToast } from "../../shared/ui";
+import {
+  Button,
+  Callout,
+  Card,
+  Field,
+  InfoRow,
+  BottomSheet,
+  useToast,
+} from "../../shared/ui";
 import { useTheme, spacing } from "../../shared/theme";
 import { Formatter } from "../../shared/format";
 import { errorMessage } from "../../shared/api";
@@ -26,12 +35,24 @@ export function RoomUtilityBills() {
   const [history, setHistory] = useState<RoomUtilityHandover[]>([]);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [violations, setViolations] = useState<RoomUtilityViolation[]>([]);
+  // Hóa đơn đang mở ô "báo trưởng phòng chưa đóng" và nội dung báo cáo.
+  const [reporting, setReporting] = useState<string | null>(null);
+  const [reportText, setReportText] = useState("");
+  // Mốc thời gian lúc tải hóa đơn, dùng tính số giờ còn lại tới hạn.
+  const [now, setNow] = useState(() => Date.now());
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [a, b] = await Promise.all([api.mine(), api.bills()]);
+      const [a, b, v] = await Promise.all([
+        api.mine(),
+        api.bills(),
+        api.violations(),
+      ]);
       setAccount(a);
       setRows(b);
+      setViolations(v);
+      setNow(Date.now());
       setHistory(a ? await api.history(a.roomId) : []);
     } catch (e) {
       notify(roomUtilityError(errorMessage(e), t), "danger");
@@ -44,17 +65,60 @@ export function RoomUtilityBills() {
       if (open) void load();
     }, [open, load]),
   );
-  const run = async (fn: () => Promise<unknown>) => {
+  const run = async (
+    fn: () => Promise<unknown>,
+    done: string = t("roomUtility.saved"),
+  ) => {
     setBusy(true);
     try {
       await fn();
       await load();
-      notify(t("roomUtility.saved"), "success");
+      notify(done, "success");
+      return true;
     } catch (e) {
       notify(roomUtilityError(errorMessage(e), t), "danger");
+      return false;
     } finally {
       setBusy(false);
     }
+  };
+  /** Nội dung cảnh báo của hóa đơn chưa đóng theo mức hiện tại. */
+  const warnings = (b: RoomUtilityBill): string[] => {
+    const lines: string[] = [];
+    const amount = Formatter.currency(b.amount);
+    if (b.status === "PENDING" && b.warningLevel >= 1) {
+      const hours = Math.max(
+        1,
+        Math.round((new Date(b.dueAt).getTime() - now) / 3_600_000),
+      );
+      lines.push(
+        t("roomUtility.banner.level1", {
+          hours,
+          amount,
+          due: Formatter.dateTime(b.dueAt),
+        }),
+      );
+    } else if (b.status === "OVERDUE" && !b.violationRecordedAt) {
+      lines.push(
+        b.warningLevel >= 2
+          ? t("roomUtility.banner.level2", {
+              days: b.overdueDays,
+              deadline: Formatter.dateTime(b.violationAt),
+            })
+          : t("roomUtility.banner.overdue", { days: b.overdueDays }),
+      );
+    }
+    if (b.violationRecordedAt)
+      lines.push(
+        t(
+          b.violationTarget === "REPRESENTATIVE"
+            ? "roomUtility.banner.violationRepresentative"
+            : "roomUtility.banner.violationRoom",
+          { amount },
+        ),
+      );
+    if (b.warningLevel >= 3) lines.push(t("roomUtility.banner.level3"));
+    return lines;
   };
   return (
     <>
@@ -206,6 +270,81 @@ export function RoomUtilityBills() {
                 value={Formatter.dateTime(b.paidAt)}
               />
             )}
+            {b.paymentMethod && (
+              <InfoRow
+                label={t("roomUtility.paymentMethod")}
+                value={
+                  t(`roomUtility.methods.${b.paymentMethod}`) +
+                  (b.cashReceiptNo
+                    ? " · " + t("roomUtility.receipt", { no: b.cashReceiptNo })
+                    : "")
+                }
+              />
+            )}
+            {b.status !== "PAID" && warnings(b).length > 0 && (
+              <View style={{ marginTop: spacing.sm }}>
+                <Callout
+                  tone={b.status === "OVERDUE" ? "danger" : "warning"}
+                  icon={b.warningLevel >= 3 ? "shield-outline" : "warning-outline"}
+                  title={t(`roomUtility.levels.${b.warningLevel}`)}
+                >
+                  {warnings(b).join("\n")}
+                </Callout>
+              </View>
+            )}
+            {b.reported && (
+              <Text style={{ color: colors.muted, marginTop: spacing.sm }}>
+                {t("roomUtility.reported")}
+              </Text>
+            )}
+            {b.canReport && reporting !== b.id && (
+              <Button
+                label={t("roomUtility.reportAction")}
+                variant="secondary"
+                size="md"
+                onPress={() => {
+                  setReporting(b.id);
+                  setReportText("");
+                }}
+                style={{ marginTop: spacing.sm }}
+              />
+            )}
+            {b.canReport && reporting === b.id && (
+              <View style={{ marginTop: spacing.sm, gap: spacing.sm }}>
+                <Text style={{ color: colors.ink, fontWeight: "600" }}>
+                  {t("roomUtility.reportTitle")}
+                </Text>
+                <Text style={{ color: colors.muted }}>
+                  {t("roomUtility.reportHint", {
+                    deadline: Formatter.dateTime(b.violationAt),
+                  })}
+                </Text>
+                <Field
+                  multiline
+                  value={reportText}
+                  onChangeText={setReportText}
+                  maxLength={1000}
+                  placeholder={t("roomUtility.reportPlaceholder")}
+                />
+                <Button
+                  label={t("roomUtility.reportSubmit")}
+                  loading={busy}
+                  disabled={reportText.trim().length < 10}
+                  onPress={() =>
+                    void run(
+                      () => api.report(b.id, reportText.trim()),
+                      t("roomUtility.reportSent"),
+                    ).then((ok) => ok && setReporting(null))
+                  }
+                />
+                <Button
+                  label={t("common.cancel")}
+                  variant="ghost"
+                  disabled={busy}
+                  onPress={() => setReporting(null)}
+                />
+              </View>
+            )}
             {b.canPay && (
               <Button
                 label={t("roomUtility.payment")}
@@ -226,6 +365,25 @@ export function RoomUtilityBills() {
             )}
           </Card>
         ))}
+        {violations.length > 0 && (
+          <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
+            <Text style={{ color: colors.danger, fontWeight: "700" }}>
+              {t("roomUtility.myViolations")} ({violations.length})
+            </Text>
+            {violations.map((v) => (
+              <View key={v.id} style={{ marginTop: spacing.sm }}>
+                <Text style={{ color: colors.ink, fontWeight: "600" }}>
+                  {t(`roomUtility.reasons.${v.reason}`)}
+                </Text>
+                <Text style={{ color: colors.muted }}>
+                  {v.roomCode} · {Formatter.currency(v.amount)} ·{" "}
+                  {t("roomUtility.overdueDaysValue", { count: v.overdueDays })} ·{" "}
+                  {Formatter.dateTime(v.createdAt)}
+                </Text>
+              </View>
+            ))}
+          </Card>
+        )}
         <Button
           label={t("roomUtility.refresh")}
           variant="secondary"
