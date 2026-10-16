@@ -13,7 +13,7 @@ export class ApiError extends Error {
   }
 }
 
-export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export type ApiCallOptions = {
   method?: HttpMethod;

@@ -3,9 +3,13 @@ import type {
   RoomUtilityAccount,
   RoomUtilityBill,
   RoomUtilityHandover,
+  RoomUtilityPolicy,
+  RoomUtilityReport,
   RoomUtilityViolation,
 } from "../models/room-utility.model";
 import type { BillPaymentQr } from "../models/debt.model";
+
+/** API điện nước phòng cho sinh viên: đọc dữ liệu dùng POST, đổi trạng thái dùng PATCH. */
 export class RoomUtilityService {
   constructor(private readonly request: ApiClient) {}
   mine() {
@@ -45,11 +49,25 @@ export class RoomUtilityService {
       body: { id },
     });
   }
-  /** Báo trưởng phòng đã thu tiền mà chưa đóng (hóa đơn quá hạn, trước mốc ghi lỗi). */
-  report(billId: string, content: string) {
-    return this.request<unknown>("/student/room-utilities/report", {
-      body: { billId, content },
+  /**
+   * Báo một người trong phòng (trưởng phòng đã thu mà chưa đóng, hoặc thành viên không góp tiền).
+   * Chỉ khi hóa đơn đã quá hạn và trước khi hết ân hạn.
+   */
+  report(billId: string, accusedStudentId: string, content: string) {
+    return this.request<RoomUtilityReport>("/student/room-utilities/report", {
+      body: { billId, accusedStudentId, content },
     });
+  }
+  /** Rút báo cáo khi BQL chưa xét. */
+  withdrawReport(id: string) {
+    return this.request<RoomUtilityReport>(
+      "/student/room-utilities/report/withdraw",
+      { method: "PATCH", body: { id } },
+    );
+  }
+  /** Quy định đang áp dụng (con số lấy từ cấu hình thật). */
+  policy() {
+    return this.request<RoomUtilityPolicy>("/student/room-utilities/policy");
   }
   violations() {
     return this.request<RoomUtilityViolation[]>(
