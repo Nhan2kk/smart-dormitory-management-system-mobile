@@ -456,9 +456,13 @@ function Wizard({
     bedIdRef.current = bedId;
     stepRef.current = step;
   });
+  // Giường chính sinh viên này đang đặt: server phát "reserved" cho giường đó ngay khi tạo đăng ký,
+  // không được hiểu nhầm là người khác vừa lấy mất giường.
+  const ownBookingBedRef = useRef<string | null>(null);
   const dropTakenBed = useCallback(
     (takenId: string, reason: HoldLostReason = "taken") => {
       if (bedIdRef.current !== takenId) return;
+      if (reason === "taken" && ownBookingBedRef.current === takenId) return;
       setBedId(null);
       if (stepRef.current > 3) setStep(3);
       notify(
@@ -605,6 +609,8 @@ function Wizard({
         return notify(t("registration.staleCampaign"), "warning");
       if (!isInScope(fresh.campaign, building.id))
         return notify(t("registration.outOfScope"), "warning");
+      // Đánh dấu trước khi gọi API: sự kiện "reserved" có thể tới trước cả phản hồi tạo đăng ký.
+      ownBookingBedRef.current = bed.id;
       const created = await api.create({
         campaignId: fresh.campaign.id,
         buildingId: building.id,
@@ -621,6 +627,7 @@ function Wizard({
       availability.forget();
       onCreated(created, payment === "now");
     } catch (error) {
+      ownBookingBedRef.current = null;
       if (error instanceof ApiError && error.code === DEBT_CODE)
         return onDebt({ message: error.message, actionPath: error.actionPath });
       notify(errorMessage(error), "danger");
