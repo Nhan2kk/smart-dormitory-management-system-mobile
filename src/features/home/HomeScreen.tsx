@@ -212,7 +212,7 @@ export function HomeScreen() {
                 room: residence?.location.room ?? "—",
               })}
               subtitle={
-                remainingDays != null
+                residence?.stayStartDate && residence.expiryDate ? `${t("residency.expectedEnd")}: ${Formatter.date(residence.expiryDate)}` : remainingDays != null
                   ? t("home.roomTileSub", { days: remainingDays })
                   : t("home.roomTileNone")
               }

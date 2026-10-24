@@ -90,11 +90,13 @@ export function CheckInScreen() {
 
   const assets = record?.assets ?? [];
   const locked = !!record?.lockedAt;
+  const notStarted = !locked && record?.canSubmit === false;
+  const disabled = locked || notStarted;
   const checked = assets.filter((asset) => asset.status !== "unchecked").length;
   const issues = assets.filter((asset) => asset.status === "issue");
 
   const markOk = async (asset: HandoverAsset) => {
-    if (!record || locked || asset.status === "ok") return;
+    if (!record || disabled || asset.status === "ok") return;
     setSavingAsset(asset.id);
     try {
       setRecord(await api.evaluate(record.id, asset.id, { status: "ok" }));
@@ -106,7 +108,7 @@ export function CheckInScreen() {
   };
 
   const openIssue = (asset: HandoverAsset) => {
-    if (locked) return;
+    if (disabled) return;
     setDraft(
       asset.status === "issue"
         ? { issueType: asset.issueType ?? "damaged", note: asset.note ?? "", photos: asset.evidence.map((item) => ({ uri: item.url, id: item.id })) }
@@ -123,7 +125,7 @@ export function CheckInScreen() {
   };
 
   const saveIssue = async () => {
-    if (!editing || !record) return;
+    if (!editing || !record || disabled) return;
     if (!draft.note.trim()) return notify(t("checkIn.reportRequired"), "warning");
     setSavingIssue(true);
     try {
@@ -147,7 +149,7 @@ export function CheckInScreen() {
   };
 
   const next = async () => {
-    if (!record) return;
+    if (!record || disabled) return;
     if (step === 0) {
       if (checked < assets.length) return notify(t("checkIn.requireAll"), "warning");
       return setStep(1);
@@ -233,7 +235,7 @@ export function CheckInScreen() {
             label={step === 0 ? t("checkIn.continueCount", { checked, total: assets.length }) : t("checkIn.confirmCheckIn")}
             icon={step === 0 ? "arrow-forward" : "lock-closed"}
             iconPosition={step === 0 ? "right" : "left"}
-            disabled={locked || (step === 1 && !agreed)}
+            disabled={disabled || (step === 1 && !agreed)}
             loading={submitting}
             onPress={next}
             style={{ flex: 2 }}
@@ -241,6 +243,9 @@ export function CheckInScreen() {
         </FooterBar>
       }
     >
+      {notStarted && <Callout tone="warning" icon="time-outline">{record.bedHandoverPending
+        ? t("checkIn.handoverPending")
+        : t("checkIn.notStarted", { date: record.availableFrom || record.expectedCheckInDate ? Formatter.date((record.availableFrom ?? record.expectedCheckInDate)!) : "—" })}</Callout>}
       {step === 0 && (
         <>
           <PhotoBackground source={Photos.bunkBed()} shade style={styles.room}>
@@ -293,7 +298,7 @@ export function CheckInScreen() {
                     {saving && <ActivityIndicator color={colors.primary} />}
                   </View>
                   {condition === "issue" && (
-                    <Touchable onPress={() => openIssue(asset)} disabled={locked} accessibilityLabel={t("checkIn.editReport", { asset: name })} style={styles.issueNote}>
+                    <Touchable onPress={() => openIssue(asset)} disabled={disabled} accessibilityLabel={t("checkIn.editReport", { asset: name })} style={styles.issueNote}>
                       <Ionicons name="alert-circle" size={16} color={colors.danger} />
                       <Text style={[styles.issueText, { color: colors.danger }]} numberOfLines={2}>
                         {asset.issueType ? t(`checkIn.issue.${asset.issueType}`) : ""}: {asset.note}
@@ -304,9 +309,9 @@ export function CheckInScreen() {
                   <View style={styles.actions}>
                     <Touchable
                       onPress={() => markOk(asset)}
-                      disabled={locked || saving}
+                      disabled={disabled || saving}
                       accessibilityRole="radio"
-                      accessibilityState={{ selected: condition === "ok", disabled: locked }}
+                      accessibilityState={{ selected: condition === "ok", disabled: disabled }}
                       accessibilityLabel={t("checkIn.markGood", { asset: name })}
                       style={[styles.choice, condition === "ok" && { backgroundColor: colors.success }]}
                     >
@@ -315,9 +320,9 @@ export function CheckInScreen() {
                     </Touchable>
                     <Touchable
                       onPress={() => openIssue(asset)}
-                      disabled={locked || saving}
+                      disabled={disabled || saving}
                       accessibilityRole="radio"
-                      accessibilityState={{ selected: condition === "issue", disabled: locked }}
+                      accessibilityState={{ selected: condition === "issue", disabled: disabled }}
                       accessibilityLabel={t("checkIn.markIssue", { asset: name })}
                       style={[styles.choice, condition === "issue" && { backgroundColor: colors.danger }]}
                     >
@@ -402,7 +407,7 @@ export function CheckInScreen() {
         onClose={() => !savingIssue && setEditing(null)}
         title={t("checkIn.reportTitle")}
         subtitle={editing?.name}
-        footer={<Button label={t("checkIn.saveReport")} icon="checkmark" loading={savingIssue} onPress={saveIssue} />}
+        footer={<Button label={t("checkIn.saveReport")} icon="checkmark" loading={savingIssue} disabled={disabled} onPress={saveIssue} />}
       >
         <View style={{ gap: spacing.sm }}>
           <Text style={styles.cardTitle}>{t("checkIn.condition")}</Text>

@@ -5,6 +5,7 @@ import { makeStyles, radius, spacing, useTheme } from "../../../shared/theme";
 import { Touchable } from "../../../shared/ui";
 import { Bed } from "../../../models/registration.model";
 import { BedStatus } from "../../../enums/registration.enum";
+import { Formatter } from "../../../shared/format";
 
 /** Mã ngắn ("01") hiển thị kiểu "G01"; mã đầy đủ từ BE ("A101-01") giữ nguyên. */
 export function bedLabel(code: string) {
@@ -59,6 +60,11 @@ export function BedMap({ beds, value, onChange }: { beds: Bed[]; value: string |
                       {bed.level !== undefined && (
                         <Text style={[styles.bedLevel, selected && { color: "rgba(255,255,255,0.85)" }]}>
                           {t("common.floor")} {bed.level}
+                        </Text>
+                      )}
+                      {bed.availableFrom && (
+                        <Text style={[styles.bedLevel, selected && { color: "rgba(255,255,255,0.85)" }]} numberOfLines={1}>
+                          {t("registration.term.freeFrom", { date: Formatter.shortDate(bed.availableFrom) })}
                         </Text>
                       )}
                     </View>

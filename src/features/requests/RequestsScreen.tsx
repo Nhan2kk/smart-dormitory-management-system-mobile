@@ -97,6 +97,7 @@ export function RequestsScreen() {
                   </Text>
                 )}
                 <View style={styles.foot}>
+                  {request.requestType === "term_end" && <StatusBadge label={t("requests.termEnd")} tone="violet" />}
                   <StatusBadge label={t(`requests.status.${request.status}`)} tone={requestStatusTone[request.status]} />
                   <View style={styles.time}>
                     <Ionicons name="time-outline" size={14} color={colors.muted} />

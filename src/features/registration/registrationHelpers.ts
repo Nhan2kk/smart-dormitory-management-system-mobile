@@ -156,16 +156,23 @@ export function withHolds(
   room: Room,
   heldBedIds: Set<string>,
   myHoldBedId: string | null,
+  preBookable: Record<string, string> = {},
 ): Room {
   const heldByOther = (bed: Bed) =>
-    bed.status === "available" &&
+    (bed.status === "available" || Boolean(preBookable[bed.id])) &&
     heldBedIds.has(bed.id) &&
     bed.id !== myHoldBedId;
-  if (!room.beds.some(heldByOther)) return room;
+  if (!room.beds.some((bed) => heldByOther(bed) || preBookable[bed.id]))
+    return room;
+  // Giường đặt trước được (sẽ trống trước kỳ) hiển thị như giường trống kèm "Trống từ ngày …".
   return withBeds(
     room,
     room.beds.map((bed) =>
-      heldByOther(bed) ? { ...bed, status: "reserved" as const } : bed,
+      heldByOther(bed)
+        ? { ...bed, status: "reserved" as const, availableFrom: undefined }
+        : preBookable[bed.id]
+          ? { ...bed, status: "available" as const, availableFrom: preBookable[bed.id] }
+          : bed,
     ),
   );
 }

@@ -28,6 +28,11 @@ export type CheckInRecord = {
   initialWater: number | null;
   lockedAt: string | null;
   checkInType: "registration" | "room_transfer" | null;
+  /** Đơn theo kỳ lưu trú: nhận phòng từ ngày này (= ngày bắt đầu ở). */
+  availableFrom?: string | null;
+  /** false khi chưa tới ngày bắt đầu ở hoặc giường chưa bàn giao. */
+  canSubmit?: boolean;
+  bedHandoverPending?: boolean;
 };
 
 export type GeneratedMaintenanceRequest = {

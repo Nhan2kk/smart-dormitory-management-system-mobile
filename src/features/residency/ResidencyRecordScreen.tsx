@@ -101,7 +101,7 @@ function ResidencyContent({ overview }: { overview: ResidencyOverview }) {
           <InfoRow label={t("residency.roomType")} value={overview.roomType ?? "—"} />
           <InfoRow label={t("residency.occupants")} value={overview.occupants != null && overview.capacity != null ? `${overview.occupants}/${overview.capacity}` : "—"} />
           <InfoRow label={t("residency.price")} value={overview.price != null ? Formatter.currency(overview.price) : "—"} />
-          <InfoRow label={t("residency.registrationTerm")} value={overview.pricingPeriod ? t(`residency.periods.${overview.pricingPeriod}`) : "—"} />
+          <InfoRow label={t("residency.registrationTerm")} value={overview.pricingPeriod ? t(`residency.periods.${overview.pricingPeriod}`) : overview.stayStartDate ? `${t("residency.periods.term")}: ${date(overview.stayStartDate)} – ${date(overview.expiryDate)}` : "—"} />
           <InfoRow label={t("residency.expectedEnd")} value={date(overview.expiryDate)} strong />
           <InfoRow label={t("residency.linked")} value={overview.linkedRequest ?? "—"} divider={false} />
         </Card>

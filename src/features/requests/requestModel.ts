@@ -53,6 +53,7 @@ export function fromSummary(item: RequestSummary): StudentRequest {
   return {
     id: item.id,
     kind: item.kind,
+    requestType: item.requestType,
     title: same(item.summary || item.id),
     submittedAt: item.submittedAt,
     status: value,
@@ -225,7 +226,8 @@ export function fromCheckout(request: RoomCheckoutRequest): RequestDetail {
   return {
     id: request.id,
     kind: "roomCheckout",
-    title: L(`Trả phòng ${request.room ?? ""}`.trim(), `Check-out ${request.room ?? ""}`.trim()),
+    requestType: request.requestType,
+    title: L(`${request.requestType === "term_end" ? "Hết kỳ · " : ""}Trả phòng ${request.room ?? ""}`.trim(), `${request.requestType === "term_end" ? "Term end · " : ""}Check-out ${request.room ?? ""}`.trim()),
     summary: same(request.reason),
     submittedAt: request.submittedAt,
     status: value,
@@ -280,6 +282,7 @@ export function fromSupport(request: SupportMaintenanceRequest): RequestDetail {
   return {
     id: request.id,
     kind: "supportMaintenance",
+    attachments: request.attachments ?? [],
     title: same(request.title),
     summary: same(request.description),
     submittedAt: request.submittedAt,
@@ -302,7 +305,6 @@ export function fromSupport(request: SupportMaintenanceRequest): RequestDetail {
       { label: L("Mức ưu tiên", "Priority"), value: PRIORITY[request.priority] ?? request.priority },
       ...(request.source === "check_in" ? [{ label: L("Nguồn", "Source"), value: L("Biên bản nhận phòng", "Check-in record") }] : []),
       ...(request.processedBy ? [{ label: L("Người xử lý", "Handled by"), value: request.processedBy }] : []),
-      ...(request.attachments.length ? [{ label: L("Ảnh minh chứng", "Photos"), value: L(`${request.attachments.length} ảnh`, `${request.attachments.length} photos`) }] : []),
     ],
     timeline: buildTimeline("supportMaintenance", request.history, value === "completed"),
   };

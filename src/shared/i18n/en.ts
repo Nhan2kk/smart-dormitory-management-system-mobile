@@ -493,6 +493,9 @@ export const en: Dictionary = {
     },
   },
   requests: {
+    viewPhoto: "View photo {{index}}: {{name}}",
+    photoLoadFailed: "Unable to load this photo. Please try again.",
+    termEnd: "Term end",
     title: "My requests",
     create: "New request",
     total: "Total",
@@ -840,6 +843,7 @@ export const en: Dictionary = {
     registrationTerm: "Registration term",
     expectedEnd: "Expected end of stay",
     periods: {
+      term: "Fixed stay term",
       "6months": "6 months",
       "1year": "1 year",
     },
@@ -872,6 +876,18 @@ export const en: Dictionary = {
       "Showing the active record and the room before your transfer (if any).",
   },
   registration: {
+    term: {
+      label: "Stay term",
+      value: "{{start}} – {{end}} ({{months}} months)",
+      billedMonths: "Months to pay",
+      billedOf: "{{billed}}/{{total}} months",
+      how: "Calculation",
+      freeFrom: "Available from {{date}}",
+      checkInFrom: "Check-in available from {{date}}",
+      handoverPending: "Awaiting bed handover. The office will notify you when your bed is ready.",
+      renew: "Register for next term",
+      pickRoom: "Select a room to preview the price",
+    },
     title: "Dorm registration",
     steps: {
       building: "Building",
@@ -978,6 +994,8 @@ export const en: Dictionary = {
     },
   },
   checkIn: {
+    notStarted: "Check-in available from {{date}}",
+    handoverPending: "Awaiting bed handover. The office will notify you when your bed is ready.",
     title: "Check-in",
     steps: {
       inspect: "Inspect assets",

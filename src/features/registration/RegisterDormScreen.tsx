@@ -53,6 +53,7 @@ import {
   BuildingDto,
   Floor,
   Registration,
+  RegistrationPricePreview,
   StudentCampaign,
   StudentCampaignState,
 } from "../../models/registration.model";
@@ -215,6 +216,11 @@ function Overview({
   const campaign = campaignState?.campaign ?? null;
   const state = campaignState?.state ?? "NONE";
   const audience = campaign ? primaryAudience(campaign) : null;
+  const [todayVN, setTodayVN] = useState(() => new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10));
+  useEffect(() => {
+    const timer = setInterval(() => setTodayVN(new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10)), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   const active =
     registration && ACTIVE_STATUSES.includes(registration.status)
       ? registration
@@ -231,7 +237,12 @@ function Overview({
             key: "registration.noCampaign",
           };
 
-  const footer = active ? (
+  const canRenew = active?.status === "approved" && state === "OPEN" &&
+    !!campaign?.stayStartDate && !!active.stayEndDate &&
+    campaign.id !== active.campaignId && campaign.stayStartDate >= active.stayEndDate;
+  const footer = canRenew ? (
+    <Button label={t("registration.term.renew")} icon="add" onPress={onStart} style={{ flex: 1 }} />
+  ) : active ? (
     active.status === "pending_payment" ? (
       <Button
         label={t("registration.continuePayment")}
@@ -307,8 +318,10 @@ function Overview({
                   />
                   <CampaignCell
                     icon="key-outline"
-                    label={t("registration.checkIn")}
-                    value={range(audience?.checkInStart, audience?.checkInEnd)}
+                    label={t(campaign.stayStartDate ? "registration.term.label" : "registration.checkIn")}
+                    value={campaign.stayStartDate ? t("registration.term.value", {
+                      start: Formatter.date(campaign.stayStartDate), end: campaign.stayEndDate ? Formatter.date(campaign.stayEndDate) : "—", months: campaign.stayMonths ?? "—",
+                    }) : range(audience?.checkInStart, audience?.checkInEnd)}
                   />
                 </View>
               )}
@@ -389,6 +402,12 @@ function Overview({
                   {registration.roomCode} · {bedLabel(registration.bedCode)} ·{" "}
                   {Formatter.currency(registration.totalAmount)}
                 </Text>
+                {registration.stayEndDate && <>
+                  <Text style={styles.caption}>{t("registration.term.label")}: {range(registration.termStartDate ?? registration.stayStartDate, registration.stayEndDate)}</Text>
+                  <Text style={styles.caption}>{t("registration.term.billedMonths")}: {t("registration.term.billedOf", { billed: registration.billedMonths ?? "—", total: registration.totalMonths ?? "—" })}</Text>
+                  {registration.status === "approved" && registration.stayStartDate && registration.stayStartDate > todayVN && <Text style={styles.caption}>{t("registration.term.checkInFrom", { date: Formatter.date(registration.stayStartDate) })}</Text>}
+                  {registration.bedHandoverPending && <Callout tone="warning">{t("registration.term.handoverPending")}</Callout>}
+                </>}
               </View>
               <StatusBadge
                 label={t(`registration.appStatus.${registration.status}`)}
@@ -445,6 +464,10 @@ function Wizard({
   const [floorId, setFloorId] = useState<string | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [bedId, setBedId] = useState<string | null>(null);
+  const stayTermMode = Boolean(campaign.stayStartDate);
+  const [previewState, setPreviewState] = useState<{ key: string; value: RegistrationPricePreview } | null>(null);
+  const [previewFailure, setPreviewFailure] = useState<{ key: string; message: string } | null>(null);
+  const [previewAttempt, setPreviewAttempt] = useState(0);
   const [period, setPeriod] = useState<PricingPeriod>("6months");
   const [payment, setPayment] = useState<"now" | "later">("now");
   const [submitting, setSubmitting] = useState(false);
@@ -479,6 +502,7 @@ function Wizard({
   const availability = useBedAvailability({
     api,
     gender,
+    campaignId: campaign.id,
     onEvent: (event) => {
       const status = event.status;
       if (status === "held") return;
@@ -491,7 +515,7 @@ function Wizard({
     },
     onHoldLost: dropTakenBed,
   });
-  const { counts, heldBedIds, myHoldBedId } = availability;
+  const { counts, heldBedIds, myHoldBedId, preBookable } = availability;
   const holdDeadline =
     bedId && bedId === myHoldBedId ? availability.holdDeadline : null;
   const hasBeds = (map: Record<string, number> | undefined, id: string) =>
@@ -565,7 +589,7 @@ function Wizard({
   const building = buildings?.find((item) => item.id === buildingId) ?? null;
   const floor = floors?.find((item) => item.id === floorId) ?? null;
   const rawRoom = floor?.rooms.find((item) => item.id === roomId) ?? null;
-  const room = rawRoom ? withHolds(rawRoom, heldBedIds, myHoldBedId) : null;
+  const room = rawRoom ? withHolds(rawRoom, heldBedIds, myHoldBedId, preBookable) : null;
   // Ẩn tòa/tầng/phòng đã hết giường (vẫn giữ mục đang chọn để không mất lựa chọn giữa chừng).
   const visibleBuildings = buildings?.filter(
     (item) => item.id === buildingId || hasBeds(counts?.buildings, item.id),
@@ -575,11 +599,22 @@ function Wizard({
   );
   const visibleRooms = (floor?.rooms ?? [])
     .filter((item) => item.id === roomId || hasBeds(counts?.rooms, item.id))
-    .map((item) => withHolds(item, heldBedIds, myHoldBedId));
+    .map((item) => withHolds(item, heldBedIds, myHoldBedId, preBookable));
   const bed = room?.beds.find((item) => item.id === bedId) ?? null;
+  const previewKey = `${campaign.id}:${roomId}:${previewAttempt}`;
+  const preview = previewState?.key === previewKey ? previewState.value : null;
+  const previewError = previewFailure?.key === previewKey ? previewFailure.message : null;
+  useEffect(() => {
+    if (!stayTermMode || !roomId) return;
+    let alive = true;
+    api.pricePreview(campaign.id, roomId)
+      .then(value => { if (alive) setPreviewState({ key: previewKey, value }); })
+      .catch((error: unknown) => { if (alive) setPreviewFailure({ key: previewKey, message: errorMessage(error) }); });
+    return () => { alive = false; };
+  }, [api, campaign.id, roomId, stayTermMode, previewKey]);
   const months = PERIOD_MONTHS[period];
   const total = room ? room.price * months : 0;
-  const canNext = [!!building, !!floor, !!room, !!bed, true][step];
+  const canNext = [!!building, !!floor, !!room, !!bed && bedId === myHoldBedId, !!bed && bedId === myHoldBedId && (!stayTermMode || !!preview)][step];
   const floorTitle = (item: Floor) =>
     item.number !== null ? `${t("common.floor")} ${item.number}` : item.name;
 
@@ -599,13 +634,13 @@ function Wizard({
   };
 
   const submit = async () => {
-    if (!building || !floor || !room || !bed) return;
+    if (!building || !floor || !room || !bed || bedId !== myHoldBedId || (stayTermMode && !preview)) return;
     setSubmitting(true);
     try {
       // Hỏi lại đợt hiện tại ngay trước khi đặt giường để không dùng campaignId của đợt đã đóng/huỷ.
       const fresh = await api.currentCampaign();
       onCampaign(fresh);
-      if (fresh.state !== "OPEN" || !fresh.campaign)
+      if (fresh.state !== "OPEN" || !fresh.campaign || fresh.campaign.id !== campaign.id)
         return notify(t("registration.staleCampaign"), "warning");
       if (!isInScope(fresh.campaign, building.id))
         return notify(t("registration.outOfScope"), "warning");
@@ -617,7 +652,7 @@ function Wizard({
         floorId: floor.id,
         roomId: room.id,
         bedId: bed.id,
-        pricingPeriod: period,
+        ...(!stayTermMode ? { pricingPeriod: period } : {}),
       });
       notify(
         payment === "now"
@@ -985,6 +1020,15 @@ function Wizard({
               <SummaryCell label={t("common.bed")} value={bedLabel(bed.code)} />
             </Glass>
           </PhotoBackground>
+          {stayTermMode ? (
+            preview ? <Card style={{ marginTop: spacing.md, paddingVertical: spacing.xs }}>
+              <InfoRow label={t("registration.term.label")} value={`${Formatter.date(preview.termStartDate)} – ${Formatter.date(preview.termEndDate)}`} />
+              <InfoRow label={t("registration.term.billedMonths")} value={t("registration.term.billedOf", { billed: preview.billedMonths, total: preview.totalMonths })} />
+              <InfoRow label={t("residency.price")} value={`${Formatter.currency(preview.monthlyPrice)}${t("common.perMonth")}`} />
+              <InfoRow label={t("registration.term.how")} value={preview.explanation} />
+              <InfoRow label={t("registration.totalPay")} value={Formatter.currency(preview.totalAmount)} strong divider={false} />
+            </Card> : previewError ? <Callout tone="danger" action={<Button label={t("common.retry")} onPress={() => setPreviewAttempt(value => value + 1)} />}>{previewError}</Callout> : loader
+          ) : <>
           <Text style={styles.subTitle}>{t("registration.duration")}</Text>
           <SegmentedControl<PricingPeriod>
             value={period}
@@ -1010,6 +1054,7 @@ function Wizard({
               divider={false}
             />
           </Card>
+          </>}
           <Text style={styles.subTitle}>{t("registration.paymentMethod")}</Text>
           <View style={{ gap: spacing.sm }}>
             <PayOption

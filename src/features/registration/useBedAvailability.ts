@@ -22,6 +22,8 @@ export type BedAvailabilityCounts = {
 type Options = {
   api: RegistrationService;
   gender: string | null;
+  /** Đợt đang đăng ký: đợt theo kỳ lưu trú cho chọn cả giường đặt trước được. */
+  campaignId?: string | null;
   /** Mỗi sự kiện giường (sau khi đã cập nhật số chỗ). */
   onEvent?: (event: BedAvailabilityEvent) => void;
   /** Mất giường đang giữ: hết thời gian giữ tối đa, hoặc không gia hạn được (đã bị người khác lấy). */
@@ -35,21 +37,26 @@ type Options = {
 export function useBedAvailability({
   api,
   gender,
+  campaignId = null,
   onEvent,
   onHoldLost,
 }: Options) {
   const { accessToken, refresh } = useAuth();
   const [counts, setCounts] = useState<BedAvailabilityCounts | null>(null);
+  const [preBookable, setPreBookable] = useState<Record<string, string>>({});
+  const campaignIdRef = useRef(campaignId);
   const [heldBedIds, setHeldBedIds] = useState<Set<string>>(() => new Set());
   const [myHold, setMyHold] = useState<BedHold | null>(null);
   const myHoldRef = useRef<BedHold | null>(null);
   const seqRef = useRef(0);
+  const snapshotSeqRef = useRef(0);
   const lastOpRef = useRef<"hold" | "release">("release");
   const genderRef = useRef(gender);
   const onEventRef = useRef(onEvent);
   const onHoldLostRef = useRef(onHoldLost);
   const refreshedFor = useRef<string | null>(null);
   useEffect(() => {
+    campaignIdRef.current = campaignId;
     genderRef.current = gender;
     onEventRef.current = onEvent;
     onHoldLostRef.current = onHoldLost;
@@ -61,20 +68,37 @@ export function useBedAvailability({
   }, []);
 
   const reload = useCallback(async () => {
-    const snapshot = await api.availability();
+    const snapshotSeq = ++snapshotSeqRef.current;
+    const operationSeq = seqRef.current;
+    const snapshot = await api.availability(campaignIdRef.current);
+    if (snapshotSeq !== snapshotSeqRef.current) return null;
+    setPreBookable(snapshot.preBookableBeds ?? {});
     setCounts({
       rooms: snapshot.rooms,
       floors: snapshot.floors,
       buildings: snapshot.buildings,
     });
     setHeldBedIds(new Set(snapshot.heldBedIds));
+    if (operationSeq !== seqRef.current) return snapshot;
     if (lastOpRef.current === "hold") updateHold(snapshot.myHold);
     // Lượt giữ còn sót từ lần mở trước mà giờ không chọn giường nào: nhả luôn.
     else if (snapshot.myHold) void api.releaseBedHold().catch(() => undefined);
+    return snapshot;
   }, [api, updateHold]);
+
+  useEffect(() => { void reload().catch(() => undefined); }, [reload, campaignId]);
 
   const apply = useCallback(
     (event: BedAvailabilityEvent) => {
+      if (campaignIdRef.current) {
+        void reload().then(snapshot => {
+          if (!snapshot) return;
+          const selectable = snapshot.preBookableBeds?.[event.bedId] &&
+            (!snapshot.heldBedIds.includes(event.bedId) || snapshot.myHold?.bedId === event.bedId);
+          onEventRef.current?.(selectable ? { ...event, status: "available" } : event);
+        }).catch(() => undefined);
+        return;
+      }
       const key =
         genderRef.current === "male" || genderRef.current === "female"
           ? genderRef.current
@@ -106,7 +130,7 @@ export function useBedAvailability({
         updateHold(null);
       onEventRef.current?.(event);
     },
-    [updateHold],
+    [reload, updateHold],
   );
 
   useEffect(() => {
@@ -142,7 +166,7 @@ export function useBedAvailability({
     async (bedId: string) => {
       const seq = ++seqRef.current;
       lastOpRef.current = "hold";
-      const result = await api.holdBed(bedId, false);
+      const result = await api.holdBed(bedId, false, campaignIdRef.current);
       if (seq !== seqRef.current) {
         // Đã đổi giường/nhả trong lúc chờ: nhả lại phòng khi server xử lý lệnh nhả trước lệnh giữ này.
         if ((lastOpRef.current as string) === "release")
@@ -176,7 +200,7 @@ export function useBedAvailability({
     const timer = setInterval(() => {
       const seq = seqRef.current;
       api
-        .holdBed(heldBedId, true)
+        .holdBed(heldBedId, true, campaignIdRef.current)
         .then((result) => {
           if (seq === seqRef.current) updateHold(result);
         })
@@ -221,6 +245,7 @@ export function useBedAvailability({
 
   return {
     counts,
+    preBookable,
     heldBedIds,
     myHoldBedId: heldBedId,
     holdDeadline,

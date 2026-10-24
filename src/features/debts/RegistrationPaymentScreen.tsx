@@ -106,11 +106,11 @@ export function RegistrationPaymentScreen({
 
   const stayStart = registration
     ? new Date(
-        checkInStart ?? registration.paymentDeadline ?? registration.createdAt,
+        registration.stayStartDate ?? checkInStart ?? registration.paymentDeadline ?? registration.createdAt,
       )
     : null;
   const stayEnd =
-    registration && stayStart
+    registration?.stayEndDate ? new Date(registration.stayEndDate) : registration?.pricingPeriod && stayStart
       ? new Date(
           stayStart.getFullYear(),
           stayStart.getMonth() + PERIOD_MONTHS[registration.pricingPeriod],
@@ -257,7 +257,7 @@ export function RegistrationPaymentScreen({
                 <View style={styles.pairItem}>
                   <Detail
                     label={t("payment.stayDuration")}
-                    value={t(
+                    value={registration.pricingPeriod == null ? t("common.months", { count: registration.billedMonths ?? "—" }) : t(
                       registration.pricingPeriod === "1year"
                         ? "registration.oneYear"
                         : "registration.sixMonths",

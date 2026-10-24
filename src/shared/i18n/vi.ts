@@ -489,6 +489,9 @@ export const vi = {
     },
   },
   requests: {
+    viewPhoto: "Xem ảnh {{index}}: {{name}}",
+    photoLoadFailed: "Không tải được ảnh. Vui lòng thử lại.",
+    termEnd: "Hết kỳ",
     title: "Yêu cầu của tôi",
     create: "Tạo yêu cầu",
     total: "Tổng",
@@ -844,6 +847,7 @@ export const vi = {
     registrationTerm: "Thời hạn đăng ký",
     expectedEnd: "Dự kiến kết thúc lưu trú",
     periods: {
+      term: "Theo kỳ lưu trú",
       "6months": "6 tháng",
       "1year": "1 năm",
     },
@@ -876,6 +880,18 @@ export const vi = {
       "Hiển thị hồ sơ đang hiệu lực và phòng trước khi chuyển (nếu có).",
   },
   registration: {
+    term: {
+      label: "Kỳ lưu trú",
+      value: "{{start}} – {{end}} ({{months}} tháng)",
+      billedMonths: "Số tháng phải đóng",
+      billedOf: "{{billed}}/{{total}} tháng",
+      how: "Cách tính",
+      freeFrom: "Trống từ {{date}}",
+      checkInFrom: "Nhận phòng từ ngày {{date}}",
+      handoverPending: "Đang chờ bàn giao giường. BQL sẽ thông báo khi giường sẵn sàng.",
+      renew: "Đăng ký kỳ sau",
+      pickRoom: "Chọn phòng để xem số tiền",
+    },
     title: "Đăng ký KTX",
     steps: {
       building: "Chọn tòa nhà",
@@ -982,6 +998,8 @@ export const vi = {
     },
   },
   checkIn: {
+    notStarted: "Nhận phòng từ ngày {{date}}",
+    handoverPending: "Đang chờ bàn giao giường. BQL sẽ thông báo khi giường sẵn sàng.",
     title: "Nhận phòng",
     steps: {
       inspect: "Kiểm tra tài sản",

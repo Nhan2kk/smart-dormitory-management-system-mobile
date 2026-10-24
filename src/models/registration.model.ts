@@ -26,6 +26,11 @@ export interface StudentCampaign {
   selectedBuildingIds: string[];
   audiences: CampaignAudience[];
   description: string | null;
+  /** Kỳ lưu trú cố định (yyyy-MM-dd); null với đợt cũ chọn 6 tháng / 1 năm. */
+  stayStartDate?: string | null;
+  stayEndDate?: string | null;
+  /** Số tháng của kỳ (N) theo quy tắc 15 ngày. */
+  stayMonths?: number | null;
 }
 
 export interface StudentCampaignState {
@@ -107,13 +112,23 @@ export interface Registration {
   roomCode: string;
   bedId: string;
   bedCode: string;
-  pricingPeriod: PricingPeriod;
+  /** null với đơn của đợt theo kỳ lưu trú. */
+  pricingPeriod: PricingPeriod | null;
   totalAmount: number;
   status: RegistrationStatus;
   paymentDeadline: string | null;
   paidAt: string | null;
   processedNote: string | null;
   createdAt: string;
+  termStartDate?: string | null;
+  termEndDate?: string | null;
+  /** Ngày bắt đầu ở = max(ngày bắt đầu kỳ, ngày đăng ký); ngày hết hạn ở = ngày kết thúc kỳ. */
+  stayStartDate?: string | null;
+  stayEndDate?: string | null;
+  totalMonths?: number | null;
+  billedMonths?: number | null;
+  monthlyPrice?: number | null;
+  bedHandoverPending?: boolean;
 }
 
 export interface RegistrationCreateBody {
@@ -122,7 +137,21 @@ export interface RegistrationCreateBody {
   floorId: string;
   roomId: string;
   bedId: string;
-  pricingPeriod: PricingPeriod;
+  /** Chỉ dùng cho đợt cũ; đợt theo kỳ lưu trú bỏ trống. */
+  pricingPeriod?: PricingPeriod;
+}
+
+/** Xem trước số tiền đăng ký theo kỳ lưu trú (chưa lưu). */
+export interface RegistrationPricePreview {
+  termStartDate: string;
+  termEndDate: string;
+  stayStartDate: string;
+  totalMonths: number;
+  billedMonths: number;
+  monthlyPrice: number;
+  totalAmount: number;
+  beforeTerm: boolean;
+  explanation: string;
 }
 
 export interface Bed {
@@ -130,6 +159,8 @@ export interface Bed {
   code: string;
   level?: 1 | 2;
   status: BedStatus;
+  /** Giường đặt trước được: trống từ ngày này (yyyy-MM-dd). */
+  availableFrom?: string;
 }
 
 export interface Room {
@@ -174,6 +205,8 @@ export interface BedAvailabilitySnapshot {
   floors: Record<string, number>;
   buildings: Record<string, number>;
   at: string;
+  /** Giường đang có người nhưng đặt trước được cho kỳ của đợt: bedId → ngày trống. */
+  preBookableBeds?: Record<string, string>;
 }
 
 /** Sự kiện `/topic/registration/beds`. */

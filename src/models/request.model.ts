@@ -49,6 +49,7 @@ export type RefundRecipient = {
 };
 
 export type RequestSummary = {
+  requestType?: "normal" | "term_end" | null;
   id: string;
   kind: RequestKind;
   summary: string;
@@ -114,6 +115,7 @@ export type RoomTransferRequest = {
 };
 
 export type RoomCheckoutRequest = {
+  requestType?: "normal" | "term_end";
   id: string;
   building: string | null;
   floor: string | null;
@@ -223,6 +225,7 @@ export type SupportCreateBody = {
 };
 
 export type StudentRequest = {
+  requestType?: "normal" | "term_end" | null;
   id: string;
   kind: RequestKind;
   title: Localized;
@@ -233,6 +236,7 @@ export type StudentRequest = {
 };
 
 export type RequestDetail = StudentRequest & {
+  attachments?: Attachment[];
   details: { label: Localized; value: Localized | string }[];
   timeline: {
     title: Localized;

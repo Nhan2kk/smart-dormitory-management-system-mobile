@@ -14,6 +14,7 @@ import { fromCheckout, fromSupport, fromTransfer, kindFromId, requestKindMeta, r
 import { RequestDetail } from "../../models/request.model";
 import { RequestKind } from "../../enums/request.enum";
 import { RequestService } from "../../services/request.service";
+import { RequestEvidence } from "./components/RequestEvidence";
 
 export function RequestDetailScreen() {
   const params = useLocalSearchParams<{ id: string; kind?: string }>();
@@ -146,6 +147,8 @@ export function RequestDetailScreen() {
           <Text style={styles.time}>{t("requests.submittedAt", { time: Formatter.dateTime(request.submittedAt) })}</Text>
         </View>
       </Card>
+
+      <RequestEvidence attachments={request.attachments ?? []} />
 
       {awaitingConfirm && (
         <View style={{ marginTop: spacing.lg }}>

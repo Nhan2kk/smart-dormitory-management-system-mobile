@@ -11,6 +11,7 @@ import type {
   PageResponse,
   Registration,
   RegistrationCreateBody,
+  RegistrationPricePreview,
   RoomDto,
   StudentCampaignState,
 } from "../models/registration.model";
@@ -80,17 +81,33 @@ export class RegistrationService {
   }
 
   /** Số giường còn chọn được + giường người khác đang giữ (cập nhật tiếp qua WebSocket). */
-  availability(): Promise<BedAvailabilitySnapshot> {
+  availability(campaignId?: string | null): Promise<BedAvailabilitySnapshot> {
     return this.request<BedAvailabilitySnapshot>(
       "/student/registrations/availability",
+      { body: { campaignId: campaignId ?? null } },
     );
   }
 
   /** Giữ tạm giường vừa chọn; `renew` = tự gia hạn (lượt quá thời gian tối đa thì BE báo BED_HOLD_EXPIRED). */
-  holdBed(bedId: string, renew = false): Promise<BedHold> {
+  holdBed(
+    bedId: string,
+    renew = false,
+    campaignId?: string | null,
+  ): Promise<BedHold> {
     return this.request<BedHold>("/student/registrations/bed-holds", {
-      body: { bedId, renew },
+      body: { bedId, renew, campaignId: campaignId ?? null },
     });
+  }
+
+  /** Kỳ lưu trú, số tháng phải đóng, cách tính và số tiền trước khi gửi (không lưu). */
+  pricePreview(
+    campaignId: string,
+    roomId: string,
+  ): Promise<RegistrationPricePreview> {
+    return this.request<RegistrationPricePreview>(
+      "/student/registrations/price-preview",
+      { body: { campaignId, roomId } },
+    );
   }
 
   releaseBedHold(): Promise<void> {
