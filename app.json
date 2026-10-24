@@ -1,39 +1,40 @@
 {
-    "expo": {
-        "name": "KTX DN",
-        "slug": "ktx-dn",
-        "scheme": "ktxdn",
-        "version": "1.0.0",
-        "orientation": "portrait",
-        "icon": "./assets/icon.png",
-        "userInterfaceStyle": "automatic",
-        "ios": {
-            "supportsTablet": false,
-            "bundleIdentifier": "com.smartdormitory.student"
-        },
-        "android": {
-            "adaptiveIcon": {
-                "backgroundColor": "#E6F4FE",
-                "foregroundImage": "./assets/android-icon-foreground.png",
-                "backgroundImage": "./assets/android-icon-background.png",
-                "monochromeImage": "./assets/android-icon-monochrome.png"
-            },
-            "predictiveBackGestureEnabled": false
-        },
-        "web": {
-            "favicon": "./assets/favicon.png"
-        },
-        "plugins": [
-            "expo-router",
-            "expo-secure-store",
-            "expo-image",
-            [
-                "expo-image-picker",
-                {
-                    "photosPermission": "Cho phép KTX DN truy cập ảnh để đổi ảnh đại diện.",
-                    "cameraPermission": "Cho phép KTX DN dùng máy ảnh để chụp ảnh đại diện."
-                }
-            ]
-        ]
-    }
+  "expo": {
+    "name": "KTX DN",
+    "slug": "ktx-dn",
+    "scheme": "ktxdn",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.smartdormitory.student"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cho phép KTX DN truy cập ảnh để đổi ảnh đại diện.",
+          "cameraPermission": "Cho phép KTX DN dùng máy ảnh để chụp ảnh đại diện."
+        }
+      ],
+      "expo-font"
+    ]
+  }
 }

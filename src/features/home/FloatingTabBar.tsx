@@ -7,7 +7,8 @@ import { Glass, IconName, Touchable } from "../../shared/ui";
 
 type TabBarProps = {
   state: { index: number; routes: { key: string; name: string }[] };
-  navigation: { emit: (event: { type: "tabPress"; target: string; canPreventDefault: true }) => { defaultPrevented: boolean }; navigate: (name: string) => void };
+  emitter: { emit: (event: { type: "tabPress"; target: string; canPreventDefault: true }) => { defaultPrevented: boolean } };
+  navigateToTab: (routeKey: string) => void;
   insets: { bottom: number };
 };
 
@@ -19,7 +20,7 @@ const tabs: Record<string, { icons: [IconName, IconName]; label: "tabs.home" | "
 };
 
 /** Thanh tab nổi bằng kính mờ, nút tạo yêu cầu nhô lên ở giữa (vùng ngón cái dễ chạm). */
-export function FloatingTabBar({ state, navigation, insets }: TabBarProps) {
+export function FloatingTabBar({ state, emitter, navigateToTab, insets }: TabBarProps) {
   const styles = useStyles();
   const { colors, shadow } = useTheme();
   const { t } = useI18n();
@@ -42,8 +43,8 @@ export function FloatingTabBar({ state, navigation, insets }: TabBarProps) {
             if (!meta) return null;
             const label = t(meta.label);
             const onPress = () => {
-              const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-              if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+              const event = emitter.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
+              if (!focused && !event.defaultPrevented) navigateToTab(route.key);
             };
             return (
               <Touchable

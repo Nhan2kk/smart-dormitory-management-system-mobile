@@ -74,7 +74,7 @@ export function AssistantScreen() {
           ListEmptyComponent={loadingMessages ? (
             <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} accessibilityLabel={t("assistant.loadingChat")} />
           ) : disabled ? <EmptyState icon="moon-outline" title={t("assistant.disabledTitle")} description={t("assistant.disabledBody")} /> : <Welcome bootstrap={bootstrap} onPick={ask} />}
-          ListFooterComponent={thinking ? <Typing /> : null}
+          ListFooterComponent={thinking ? <Typing /> : undefined}
           renderItem={({ item }) => (item.role === ChatRole.User ? <UserBubble text={item.text} /> : <BotBubble message={item} onRate={onRate} />)}
         />
         <View style={styles.composer}>

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Redirect, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useRef, useState } from "react";
-import { Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from "react-native";
+import { Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInputInstance, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Photos } from "../../shared/images";
@@ -18,7 +18,7 @@ export function LoginScreen() {
   const { colors } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const passwordRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);

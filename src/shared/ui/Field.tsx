@@ -1,6 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { forwardRef, ReactNode, useState } from "react";
-import { Text, TextInput, TextInputProps, View } from "react-native";
+import {
+  Text,
+  TextInput,
+  TextInputInstance,
+  TextInputProps,
+  View,
+} from "react-native";
 import { makeStyles, radius, spacing, useTheme } from "../theme";
 import { IconName } from "./Badges";
 
@@ -13,7 +19,7 @@ type Props = TextInputProps & {
 };
 
 /** Ô nhập có nhãn, viền sáng khi focus, thông báo lỗi ngay dưới trường. */
-export const Field = forwardRef<TextInput, Props>(function Field(
+export const Field = forwardRef<TextInputInstance, Props>(function Field(
   {
     label,
     icon,

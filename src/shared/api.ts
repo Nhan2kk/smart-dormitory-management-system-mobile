@@ -46,7 +46,8 @@ export async function apiCall<T>(
       },
       body: form ?? (body === undefined ? undefined : JSON.stringify(body)),
     });
-  } catch {
+  } catch (error) {
+    if (__DEV__) console.warn(`[api] ${method} ${path} failed:`, error);
     throw new ApiError(
       "Không thể kết nối máy chủ. Kiểm tra mạng và địa chỉ API.",
       0,
@@ -55,8 +56,12 @@ export async function apiCall<T>(
 
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
+    // 413 do proxy (nginx) chặn trả về HTML, không có `message`.
+    const fallback = response.status === 413
+      ? "Tệp tải lên quá lớn so với giới hạn của máy chủ."
+      : "Yêu cầu không thành công. Vui lòng thử lại.";
     throw new ApiError(
-      payload?.message || "Yêu cầu không thành công. Vui lòng thử lại.",
+      payload?.message || fallback,
       response.status,
       payload?.code ?? undefined,
       payload?.actionPath ?? undefined,

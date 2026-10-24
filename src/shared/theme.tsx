@@ -1,5 +1,17 @@
 import { createContext, ReactNode, useContext, useMemo } from "react";
-import { Platform, StyleSheet, useColorScheme, ViewStyle } from "react-native";
+import {
+  ImageStyle,
+  Platform,
+  StyleSheet,
+  TextStyle,
+  useColorScheme,
+  ViewStyle,
+} from "react-native";
+
+/** RN 0.88 đã bỏ `StyleSheet.NamedStyles`, nên tự định nghĩa lại kiểu tương đương. */
+export type NamedStyles<T> = {
+  [P in keyof T]: ViewStyle | TextStyle | ImageStyle;
+};
 
 export type Tone =
   | "primary"
@@ -495,7 +507,7 @@ export function useTheme() {
 /**
  * Tạo hook style phụ thuộc theme; kết quả được nhớ theo từng theme nên không tạo lại mỗi lần render.
  */
-export function makeStyles<T extends StyleSheet.NamedStyles<T>>(
+export function makeStyles<T extends NamedStyles<T>>(
   factory: (theme: Theme) => T,
 ) {
   const cache = new WeakMap<Theme, T>();

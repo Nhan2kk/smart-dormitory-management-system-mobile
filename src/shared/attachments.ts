@@ -1,3 +1,4 @@
+import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { Platform } from "react-native";
 import type { ApiClient } from "./api";
@@ -13,21 +14,27 @@ export type Attachment = {
 /** Ảnh minh chứng đã chọn: `uri` để xem trước, `id` sau khi upload thành công. */
 export type EvidencePhoto = { uri: string; id?: string };
 
+/** Thêm ảnh tại `uri` vào form. Trên native, `fetch` của Expo (SDK 57) không nhận part dạng
+ * `{ uri, name, type }` của React Native mà cần đối tượng có `bytes()`, nên đọc file qua expo-file-system. */
+async function appendPhoto(form: FormData, field: string, uri: string) {
+  const raw = uri.split("/").pop()?.split("?")[0] || `evidence-${Date.now()}`;
+  const name = raw.includes(".") ? raw : `${raw}.jpg`;
+  if (Platform.OS === "web") {
+    form.append(field, await (await fetch(uri)).blob(), name);
+    return;
+  }
+  const type = /\.png$/i.test(name) ? "image/png" : /\.webp$/i.test(name) ? "image/webp" : "image/jpeg";
+  const file = new File(uri);
+  form.append(field, { name, type, bytes: () => file.bytes() } as unknown as Blob);
+}
+
 /** Upload 1 ảnh lên `POST /attachments` (multipart, field `file`). */
 export async function uploadAttachment(
   request: ApiClient,
   uri: string,
 ): Promise<Attachment> {
-  const name =
-    uri.split("/").pop()?.split("?")[0] || `evidence-${Date.now()}.jpg`;
   const form = new FormData();
-  if (Platform.OS === "web") {
-    const blob = await (await fetch(uri)).blob();
-    form.append("file", blob, name.includes(".") ? name : `${name}.jpg`);
-  } else {
-    const type = /\.png$/i.test(name) ? "image/png" : "image/jpeg";
-    form.append("file", { uri, name, type } as unknown as Blob);
-  }
+  await appendPhoto(form, "file", uri);
   return request<Attachment>("/attachments", { form });
 }
 
@@ -40,16 +47,7 @@ export async function uploadPhotos(
   if (!pending.length) return photos as Required<EvidencePhoto>[];
   if (pending.length > 10) throw new Error("Mỗi lần tối đa 10 ảnh");
   const form = new FormData();
-  for (const photo of pending) {
-    const name = photo.uri.split("/").pop()?.split("?")[0] || `evidence.jpg`;
-    if (Platform.OS === "web") {
-      const blob = await (await fetch(photo.uri)).blob();
-      form.append("files", blob, name);
-    } else {
-      const type = /\.png$/i.test(name) ? "image/png" : /\.webp$/i.test(name) ? "image/webp" : "image/jpeg";
-      form.append("files", { uri: photo.uri, name, type } as unknown as Blob);
-    }
-  }
+  for (const photo of pending) await appendPhoto(form, "files", photo.uri);
   const records = await request<Attachment[]>("/attachments/batch", { form });
   if (records.length !== pending.length) throw new Error("Số ảnh tải lên không khớp");
   let index = 0;
