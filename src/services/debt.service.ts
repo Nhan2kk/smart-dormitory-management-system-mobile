@@ -41,8 +41,8 @@ export class DebtService {
     const bills: BillResponse[] = [];
     for (let page = 0; page < MAX_PAGES; page++) {
       const result = await this.request<BillPageResponse>(
-        `/student/bills?page=${page}&size=${PAGE_SIZE}`,
-        { method: "GET" },
+        "/student/bills/search",
+        { body: { page, size: PAGE_SIZE } },
       );
       bills.push(...result.content);
       if (result.last || result.content.length < PAGE_SIZE) break;

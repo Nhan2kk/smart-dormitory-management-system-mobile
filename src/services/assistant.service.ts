@@ -12,9 +12,7 @@ export class AssistantService {
   constructor(private readonly request: ApiClient) {}
 
   bootstrap(): Promise<ChatBootstrapResponse> {
-    return this.request<ChatBootstrapResponse>("/chat-ai/bootstrap", {
-      method: "GET",
-    });
+    return this.request<ChatBootstrapResponse>("/chat-ai/bootstrap");
   }
 
   /** Gửi câu hỏi; truyền `conversationId` cũ để AI hiểu ngữ cảnh. */

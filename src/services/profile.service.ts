@@ -10,9 +10,7 @@ export class ProfileService {
 
   /** Hồ sơ sinh viên đang đăng nhập (chỉ xem; BE chưa có API cho sinh viên tự sửa). */
   get(): Promise<StudentProfileResponse> {
-    return this.request<StudentProfileResponse>("/student/profile", {
-      method: "GET",
-    });
+    return this.request<StudentProfileResponse>("/student/profile");
   }
 
   /** Đổi mật khẩu; BE kiểm tra mật khẩu hiện tại và độ dài 8–72 ký tự. */

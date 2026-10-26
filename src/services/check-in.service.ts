@@ -13,7 +13,7 @@ export class CheckInService {
   constructor(private readonly request: ApiClient) {}
 
   mine(): Promise<CheckInRecord> {
-    return this.request<CheckInRecord>("/student/check-in", { method: "GET" });
+    return this.request<CheckInRecord>("/student/check-in");
   }
 
   evaluate(

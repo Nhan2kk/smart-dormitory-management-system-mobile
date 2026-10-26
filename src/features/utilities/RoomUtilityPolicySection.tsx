@@ -62,7 +62,10 @@ export function RoomUtilityPolicySection({ policy }: { policy: RoomUtilityPolicy
           </Text>
           {!s && <Text style={{ color: colors.muted }}>{t("roomUtility.policyNoSchedule")}</Text>}
           <Text style={{ color: colors.muted }}>
-            {t("roomUtility.policyExample", { month: e.month })}
+            {t("roomUtility.policyExample", {
+              // Server trả "yyyy-MM"; hiển thị "10/2026".
+              month: Formatter.monthYear(e.month + "-01T00:00:00"),
+            })}
           </Text>
           {items.map((item, index) => (
             <Text key={item} style={{ color: colors.ink }}>
