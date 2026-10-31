@@ -1086,6 +1086,16 @@ export const en: Dictionary = {
     disabledBody:
       "The dorm office has turned the AI assistant off. You can send a support request instead.",
     questions: {
+      roomPrices: "What is the current price of a 6-person room?",
+      utilityTariffs: "What are the current utility tariffs?",
+      myAssets: "Which assets are in my current room?",
+      myRoom: "Which room am I staying in?",
+      myResidency: "What is my current residency record?",
+      myDebt: "What amounts do I still owe?",
+      myBills: "Which bills have I not paid?",
+      myUtilities: "What is my room's current utility bill?",
+      myRegistration: "What is the status of my dormitory registration?",
+      myRequests: "What is the progress of my requests?",
       registration: "How do I apply for dormitory accommodation?",
       curfew: "What are the dormitory entry and exit hours?",
       utilities: "How are electricity and water fees calculated?",

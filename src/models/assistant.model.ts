@@ -11,6 +11,8 @@ export interface ChatBootstrapResponse {
   fallbackMessage: string;
   language: "vi" | "en";
   quickQuestions: ChatQuickQuestionResponse[];
+  dataScope?: "personal" | "management" | null;
+  dataQuickQuestions?: ChatQuickQuestionResponse[];
 }
 
 export interface ChatCitationResponse {

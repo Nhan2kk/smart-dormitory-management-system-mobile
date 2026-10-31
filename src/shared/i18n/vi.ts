@@ -1093,6 +1093,16 @@ export const vi = {
     disabledBody:
       "Ban quản lý đã tạm tắt Trợ lý AI. Bạn có thể gửi Yêu cầu hỗ trợ để được phản hồi.",
     questions: {
+      roomPrices: "Giá phòng 6 người hiện tại là bao nhiêu?",
+      utilityTariffs: "Biểu giá điện nước hiện hành là bao nhiêu?",
+      myAssets: "Phòng tôi hiện có những tài sản nào?",
+      myRoom: "Hiện tôi đang ở phòng nào?",
+      myResidency: "Hồ sơ cư trú hiện tại của tôi thế nào?",
+      myDebt: "Tôi còn những khoản công nợ nào?",
+      myBills: "Tôi có những hóa đơn chưa thanh toán nào?",
+      myUtilities: "Hóa đơn điện nước phòng tôi hiện thế nào?",
+      myRegistration: "Đơn đăng ký ký túc xá của tôi ở trạng thái nào?",
+      myRequests: "Các yêu cầu tôi đã gửi được xử lý đến đâu?",
       registration: "Thủ tục đăng ký ở KTX như thế nào?",
       curfew: "Giờ giấc ra vào KTX là mấy giờ?",
       utilities: "Chi phí điện nước được tính như thế nào?",

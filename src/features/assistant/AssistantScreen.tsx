@@ -13,6 +13,16 @@ import { useAssistant } from "./useAssistant";
 
 /** Khoá câu hỏi gợi ý mặc định của backend → khoá bản dịch trên mobile. */
 const QUICK_QUESTION_KEYS: Record<string, TranslationKey> = {
+  "chatDatabase.questions.bang_gia_phong": "assistant.questions.roomPrices",
+  "chatDatabase.questions.bieu_gia_dien_nuoc": "assistant.questions.utilityTariffs",
+  "chatDatabase.questions.tai_san_phong_toi": "assistant.questions.myAssets",
+  "chatAssistant.dataQuestions.myRoom": "assistant.questions.myRoom",
+  "chatAssistant.dataQuestions.myResidency": "assistant.questions.myResidency",
+  "chatAssistant.dataQuestions.myDebt": "assistant.questions.myDebt",
+  "chatAssistant.dataQuestions.myBills": "assistant.questions.myBills",
+  "chatAssistant.dataQuestions.myUtilities": "assistant.questions.myUtilities",
+  "chatAssistant.dataQuestions.myRegistration": "assistant.questions.myRegistration",
+  "chatAssistant.dataQuestions.myRequests": "assistant.questions.myRequests",
   "chatAi.questions.registration": "assistant.questions.registration",
   "chatAi.questions.curfew": "assistant.questions.curfew",
   "chatAi.questions.utilities": "assistant.questions.utilities",
@@ -154,7 +164,7 @@ function Welcome({ bootstrap, onPick }: { bootstrap: ChatBootstrapResponse | nul
   const { colors } = useTheme();
   const { t } = useI18n();
   // Câu hỏi BQL cấu hình: khoá mặc định thì dịch theo ngôn ngữ app, câu tự nhập thì hiện nguyên văn.
-  const questions = (bootstrap?.quickQuestions ?? []).map((question) => {
+  const questions = [...(bootstrap?.quickQuestions ?? []), ...(bootstrap?.dataQuickQuestions ?? []).filter(question => QUICK_QUESTION_KEYS[question.textKey])].map((question) => {
     const key = QUICK_QUESTION_KEYS[question.textKey];
     return { id: question.id, text: key ? t(key) : question.textKey };
   });
