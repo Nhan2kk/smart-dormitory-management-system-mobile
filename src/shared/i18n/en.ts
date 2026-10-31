@@ -1086,7 +1086,6 @@ export const en: Dictionary = {
     disabledBody:
       "The dorm office has turned the AI assistant off. You can send a support request instead.",
     questions: {
-      roomPrices: "What is the current price of a 6-person room?",
       utilityTariffs: "What are the current utility tariffs?",
       myAssets: "Which assets are in my current room?",
       currentPolicies: "When is the utility payment deadline this month?",

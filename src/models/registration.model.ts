@@ -87,8 +87,6 @@ export interface BedDto {
 }
 
 export interface RoomDto {
-  roomTypeId?: string | null;
-  roomTypeName?: string | null;
   id: string;
   code: string;
   buildingId: string;
@@ -166,8 +164,6 @@ export interface Bed {
 }
 
 export interface Room {
-  roomTypeId?: string | null;
-  roomTypeName?: string | null;
   id: string;
   code: string;
   floorId: string;

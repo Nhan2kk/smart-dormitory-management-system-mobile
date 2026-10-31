@@ -13,7 +13,6 @@ import { useAssistant } from "./useAssistant";
 
 /** Khoá câu hỏi gợi ý mặc định của backend → khoá bản dịch trên mobile. */
 const QUICK_QUESTION_KEYS: Record<string, TranslationKey> = {
-  "chatDatabase.questions.bang_gia_phong": "assistant.questions.roomPrices",
   "chatDatabase.questions.bieu_gia_dien_nuoc": "assistant.questions.utilityTariffs",
   "chatDatabase.questions.tai_san_phong_toi": "assistant.questions.myAssets",
   "chatDatabase.questions.quy_dinh_hien_hanh": "assistant.questions.currentPolicies",
