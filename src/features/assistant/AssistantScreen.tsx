@@ -16,6 +16,7 @@ const QUICK_QUESTION_KEYS: Record<string, TranslationKey> = {
   "chatDatabase.questions.bang_gia_phong": "assistant.questions.roomPrices",
   "chatDatabase.questions.bieu_gia_dien_nuoc": "assistant.questions.utilityTariffs",
   "chatDatabase.questions.tai_san_phong_toi": "assistant.questions.myAssets",
+  "chatDatabase.questions.quy_dinh_hien_hanh": "assistant.questions.currentPolicies",
   "chatAssistant.dataQuestions.myRoom": "assistant.questions.myRoom",
   "chatAssistant.dataQuestions.myResidency": "assistant.questions.myResidency",
   "chatAssistant.dataQuestions.myDebt": "assistant.questions.myDebt",

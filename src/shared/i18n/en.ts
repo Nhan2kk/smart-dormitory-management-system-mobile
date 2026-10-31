@@ -1089,6 +1089,7 @@ export const en: Dictionary = {
       roomPrices: "What is the current price of a 6-person room?",
       utilityTariffs: "What are the current utility tariffs?",
       myAssets: "Which assets are in my current room?",
+      currentPolicies: "When is the utility payment deadline this month?",
       myRoom: "Which room am I staying in?",
       myResidency: "What is my current residency record?",
       myDebt: "What amounts do I still owe?",

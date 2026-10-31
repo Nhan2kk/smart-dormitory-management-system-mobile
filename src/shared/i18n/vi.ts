@@ -1096,6 +1096,7 @@ export const vi = {
       roomPrices: "Giá phòng 6 người hiện tại là bao nhiêu?",
       utilityTariffs: "Biểu giá điện nước hiện hành là bao nhiêu?",
       myAssets: "Phòng tôi hiện có những tài sản nào?",
+      currentPolicies: "Hạn đóng tiền điện nước tháng này là ngày nào?",
       myRoom: "Hiện tôi đang ở phòng nào?",
       myResidency: "Hồ sơ cư trú hiện tại của tôi thế nào?",
       myDebt: "Tôi còn những khoản công nợ nào?",
