@@ -56,6 +56,8 @@ export function UtilitiesScreen() {
         <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
       ) : noRoom ? (
         <EmptyState icon="home-outline" title={t("utilities.noRoomTitle")} description={t("utilities.noRoomBody")} />
+      ) : usage?.notCheckedIn ? (
+        <EmptyState icon="key-outline" title={t("utilities.notCheckedInTitle")} description={t("utilities.notCheckedInBody")} />
       ) : usage && !usage.hasData ? (
         <EmptyState icon="pulse-outline" title={t("utilities.emptyTitle")} description={t("utilities.emptyBody")} action={retry} />
       ) : usage ? (
@@ -183,8 +185,11 @@ function UtilitiesContent({ usage }: { usage: UtilityUsage }) {
 
       <SectionHeader title={t("utilities.calendar", { month: Formatter.monthYear(UtilityUsage.dateOf(`${usage.month}-01`)) })} />
       <Card>
-        <Text style={[styles.caption, { marginBottom: spacing.md }]}>{t("utilities.calendarHint")}</Text>
-        <UtilityCalendar month={usage.month} records={usage.days()} metric={metric} onSelect={setDay} />
+        <Text style={[styles.caption, { marginBottom: spacing.md }]}>
+          {t("utilities.calendarHint")}
+          {usage.visibleFrom ? ` ${t("utilities.visibleSince", { time: Formatter.dateTime(usage.visibleFrom) })}` : ""}
+        </Text>
+        <UtilityCalendar month={usage.month} records={usage.days()} firstStayDate={usage.firstStayDate} metric={metric} onSelect={setDay} />
       </Card>
 
       <SectionHeader title={t("utilities.compare")} />

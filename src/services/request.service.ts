@@ -22,22 +22,20 @@ export class RequestService {
   /** Danh sách tổng hợp mọi loại yêu cầu của tôi, mới nhất trước. */
   async mine(kind?: RequestKind): Promise<RequestSummary[]> {
     const page = await this.request<RequestPageResponse<RequestSummary>>(
-      `/student/requests?page=0&size=100${kind ? `&kind=${kind}` : ""}`,
-      { method: "GET" },
+      "/student/requests/search",
+      { body: { page: 0, size: 100, ...(kind ? { kind } : {}) } },
     );
     return page.content;
   }
 
   residency(): Promise<Residency> {
-    return this.request<Residency>("/student/residency-records", {
-      method: "GET",
-    });
+    return this.request<Residency>("/student/residency-records");
   }
 
   transfer(id: string): Promise<RoomTransferRequest> {
     return this.request<RoomTransferRequest>(
-      `/student/room-transfer-requests/${q(id)}`,
-      { method: "GET" },
+      "/student/room-transfer-requests/detail",
+      { body: { id } },
     );
   }
 
@@ -50,15 +48,15 @@ export class RequestService {
 
   previewTransferPrice(desiredRoomId: string): Promise<PricePreview> {
     return this.request<PricePreview>(
-      `/student/room-transfer-requests/price-preview?desiredRoomId=${q(desiredRoomId)}`,
-      { method: "GET" },
+      "/student/room-transfer-requests/price-preview",
+      { body: { desiredRoomId } },
     );
   }
 
   checkout(id: string): Promise<RoomCheckoutRequest> {
     return this.request<RoomCheckoutRequest>(
-      `/student/room-checkout-requests/${q(id)}`,
-      { method: "GET" },
+      "/student/room-checkout-requests/detail",
+      { body: { id } },
     );
   }
 
@@ -71,8 +69,8 @@ export class RequestService {
 
   support(id: string): Promise<SupportMaintenanceRequest> {
     return this.request<SupportMaintenanceRequest>(
-      `/student/maintenance-requests/${q(id)}`,
-      { method: "GET" },
+      "/student/maintenance-requests/detail",
+      { body: { id } },
     );
   }
 

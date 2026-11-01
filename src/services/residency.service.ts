@@ -12,9 +12,7 @@ export class ResidencyService {
 
   /** Hồ sơ lưu trú hiện hành; BE trả 404 khi sinh viên chưa có hồ sơ. */
   current(): Promise<ResidencyRecordResponse> {
-    return this.request<ResidencyRecordResponse>("/student/residency-records", {
-      method: "GET",
-    });
+    return this.request<ResidencyRecordResponse>("/student/residency-records");
   }
 
   /** Phòng đang ở (tìm theo mã trong tòa); null nếu không tìm thấy. */
@@ -37,8 +35,6 @@ export class ResidencyService {
 
   /** Thời hạn ở (ngày bắt đầu / kết thúc) trong hồ sơ sinh viên. */
   stayPeriod(): Promise<StayPeriodResponse> {
-    return this.request<StayPeriodResponse>("/student/profile", {
-      method: "GET",
-    });
+    return this.request<StayPeriodResponse>("/student/profile");
   }
 }

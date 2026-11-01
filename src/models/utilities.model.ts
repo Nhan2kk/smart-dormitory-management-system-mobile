@@ -36,6 +36,10 @@ export interface StudentMonthlyUsage {
   electricityPriceStatus: PriceStatus;
   waterPriceStatus: PriceStatus;
   calculationBasis: string;
+  /** Mốc bắt đầu xem số đo (giờ nhận phòng hiện tại, làm tròn giờ, ISO UTC). BE cũ không trả trường này. */
+  visibleFrom?: string | null;
+  visibleFromSource?: "CHECK_IN" | "RESIDENCY_RECORD" | null;
+  residencyStatus?: "CHECKED_IN" | "NOT_CHECKED_IN";
 }
 
 export interface UtilitySeries {

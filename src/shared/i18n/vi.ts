@@ -462,6 +462,10 @@ export const vi = {
     emptyBody: "Cảm biến của phòng chưa gửi số điện nước nào trong tháng này.",
     noRoomTitle: "Bạn chưa có phòng",
     noRoomBody: "Khi đã nhận phòng, số điện nước của phòng sẽ hiện ở đây.",
+    notCheckedInTitle: "Bạn chưa hoàn tất nhận phòng",
+    notCheckedInBody: "Chưa có dữ liệu tiêu thụ. Số điện nước sẽ tính từ giờ bạn ký biên bản nhận phòng.",
+    visibleSince: "Số đo tính từ {{time}} (ngày nhận phòng).",
+    beforeStay: "Chưa ở",
     noReading: "Chưa có",
     liveIncidentTitle: "Phòng đang có cảnh báo",
     liveIncidentBody:

@@ -8,7 +8,7 @@ import { UtilityMetric } from "../../enums/utilities.enum";
 import { UtilityUsage } from "./UtilityUsage";
 
 /** Lịch nhiệt theo ngày của một tháng (yyyy-MM): ô càng đậm tiêu thụ càng cao; ngày chưa có số đo để mờ. */
-export function UtilityCalendar({ month, records, metric = "electricity", onSelect }: { month: string; records: DailyRecord[]; metric?: UtilityMetric; onSelect: (record: DailyRecord) => void }) {
+export function UtilityCalendar({ month, records, firstStayDate = null, metric = "electricity", onSelect }: { month: string; records: DailyRecord[]; firstStayDate?: string | null; metric?: UtilityMetric; onSelect: (record: DailyRecord) => void }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const { t } = useI18n();
@@ -40,9 +40,14 @@ export function UtilityCalendar({ month, records, metric = "electricity", onSele
           const record = byDate.get(date);
           const dayNumber = Number(date.slice(8));
           if (!record) {
+            // Ngày trước khi vào ở: không phải thiếu số đo, để trống hẳn và ghi chú cho trình đọc màn hình.
+            const beforeStay = firstStayDate != null && date < firstStayDate;
             return (
               <View key={date} style={styles.cell}>
-                <View style={[styles.day, { backgroundColor: colors.surfaceMuted }]}>
+                <View
+                  accessibilityLabel={beforeStay ? `${Formatter.date(UtilityUsage.dateOf(date))}: ${t("utilities.beforeStay")}` : undefined}
+                  style={[styles.day, beforeStay ? { backgroundColor: "transparent", opacity: 0.4 } : { backgroundColor: colors.surfaceMuted }]}
+                >
                   <Text style={[styles.dayText, { color: colors.muted, fontWeight: "500" }]}>{dayNumber}</Text>
                 </View>
               </View>

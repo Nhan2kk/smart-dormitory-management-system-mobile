@@ -53,9 +53,7 @@ export class RegistrationService {
   }
 
   mine(): Promise<Registration> {
-    return this.request<Registration>("/student/registrations", {
-      method: "GET",
-    });
+    return this.request<Registration>("/student/registrations/mine");
   }
 
   create(body: RegistrationCreateBody): Promise<Registration> {
