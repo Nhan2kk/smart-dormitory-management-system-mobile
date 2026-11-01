@@ -1,7 +1,6 @@
 import type { ApiClient } from "../shared/api";
 import type { RequestKind } from "../enums/request.enum";
 import type {
-  Bill,
   PricePreview,
   RequestPageResponse,
   RequestSummary,
@@ -94,11 +93,5 @@ export class RequestService {
       `/student/maintenance-requests/${q(id)}/confirmation`,
       { method: "PUT", body },
     );
-  }
-
-  payBill(id: string): Promise<Bill> {
-    return this.request<Bill>(`/student/bills/${q(id)}/payment`, {
-      body: { paymentMethod: "bank_transfer" },
-    });
   }
 }
