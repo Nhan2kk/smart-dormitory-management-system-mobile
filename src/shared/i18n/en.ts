@@ -466,6 +466,11 @@ export const en: Dictionary = {
     noRoomTitle: "You have no room yet",
     noRoomBody:
       "Once you check in, your room's electricity and water usage will appear here.",
+    notCheckedInTitle: "Room check-in not completed",
+    notCheckedInBody:
+      "There is no usage data yet. Readings start from the time you sign the check-in record.",
+    visibleSince: "Readings counted from {{time}} (check-in time).",
+    beforeStay: "Before stay",
     noReading: "N/A",
     liveIncidentTitle: "Active alert in your room",
     liveIncidentBody:

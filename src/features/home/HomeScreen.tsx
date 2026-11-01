@@ -115,7 +115,9 @@ export function HomeScreen() {
   const callName = Formatter.callName(name);
   const residence = useResidency().overview;
   const remainingDays = residence?.remainingDays() ?? null;
-  const usage = useUtilities().usage;
+  const loadedUsage = useUtilities().usage;
+  // Chưa nhận phòng: hiện "—", không vẽ số 0 giả.
+  const usage = loadedUsage?.notCheckedIn ? null : loadedUsage;
   const today = usage?.series("day") ?? null;
   const week = usage?.series("week") ?? null;
   const debts = useDebts().ledger;

@@ -35,6 +35,12 @@ export class UtilityUsage {
   private readonly electricity: Reading[];
   private readonly water: Reading[];
   private readonly current: StudentMonthlyUsage;
+  /** Sinh viên có phòng nhưng chưa hoàn tất biên bản nhận phòng: không có số đo nào thuộc về mình. */
+  readonly notCheckedIn: boolean;
+  /** Mốc bắt đầu xem số đo (ISO); null khi BE cũ không trả hoặc chưa nhận phòng. */
+  readonly visibleFrom: string | null;
+  /** Ngày (giờ Việt Nam) bắt đầu ở; các ngày trước đó không phải "thiếu số đo". */
+  readonly firstStayDate: string | null;
 
   constructor(current: StudentMonthlyUsage, previous: StudentMonthlyUsage | null, now: Date = new Date()) {
     const local = UtilityUsage.local(now.getTime());
@@ -42,16 +48,27 @@ export class UtilityUsage {
     this.roomCode = current.roomCode;
     this.today = local.date;
     this.month = local.date.slice(0, 7);
+    this.notCheckedIn = current.residencyStatus === "NOT_CHECKED_IN";
+    const visibleFrom = [current.visibleFrom, previous?.visibleFrom]
+      .map((value) => (value ? Date.parse(value) : NaN))
+      .filter(Number.isFinite)
+      .sort((a, b) => b - a)[0];
+    this.visibleFrom = visibleFrom == null || this.notCheckedIn ? null : new Date(visibleFrom).toISOString();
+    // Giờ đo đầu tiên là (visibleFrom, visibleFrom + 1h] nên thuộc cùng ngày với visibleFrom.
+    this.firstStayDate = this.visibleFrom == null ? null : UtilityUsage.local(visibleFrom).date;
+    // BE đã lọc; chặn thêm số đo có khoảng đo chưa nằm hẳn sau mốc vào ở.
+    const afterStay = (recordedAt: string) =>
+      !this.notCheckedIn && (visibleFrom == null || Date.parse(recordedAt) > visibleFrom);
     this.electricity = [...(previous?.electricity ?? []), ...current.electricity]
       .flatMap((row) =>
-        row.metrics
+        row.metrics && afterStay(row.recordedAt)
           ? [UtilityUsage.reading(row.recordedAt, row.metrics.consumptionKwh, row.metrics.startKwh, row.metrics.endKwh, row.metrics.avgPowerW / 1000, row.metrics.peakPowerW / 1000)]
           : [],
       )
       .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
     this.water = [...(previous?.water ?? []), ...current.water]
       .flatMap((row) =>
-        row.metrics
+        row.metrics && afterStay(row.recordedAt)
           ? [UtilityUsage.reading(row.recordedAt, row.metrics.consumptionM3, row.metrics.startM3, row.metrics.endM3, row.metrics.avgFlowRateLpm * 60, row.metrics.peakFlowRateLpm * 60)]
           : [],
       )
@@ -81,11 +98,12 @@ export class UtilityUsage {
 
   series(range: UtilityRange): UtilitySeries {
     if (range === "day") return this.daySeries();
-    if (range === "week") return this.daysSeries(UtilityUsage.addDays(this.today, -6), this.today, 7);
+    // Ngày trước khi vào ở không lên trục: chỉ vẽ từ ngày nhận phòng tới hôm nay.
+    if (range === "week") return this.daysSeries(this.fromStay(UtilityUsage.addDays(this.today, -6)), this.today, 7);
     // Tháng: so với cùng số ngày đầu tháng trước (không phải các ngày cuối tháng trước).
     const mtd = this.monthToDate();
     return {
-      ...this.daysSeries(`${this.month}-01`, this.today, this.dayOfMonth),
+      ...this.daysSeries(this.fromStay(`${this.month}-01`), this.today, this.dayOfMonth),
       changePercent: {
         electricity: UtilityUsage.change(mtd.electricity.current, mtd.electricity.previous),
         water: UtilityUsage.change(mtd.water.current, mtd.water.previous),
@@ -132,6 +150,10 @@ export class UtilityUsage {
     if (peak != null) items.push({ kind: "peakHour", tone: "info", value: peak });
     if (items.every((item) => item.kind === "peakHour") && this.hasData) items.unshift({ kind: "stable", tone: "success", value: 0 });
     return items;
+  }
+
+  private fromStay(date: string): string {
+    return this.firstStayDate != null && this.firstStayDate > date ? this.firstStayDate : date;
   }
 
   private get dayOfMonth(): number {
