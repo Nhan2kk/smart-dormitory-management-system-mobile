@@ -3,6 +3,7 @@ export interface AuthUser {
   username: string;
   fullName: string;
   role: string;
+  permissions?: string[];
 }
 
 export interface AuthResponse {

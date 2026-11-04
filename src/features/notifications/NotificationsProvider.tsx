@@ -7,6 +7,7 @@ import { useRealtime } from "../realtime/RealtimeProvider";
 import { AppNotification } from "../../models/notification.model";
 import { notificationKindMeta } from "./notificationMeta";
 import { NotificationService } from "../../services/notification.service";
+import { useI18n } from "../../shared/i18n/I18nProvider";
 
 /** Chu kỳ hỏi thông báo mới khi app đang mở nhưng WebSocket chưa kết nối được (dự phòng). */
 const POLL_MS = 30_000;
@@ -26,6 +27,7 @@ type NotificationsValue = {
 const NotificationsContext = createContext<NotificationsValue | null>(null);
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
   const { request } = useAuth();
   const { notify } = useToast();
   const { connected, notifySignal } = useRealtime();
@@ -45,7 +47,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         if (fresh.length) {
           setLastIncoming(fresh[0]);
           // Cảnh báo IoT (danger/warning) hiện toast cùng màu mức độ.
-          notify(fresh[0].title, notificationKindMeta[fresh[0].kind]?.tone ?? "info");
+          notify(fresh[0].kind === "chat" ? t("chat.notificationTitle") : fresh[0].title, notificationKindMeta[fresh[0].kind]?.tone ?? "info");
         }
       }
       seen.current = new Set(list.map((item) => item.id));
@@ -55,7 +57,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     } catch (reason) {
       setError(errorMessage(reason));
     }
-  }, [api, notify]);
+  }, [api, notify, t]);
 
   // Có thông báo mới qua WebSocket (hoặc vừa nối lại) → tải lại danh sách.
   useEffect(() => {
@@ -123,8 +125,11 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ items, unreadCount, error, lastIncoming, reload, markRead, markAllRead, acknowledge }),
-    [items, unreadCount, error, lastIncoming, reload, markRead, markAllRead, acknowledge],
+    () => {
+      const localized = (item: AppNotification) => item.kind === "chat" ? { ...item, title: t("chat.notificationTitle"), content: t("chat.notificationBody") } : item;
+      return { items: items?.map(localized) ?? null, unreadCount, error, lastIncoming: lastIncoming ? localized(lastIncoming) : null, reload, markRead, markAllRead, acknowledge };
+    },
+    [items, unreadCount, error, lastIncoming, reload, markRead, markAllRead, acknowledge, t],
   );
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 }

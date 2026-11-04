@@ -30,8 +30,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Cho phép KTX DN truy cập ảnh để đổi ảnh đại diện.",
-          "cameraPermission": "Cho phép KTX DN dùng máy ảnh để chụp ảnh đại diện."
+          "photosPermission": "Cho phép KTX DN chọn ảnh đại diện, gửi tin nhắn và minh chứng yêu cầu.",
+          "cameraPermission": "Cho phép KTX DN chụp ảnh đại diện, gửi tin nhắn và minh chứng yêu cầu."
         }
       ],
       "expo-font"

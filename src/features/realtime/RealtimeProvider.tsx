@@ -16,8 +16,11 @@ import type {
 import type { BillPaymentEvent } from "../../models/debt.model";
 import type { RegistrationPaymentEvent } from "../../models/registration-payment.model";
 import { useAuth } from "../auth/AuthProvider";
+import type { ChatRealtimeEvent } from "../../models/chat.model";
 
 type RealtimeValue = {
+  lastChat: ChatRealtimeEvent | null;
+  reconnectSignal: number;
   connected: boolean;
   /** Tăng mỗi khi có thông báo mới qua WebSocket — NotificationsProvider dựa vào để tải lại. */
   notifySignal: number;
@@ -38,6 +41,8 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState(AppState.currentState === "active");
   const [connected, setConnected] = useState(false);
   const [notifySignal, setNotifySignal] = useState(0);
+  const [lastChat, setLastChat] = useState<ChatRealtimeEvent | null>(null);
+  const [reconnectSignal, setReconnectSignal] = useState(0);
   const [lastIncident, setLastIncident] = useState<RoomIncident | null>(null);
   const [lastTelemetry, setLastTelemetry] = useState<TelemetryUpdate | null>(
     null,
@@ -68,6 +73,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     return RealtimeConnection.open(
       accessToken,
       [
+        { destination: "/user/queue/chat", onMessage: body => setLastChat(body as ChatRealtimeEvent) },
         { destination: "/user/queue/notifies", onMessage: bump },
         {
           destination: "/user/queue/registration-payments",
@@ -90,7 +96,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       {
         onConnected: setConnected,
         // Rớt mạng rồi nối lại: có thể đã lỡ thông báo nên tải lại một lượt.
-        onReconnect: bump,
+        onReconnect: () => { bump(); setReconnectSignal(value => value + 1); },
         onAuthError: () => {
           if (refreshedFor.current === accessToken) return;
           refreshedFor.current = accessToken;
@@ -106,13 +112,15 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       connected: live,
+      lastChat,
+      reconnectSignal,
       notifySignal,
       lastIncident,
       lastTelemetry,
       lastRegistrationPayment,
       lastBillPayment,
     }),
-    [live, notifySignal, lastIncident, lastTelemetry, lastRegistrationPayment, lastBillPayment],
+    [live, notifySignal, lastIncident, lastTelemetry, lastRegistrationPayment, lastBillPayment, lastChat, reconnectSignal],
   );
   return (
     <RealtimeContext.Provider value={value}>

@@ -9,6 +9,7 @@ export const notificationKindMeta: Record<NotificationKind, { icon: IconName; to
   warning: { icon: "time-outline", tone: "warning" },
   danger: { icon: "alert-circle-outline", tone: "danger" },
   system: { icon: "sparkles-outline", tone: "violet" },
+  chat: { icon: "chatbubbles-outline", tone: "primary" },
 };
 
 /** Các trang yêu cầu của sinh viên mà thông báo nghiệp vụ trỏ tới. */
@@ -23,6 +24,8 @@ export function notificationHref(targetPath: string | null): Href | null {
   const [path, query = ""] = targetPath.split("?");
   const params = new URLSearchParams(query);
   switch (path.replace(/\/$/, "")) {
+    case "/chat":
+      return "/chat";
     case "/student/requests": {
       const id = params.get("id");
       const kind = params.get("kind");

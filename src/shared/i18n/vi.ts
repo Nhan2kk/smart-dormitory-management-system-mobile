@@ -1,4 +1,6 @@
+import { chatVi } from "./chat";
 export const vi = {
+  chat: chatVi,
   roomUtility: {
     messages: {
       m0: "Không tìm thấy phòng",
@@ -825,6 +827,7 @@ export const vi = {
       warning: "Cảnh báo",
       danger: "Khẩn cấp",
       system: "Hệ thống",
+      chat: "Tin nhắn hỗ trợ",
     },
     priority: {
       NORMAL: "Bình thường",

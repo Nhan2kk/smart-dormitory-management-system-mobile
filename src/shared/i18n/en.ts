@@ -1,6 +1,8 @@
 import type { Dictionary } from "./types";
+import { chatEn } from "./chat";
 
 export const en: Dictionary = {
+  chat: chatEn,
   roomUtility: {
     messages: {
       m0: "Room not found",
@@ -826,6 +828,7 @@ export const en: Dictionary = {
       warning: "Warning",
       danger: "Urgent",
       system: "System",
+      chat: "Support chat",
     },
     priority: { NORMAL: "Normal", IMPORTANT: "Important", URGENT: "Urgent" },
     sources: {

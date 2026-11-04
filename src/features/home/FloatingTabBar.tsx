@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useState } from "react";
 import { Text, View } from "react-native";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, useTheme } from "../../shared/theme";
 import { Glass, IconName, Touchable } from "../../shared/ui";
+import { SupportLauncherMenu } from "../support/SupportLauncherMenu";
+import { useSupportChatState } from "../chat/SupportChatProvider";
 
 type TabBarProps = {
   state: { index: number; routes: { key: string; name: string }[] };
@@ -24,6 +26,8 @@ export function FloatingTabBar({ state, emitter, navigateToTab, insets }: TabBar
   const styles = useStyles();
   const { colors, shadow } = useTheme();
   const { t } = useI18n();
+  const [supportOpen, setSupportOpen] = useState(false);
+  const { unread } = useSupportChatState();
   return (
     <View pointerEvents="box-none" style={[styles.wrap, { paddingBottom: Math.max(insets.bottom - 6, 12) }]}>
       <View style={[styles.shadow, shadow(3)]}>
@@ -33,9 +37,10 @@ export function FloatingTabBar({ state, emitter, navigateToTab, insets }: TabBar
             if (route.name === "create")
               return (
                 <View key={route.key} style={styles.item}>
-                  <Touchable onPress={() => router.push("/assistant")} accessibilityLabel={t("tabs.create")} style={[styles.fab, shadow(2)]} pressScale={0.92}>
-                    <Ionicons name="sparkles" size={24} color={colors.onPrimary} />
-                    <Text style={[styles.fabLabel, { color: colors.onPrimary }]}>AI</Text>
+                  <Touchable onPress={() => setSupportOpen(true)} accessibilityLabel={t("chat.support")} accessibilityState={{ expanded: supportOpen }} style={[styles.fab, shadow(2)]} pressScale={0.92}>
+                    <Ionicons name="chatbubbles" size={24} color={colors.onPrimary} />
+                    <Text style={[styles.fabLabel, { color: colors.onPrimary }]}>{t("chat.support")}</Text>
+                    {unread > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{Math.min(unread,99)}</Text></View>}
                   </Touchable>
                 </View>
               );
@@ -67,11 +72,14 @@ export function FloatingTabBar({ state, emitter, navigateToTab, insets }: TabBar
           })}
         </Glass>
       </View>
+      <SupportLauncherMenu visible={supportOpen} onClose={() => setSupportOpen(false)} />
     </View>
   );
 }
 
-const useStyles = makeStyles(({ colors }) => ({
+const useStyles = makeStyles(({ colors, tones }) => ({
+  badge: { position: "absolute", top: -4, right: -5, minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 4, backgroundColor: tones.danger.fg, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.onPrimary },
+  badgeText: { color: colors.onPrimary, fontSize: 10, fontWeight: "800" },
   wrap: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 16 },
   shadow: { borderRadius: radius.xl + 6, width: "100%", maxWidth: 520, alignSelf: "center" },
   bar: { flexDirection: "row", alignItems: "center", borderRadius: radius.xl + 6, height: 72, paddingHorizontal: 6 },

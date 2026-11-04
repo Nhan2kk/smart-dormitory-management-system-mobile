@@ -8,6 +8,7 @@ export const NotificationKind = {
   Warning: "warning",
   Danger: "danger",
   System: "system",
+  Chat: "chat",
 } as const;
 export type NotificationKind = (typeof NotificationKind)[keyof typeof NotificationKind];
 
