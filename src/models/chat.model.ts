@@ -23,6 +23,8 @@ export interface ChatConversation {
   status: ChatConversationStatus;
   unreadByStudent: number;
   studentLastReadAt: string | null;
+  studentAvatarUrl?: string | null;
+  assignedEmployeeAvatarUrl?: string | null;
   staffLastReadAt: string | null;
   rating: number | null;
   ratingComment: string | null;
@@ -40,6 +42,8 @@ export interface ChatMessage {
   clientMessageId: string;
   createdAt: string;
   delivery?: "sending" | "failed";
+  /** Ảnh đại diện hiện tại của người gửi; null = hiện chữ cái đầu. */
+  senderAvatarUrl?: string | null;
 }
 export interface ChatRealtimeEvent {
   event: ChatRealtimeEventType;

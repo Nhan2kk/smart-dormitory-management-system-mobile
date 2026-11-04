@@ -1,4 +1,5 @@
 import { Image } from "expo-image";
+import { useState } from "react";
 import { Text, View } from "react-native";
 import { useTheme } from "../theme";
 
@@ -15,6 +16,9 @@ export function Avatar({
   ring?: boolean;
 }) {
   const { colors } = useTheme();
+  // Ảnh tải lỗi (bị xoá, mất mạng) thì quay về chữ cái đầu thay vì ô trống.
+  const [failedUri, setFailedUri] = useState<string | null>(null);
+  const showImage = !!uri && failedUri !== uri;
   return (
     <View
       style={[
@@ -31,12 +35,13 @@ export function Avatar({
       ]}
       accessibilityLabel={initials}
     >
-      {uri ? (
+      {showImage ? (
         <Image
           source={{ uri }}
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
           transition={200}
+          onError={() => setFailedUri(uri)}
         />
       ) : (
         <Text

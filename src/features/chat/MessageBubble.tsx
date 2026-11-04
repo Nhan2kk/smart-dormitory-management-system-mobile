@@ -92,6 +92,7 @@ export function MessageBubble({
         ) : (
           <Avatar
             initials={Formatter.initials(message.senderName)}
+            uri={message.senderAvatarUrl}
             size={28}
             ring={false}
           />
