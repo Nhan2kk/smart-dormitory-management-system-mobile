@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Href, router } from "expo-router";
-import { ReactNode, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
+import { AvatarService } from "../../services/avatar.service";
+import { errorMessage } from "../../shared/api";
 import { ScrollView, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Formatter } from "../../shared/format";
@@ -19,7 +21,10 @@ import { useProfile } from "./useProfile";
 
 /** Tab Cá nhân: hồ sơ, tài khoản, lưu trú, tuỳ chọn và hỗ trợ (bố cục kiểu trang Settings). */
 export function ProfileScreen() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, request, updateUser } = useAuth();
+  const avatarService = useMemo(() => new AvatarService(request), [request]);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const avatarUrl = user?.avatarUrl ?? null;
   const { notify } = useToast();
   const { t } = useI18n();
   const { colors, isDark } = useTheme();
@@ -43,8 +48,31 @@ export function ProfileScreen() {
       notify(result.error === "permission" ? t("profile.permissionDenied", { target: t(source === "camera" ? "profile.camera" : "profile.library") }) : t("profile.avatarTooLarge"), "warning");
       return;
     }
-    prefs.update({ avatarUri: result.uri });
-    notify(t("profile.avatarUpdated"));
+    // Upload lên server để ảnh theo tài khoản (web + mọi thiết bị), không chỉ lưu trên máy này.
+    setAvatarBusy(true);
+    try {
+      const saved = await avatarService.change(result.uri);
+      await updateUser({ avatarUrl: saved.avatarUrl });
+      notify(t("profile.avatarUpdated"));
+    } catch (error) {
+      notify(errorMessage(error), "danger");
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
+  const removeAvatar = async () => {
+    setAvatarSheet(false);
+    setAvatarBusy(true);
+    try {
+      const saved = await avatarService.remove();
+      await updateUser({ avatarUrl: saved.avatarUrl });
+      notify(t("profile.avatarRemoved"));
+    } catch (error) {
+      notify(errorMessage(error), "danger");
+    } finally {
+      setAvatarBusy(false);
+    }
   };
 
   const switchControl = (value: boolean, onChange: (value: boolean) => void, label: string) => (
@@ -77,8 +105,8 @@ export function ProfileScreen() {
 
         {/* Thẻ hồ sơ */}
         <Card style={styles.profileCard}>
-          <Touchable onPress={() => setAvatarSheet(true)} accessibilityLabel={t("profile.changeAvatar")}>
-            <Avatar initials={Formatter.initials(name)} uri={prefs.avatarUri} size={58} ring={false} />
+          <Touchable onPress={() => !avatarBusy && setAvatarSheet(true)} accessibilityLabel={t("profile.changeAvatar")} accessibilityState={{ busy: avatarBusy }}>
+            <Avatar initials={Formatter.initials(name)} uri={avatarUrl} size={58} ring={false} />
             <View style={[styles.camera, { backgroundColor: colors.primary }]}>
               <Ionicons name="camera" size={11} color={colors.onPrimary} />
             </View>
@@ -153,18 +181,14 @@ export function ProfileScreen() {
       <BottomSheet visible={avatarSheet} onClose={() => setAvatarSheet(false)} title={t("profile.changeAvatar")} subtitle={t("profile.avatarHint")}>
         <Card style={{ paddingVertical: spacing.xs }}>
           <ListRow icon="camera-outline" tone="primary" title={t("profile.takePhoto")} divider onPress={() => pickAvatar("camera")} />
-          <ListRow icon="images-outline" tone="info" title={t("profile.pickPhoto")} divider={!!prefs.avatarUri} onPress={() => pickAvatar("library")} />
-          {prefs.avatarUri && (
+          <ListRow icon="images-outline" tone="info" title={t("profile.pickPhoto")} divider={!!avatarUrl} onPress={() => pickAvatar("library")} />
+          {avatarUrl && (
             <ListRow
               icon="trash-outline"
               title={t("profile.removePhoto")}
               destructive
               chevron={false}
-              onPress={() => {
-                setAvatarSheet(false);
-                prefs.update({ avatarUri: null });
-                notify(t("profile.avatarRemoved"));
-              }}
+              onPress={() => void removeAvatar()}
             />
           )}
         </Card>

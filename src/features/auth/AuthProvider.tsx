@@ -25,6 +25,8 @@ type AuthContextValue = {
   request: ApiClient;
   /** Làm mới access token (vd. WebSocket bị từ chối); trả token mới hoặc null nếu phiên đã hết. */
   refresh: () => Promise<string | null>;
+  /** Cập nhật thông tin user trong phiên (vd. ảnh đại diện mới) và lưu lại trên máy. */
+  updateUser: (patch: Partial<AuthUser>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -181,6 +183,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [refreshSession],
   );
 
+  const updateUser = useCallback(async (patch: Partial<AuthUser>) => {
+    const current = sessionRef.current;
+    if (!current) return;
+    const next = { ...current, user: { ...current.user, ...patch } };
+    sessionRef.current = next;
+    setSession(next);
+    if (!MOCK_AUTH) await SessionStore.save(next.refreshToken, next.user);
+  }, []);
+
   const value = useMemo(
     () => ({
       user: session?.user ?? null,
@@ -190,8 +201,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signOut,
       request,
       refresh,
+      updateUser,
     }),
-    [session, loading, signIn, signOut, request, refresh],
+    [session, loading, signIn, signOut, request, refresh, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
