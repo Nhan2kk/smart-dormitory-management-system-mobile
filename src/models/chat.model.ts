@@ -47,6 +47,12 @@ export interface ChatRealtimeEvent {
   conversation: ChatConversation;
   message: ChatMessage | null;
 }
+export interface ChatMessageRow {
+  message: ChatMessage;
+  startsGroup: boolean;
+  endsGroup: boolean;
+  separator: "date" | "time" | null;
+}
 export interface ChatMessagePage {
   items: ChatMessage[];
   hasMore: boolean;

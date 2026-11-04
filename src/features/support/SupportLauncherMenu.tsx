@@ -94,6 +94,16 @@ export function SupportLauncherMenu({
     onClose();
     router.push(kind === "ai" ? "/assistant" : "/chat");
   };
+  const staffStatus = info
+    ? info.isWorkingHours
+      ? t("chat.working")
+      : t("chat.offHours", {
+          time: new Date(info.nextOpenAt).toLocaleTimeString(
+            lang === "en" ? "en-GB" : "vi-VN",
+            { timeZone: info.timezone, hour: "2-digit", minute: "2-digit" },
+          ),
+        })
+    : "";
   return (
     <Modal
       visible={mounted}
@@ -128,13 +138,13 @@ export function SupportLauncherMenu({
                 kind: "ai",
                 icon: "sparkles",
                 label: t("chat.ai"),
-                tone: tones.violet,
+                description: t("chat.aiSubtitle"),
               },
               {
                 kind: "staff",
                 icon: "headset",
                 label: t("chat.management"),
-                tone: tones.success,
+                description: staffStatus,
               },
             ] as const
           ).map((option, index) =>
@@ -162,42 +172,16 @@ export function SupportLauncherMenu({
                 }}
               >
                 <Touchable
-                  style={styles.option}
-                  accessibilityLabel={option.label}
+                  style={[styles.option, shadow(2)]}
+                  accessibilityLabel={`${option.label}${option.description ? `, ${option.description}` : ""}`}
                   onPress={() => choose(option.kind)}
-                  pressScale={0.92}
+                  pressScale={0.96}
                 >
-                  <View style={[styles.label, shadow(2)]}>
-                    <Text style={styles.labelText}>{option.label}</Text>
-                    {option.kind === "staff" && info && (
-                      <Text style={styles.status}>
-                        {info.isWorkingHours
-                          ? t("chat.working")
-                          : t("chat.offHours", {
-                              time: new Date(
-                                info.nextOpenAt,
-                              ).toLocaleTimeString(
-                                lang === "en" ? "en-GB" : "vi-VN",
-                                {
-                                  timeZone: info.timezone,
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              ),
-                            })}
-                      </Text>
-                    )}
-                  </View>
-                  <View
-                    style={[
-                      styles.optionIcon,
-                      { backgroundColor: option.tone.fg },
-                    ]}
-                  >
+                  <View style={styles.optionIcon}>
                     <Ionicons
                       name={option.icon}
-                      size={23}
-                      color={colors.onPrimary}
+                      size={21}
+                      color={colors.primary}
                     />
                     {option.kind === "staff" && unread > 0 && (
                       <View
@@ -208,6 +192,30 @@ export function SupportLauncherMenu({
                       >
                         <Text style={styles.badgeText}>
                           {Math.min(unread, 99)}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.label}>
+                    <Text style={styles.labelText} numberOfLines={1}>
+                      {option.label}
+                    </Text>
+                    {!!option.description && (
+                      <View style={styles.statusRow}>
+                        {option.kind === "staff" && info && (
+                          <View
+                            style={[
+                              styles.statusDot,
+                              {
+                                backgroundColor: info.isWorkingHours
+                                  ? tones.success.fg
+                                  : tones.warning.fg,
+                              },
+                            ]}
+                          />
+                        )}
+                        <Text style={styles.status} numberOfLines={1}>
+                          {option.description}
                         </Text>
                       </View>
                     )}
@@ -265,30 +273,42 @@ const useStyles = makeStyles(({ colors }) => ({
     position: "absolute",
     left: 20,
     right: 20,
-    gap: 18,
+    gap: 10,
     alignItems: "center",
   },
   option: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 12,
-    width: 310,
+    gap: 10,
+    width: 264,
     maxWidth: "100%",
+    minHeight: 58,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primarySoft,
+    borderRadius: 30,
+    padding: 8,
+    paddingRight: 14,
   },
   label: {
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    flexShrink: 1,
+    flex: 1,
+    minWidth: 0,
+    gap: 3,
   },
-  labelText: { color: colors.ink, fontSize: 14, fontWeight: "700" },
-  status: { color: colors.muted, fontSize: 10, marginTop: 3 },
+  labelText: {
+    color: colors.ink,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "700",
+  },
+  statusRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  status: { color: colors.muted, fontSize: 11, lineHeight: 15, flexShrink: 1 },
   optionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },

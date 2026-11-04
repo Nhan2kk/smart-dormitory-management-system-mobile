@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { ChatMessage } from "../../models/chat.model";
+import type { ChatMessageRow } from "../../models/chat.model";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, useTheme } from "../../shared/theme";
 import { AppHeader, Backdrop, Touchable } from "../../shared/ui";
@@ -17,13 +17,18 @@ import { useChat } from "./useChat";
 import { Composer } from "./Composer";
 import { MessageBubble } from "./MessageBubble";
 import { ChatRating } from "./ChatRating";
+import { buildChatMessageRows } from "./chat-state";
 export function ChatScreen() {
   const { t, lang } = useI18n();
   const { colors, tones } = useTheme();
   const styles = useStyles();
   const { info, allowed } = useSupportChatState();
   const chat = useChat();
-  const list = useRef<FlatList<ChatMessage>>(null);
+  const list = useRef<FlatList<ChatMessageRow>>(null);
+  const rows = useMemo(
+    () => buildChatMessageRows(chat.messages).reverse(),
+    [chat.messages],
+  );
   const locale = lang === "en" ? "en-GB" : "vi-VN";
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -73,8 +78,9 @@ export function ChatScreen() {
             ref={list}
             style={{ flex: 1 }}
             inverted
-            data={[...chat.messages].reverse()}
-            keyExtractor={(item) => item.clientMessageId}
+            data={rows}
+            extraData={chat.conversation}
+            keyExtractor={(item) => item.message.clientMessageId}
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
             maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
@@ -94,18 +100,30 @@ export function ChatScreen() {
                 </Touchable>
               ) : undefined
             }
-            renderItem={({ item, index }) => {
-              const previous = chat.messages[chat.messages.length - index - 2];
-              const date = new Date(item.createdAt).toLocaleDateString(locale);
+            renderItem={({ item }) => {
+              const message = item.message;
+              const date = new Date(message.createdAt).toLocaleDateString(
+                locale,
+              );
               return (
                 <View>
-                  {(!previous ||
-                    new Date(previous.createdAt).toLocaleDateString(locale) !==
-                      date) && <Text style={styles.date}>{date}</Text>}
+                  {item.separator === "date" && (
+                    <Text style={styles.date}>{date}</Text>
+                  )}
+                  {item.separator === "time" && (
+                    <Text style={styles.date}>
+                      {new Date(message.createdAt).toLocaleTimeString(locale, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Text>
+                  )}
                   <MessageBubble
-                    message={item}
+                    message={message}
                     conversation={chat.conversation}
-                    onRetry={() => void chat.retry(item)}
+                    grouped={!item.startsGroup}
+                    endsGroup={item.endsGroup}
+                    onRetry={() => void chat.retry(message)}
                   />
                 </View>
               );

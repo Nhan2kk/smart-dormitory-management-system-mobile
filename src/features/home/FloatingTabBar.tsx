@@ -38,8 +38,8 @@ export function FloatingTabBar({ state, emitter, navigateToTab, insets }: TabBar
               return (
                 <View key={route.key} style={styles.item}>
                   <Touchable onPress={() => setSupportOpen(true)} accessibilityLabel={t("chat.support")} accessibilityState={{ expanded: supportOpen }} style={[styles.fab, shadow(2)]} pressScale={0.92}>
+                    {/* Icon only, like the web launcher button: no "Hỗ trợ" caption while the menu is closed. */}
                     <Ionicons name="chatbubbles" size={24} color={colors.onPrimary} />
-                    <Text style={[styles.fabLabel, { color: colors.onPrimary }]}>{t("chat.support")}</Text>
                     {unread > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{Math.min(unread,99)}</Text></View>}
                   </Touchable>
                 </View>
@@ -88,6 +88,5 @@ const useStyles = makeStyles(({ colors, tones }) => ({
   iconActive: { backgroundColor: colors.primarySoft },
   label: { fontSize: 11, fontWeight: "600", color: colors.muted },
   labelActive: { color: colors.primary, fontWeight: "800" },
-  fabLabel: { fontSize: 10, fontWeight: "900", marginTop: -2, letterSpacing: 0.5 },
   fab: { width: 58, height: 58, borderRadius: 29, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", borderWidth: 4, borderColor: "rgba(255,255,255,0.7)" },
 }));

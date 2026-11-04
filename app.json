@@ -34,7 +34,8 @@
           "cameraPermission": "Cho phép KTX DN chụp ảnh đại diện, gửi tin nhắn và minh chứng yêu cầu."
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-sharing"
     ]
   }
 }
