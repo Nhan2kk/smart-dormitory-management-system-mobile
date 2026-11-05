@@ -59,3 +59,20 @@ export interface ResidencyHistory {
   linkedRequest: string | null;
   active: boolean;
 }
+
+/** Sinh viên đang ở cùng phòng (`POST /student/residency-records/roommates`), gồm cả chính mình. */
+export interface RoommateResponse {
+  studentId: string;
+  studentCode: string | null;
+  fullName: string | null;
+  gender: "male" | "female" | "other";
+  faculty: string | null;
+  className: string | null;
+  /** Ảnh đại diện; null thì hiện chữ cái đầu của tên. */
+  avatarUrl: string | null;
+  bedCode: string | null;
+  /** Là sinh viên đang đăng nhập. */
+  me: boolean;
+  /** Là người đại diện (trưởng phòng) đóng tiền điện nước. */
+  representative: boolean;
+}

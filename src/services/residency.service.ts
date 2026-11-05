@@ -2,6 +2,7 @@ import type { ApiClient } from "../shared/api";
 import type {
   ResidencyRecordResponse,
   ResidencyRoomResponse,
+  RoommateResponse,
   StayPeriodResponse,
 } from "../models/residency.model";
 
@@ -13,6 +14,11 @@ export class ResidencyService {
   /** Hồ sơ lưu trú hiện hành; BE trả 404 khi sinh viên chưa có hồ sơ. */
   current(): Promise<ResidencyRecordResponse> {
     return this.request<ResidencyRecordResponse>("/student/residency-records");
+  }
+
+  /** Sinh viên đang ở cùng phòng (gồm cả chính mình); chưa ở giường nào thì rỗng. */
+  roommates(): Promise<RoommateResponse[]> {
+    return this.request<RoommateResponse[]>("/student/residency-records/roommates");
   }
 
   /** Phòng đang ở (tìm theo mã trong tòa); null nếu không tìm thấy. */

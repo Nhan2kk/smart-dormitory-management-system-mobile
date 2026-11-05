@@ -12,6 +12,7 @@ import { AppHeader, BottomSheet, Button, Callout, Card, CircleButton, EmptyState
 import { ResidencyRecordType } from "../../enums/residency.enum";
 import type { ResidencyHistory, ResidencyLocation } from "../../models/residency.model";
 import { ResidencyOverview } from "./ResidencyOverview";
+import { RoommatesSection } from "./RoommatesSection";
 import { useResidency } from "./useResidency";
 
 /** Hồ sơ lưu trú hiện hành của sinh viên (`GET /student/residency-records`). */
@@ -105,6 +106,8 @@ function ResidencyContent({ overview }: { overview: ResidencyOverview }) {
           <InfoRow label={t("residency.expectedEnd")} value={date(overview.expiryDate)} strong />
           <InfoRow label={t("residency.linked")} value={overview.linkedRequest ?? "—"} divider={false} />
         </Card>
+
+        <RoommatesSection />
 
         <SectionHeader title={t("residency.history")} />
         {history.map((record, index) => (
