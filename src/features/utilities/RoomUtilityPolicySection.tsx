@@ -16,35 +16,20 @@ export function RoomUtilityPolicySection({ policy }: { policy: RoomUtilityPolicy
   const [open, setOpen] = useState(false);
   const e = policy.example;
   const s = policy.schedule;
-  const rules = {
-    dueSoonHours: s?.dueSoonWarningHours ?? 72,
-    dailyHour: s?.dailyReminderHour ?? 8,
-    grace: s?.gracePeriodDays ?? 5,
-    suspension: s?.suspensionEnabled ?? true,
-    disciplineDays: s?.disciplineOverdueDays ?? 30,
-    count: s?.disciplineViolationCount ?? 3,
-    months: s?.disciplineWindowMonths ?? 12,
-  };
+  const rules = { reminderDays: s?.reminderDays ?? 3, lateDays: s?.lateDays ?? 5 };
   const items = [
     t("roomUtility.policyRules.close", { time: Formatter.dateTime(e.closeAt) }),
     t("roomUtility.policyRules.due", { time: Formatter.dateTime(e.dueAt) }),
     t("roomUtility.policyRules.dueSoon", {
-      time: Formatter.dateTime(e.dueSoonAt),
-      hours: rules.dueSoonHours,
+      time: Formatter.dateTime(e.reminderAt),
+      days: rules.reminderDays,
     }),
-    t("roomUtility.policyRules.daily", { hour: String(rules.dailyHour).padStart(2, "0") }),
-    t("roomUtility.policyRules.grace", {
-      days: rules.grace,
-      time: Formatter.dateTime(e.graceEndsAt),
+    t("roomUtility.policyRules.late", {
+      days: rules.lateDays,
+      time: Formatter.dateTime(e.lateUntil),
     }),
-    t("roomUtility.policyRules.violation"),
-    ...(rules.suspension ? [t("roomUtility.policyRules.suspension")] : []),
-    t("roomUtility.policyRules.discipline", {
-      days: rules.disciplineDays,
-      time: Formatter.dateTime(e.disciplineAt),
-      count: rules.count,
-      months: rules.months,
-    }),
+    t("roomUtility.policyRules.overdue"),
+    t("roomUtility.policyRules.report"),
   ];
   return (
     <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>

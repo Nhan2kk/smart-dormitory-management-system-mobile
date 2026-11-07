@@ -3,9 +3,9 @@ import { Text, View } from "react-native";
 import { router } from "expo-router";
 import {
   BillMilestoneKey,
-  RoomServiceState,
   RoomUtilityBillStage,
   UtilityReportStatus,
+  UtilityCommodity,
   UtilityReportType,
 } from "../../enums/room-utility.enum";
 import type { RoomUtilityBill } from "../../models/room-utility.model";
@@ -24,22 +24,18 @@ import {
 import { useTheme, spacing, type Tone } from "../../shared/theme";
 import { Formatter } from "../../shared/format";
 
-/** Màu và icon của từng giai đoạn hóa đơn. */
+/** Màu và icon của từng trạng thái hóa đơn. */
 const STAGE_STYLE: Record<RoomUtilityBillStage, { tone: Tone; icon: IconName }> = {
-  [RoomUtilityBillStage.InTerm]: { tone: "info", icon: "calendar-outline" },
-  [RoomUtilityBillStage.DueSoon]: { tone: "warning", icon: "time-outline" },
-  [RoomUtilityBillStage.OverdueInGrace]: { tone: "warning", icon: "alert-circle-outline" },
-  [RoomUtilityBillStage.GraceFinalWarning]: { tone: "danger", icon: "warning-outline" },
-  [RoomUtilityBillStage.ViolationPendingReview]: { tone: "danger", icon: "hourglass-outline" },
-  [RoomUtilityBillStage.ViolationRecorded]: { tone: "danger", icon: "shield-outline" },
-  [RoomUtilityBillStage.DisciplineProposed]: { tone: "danger", icon: "hammer-outline" },
+  [RoomUtilityBillStage.Unpaid]: { tone: "info", icon: "calendar-outline" },
+  [RoomUtilityBillStage.Overdue]: { tone: "danger", icon: "alert-circle-outline" },
   [RoomUtilityBillStage.Paid]: { tone: "success", icon: "checkmark-circle-outline" },
+  [RoomUtilityBillStage.PaidLate]: { tone: "warning", icon: "time-outline" },
 };
 
 /**
- * Thẻ một hóa đơn điện nước phòng: giai đoạn và giải thích, mốc tiếp theo, dòng thời gian các mốc,
- * số tiền mỗi người (tham khảo), ai được đóng, người bị ghi lỗi, trạng thái điện nước, báo cáo của
- * bạn (rút được khi chờ xét) và form gửi báo cáo tách trách nhiệm.
+ * Thẻ một hóa đơn điện nước phòng: trạng thái và giải thích, mốc tiếp theo, tiền điện/nước, dòng
+ * thời gian các mốc, số tiền mỗi người (tham khảo), báo cáo của bạn (rút được khi chờ xét) và form
+ * gửi báo cáo người chưa góp tiền.
  */
 export function RoomUtilityBillCard({
   bill,
@@ -62,10 +58,9 @@ export function RoomUtilityBillCard({
   const unpaid = bill.status !== "PAID";
   const style = STAGE_STYLE[bill.stage];
   const next = bill.nextMilestone;
-  const consequence = (key: BillMilestoneKey) =>
-    key === BillMilestoneKey.GraceEnd && bill.suspensionEnabled
-      ? t("roomUtility.milestoneConsequences.GRACE_END_SUSPENSION")
-      : t(`roomUtility.milestoneConsequences.${key}`);
+  const consequence = (key: BillMilestoneKey) => t(`roomUtility.milestoneConsequences.${key}`);
+  // Đã qua ngày thanh toán nhưng còn trong thời gian được đóng trễ.
+  const inLateWindow = bill.stage === RoomUtilityBillStage.Unpaid && bill.overdueDays > 0;
   const timeline: TimelineItem[] = bill.milestones.map((m) => ({
     title: t(`roomUtility.milestones.${m.key}`),
     description: consequence(m.key),
@@ -78,11 +73,6 @@ export function RoomUtilityBillCard({
       : accused === bill.representativeId
         ? UtilityReportType.RepresentativeCollected
         : UtilityReportType.MemberNotContributed;
-  const service =
-    bill.serviceState === RoomServiceState.Suspended ||
-    bill.serviceState === RoomServiceState.RestoreRequired
-      ? bill.serviceState
-      : null;
 
   return (
     <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
@@ -97,7 +87,9 @@ export function RoomUtilityBillCard({
             : "")
         }
       >
-        {t(`roomUtility.stageHints.${bill.stage}`) +
+        {(inLateWindow
+          ? t("roomUtility.lateUntil", { time: Formatter.dateTime(bill.lateUntil) })
+          : t(`roomUtility.stageHints.${bill.stage}`)) +
           (next
             ? "\n" +
               t("roomUtility.nextMilestone") +
@@ -109,13 +101,6 @@ export function RoomUtilityBillCard({
               consequence(next.key)
             : "")}
       </Callout>
-      {service && (
-        <View style={{ marginTop: spacing.sm }}>
-          <Callout tone="danger" icon="flash-off-outline">
-            {t(`roomUtility.studentServiceBanner.${service}`)}
-          </Callout>
-        </View>
-      )}
       {bill.reportedAgainstMe && unpaid && (
         <View style={{ marginTop: spacing.sm }}>
           <Callout tone="warning" icon="megaphone-outline">
@@ -132,11 +117,44 @@ export function RoomUtilityBillCard({
           value={Formatter.dateTime(bill.periodFrom)}
         />
         <InfoRow label={t("roomUtility.to")} value={Formatter.dateTime(bill.periodTo)} />
-        <InfoRow
-          label={t("roomUtility.electricity")}
-          value={Formatter.decimal(bill.electricityKwh, 3)}
-        />
-        <InfoRow label={t("roomUtility.water")} value={Formatter.decimal(bill.waterM3, 3)} />
+        {bill.charges?.length > 0 ? (
+          bill.charges.map((charge) => (
+            <View key={charge.commodity}>
+              <InfoRow
+                label={t(
+                  charge.commodity === UtilityCommodity.Electricity
+                    ? "roomUtility.chargeElectricity"
+                    : "roomUtility.chargeWater",
+                  { usage: Formatter.decimal(charge.consumption ?? 0, 3) },
+                )}
+                value={Formatter.currency(charge.amount)}
+              />
+              {charge.lines.length > 1 &&
+                charge.lines.map((line, index) => (
+                  <Text
+                    key={index}
+                    style={{ color: colors.muted, fontSize: 12, paddingLeft: spacing.md }}
+                  >
+                    {t("roomUtility.chargeTier", {
+                      index: index + 1,
+                      quantity: Formatter.decimal(line.quantity ?? 0, 3),
+                      price: Formatter.currency(line.unitPrice ?? 0),
+                    })}
+                    {" = "}
+                    {Formatter.currency(line.amount ?? 0)}
+                  </Text>
+                ))}
+            </View>
+          ))
+        ) : (
+          <>
+            <InfoRow
+              label={t("roomUtility.electricity")}
+              value={Formatter.decimal(bill.electricityKwh, 3)}
+            />
+            <InfoRow label={t("roomUtility.water")} value={Formatter.decimal(bill.waterM3, 3)} />
+          </>
+        )}
         <InfoRow
           label={t("roomUtility.amount")}
           value={Formatter.currency(bill.amount)}
@@ -171,7 +189,7 @@ export function RoomUtilityBillCard({
       {unpaid && (
         <Text style={{ color: colors.muted, marginTop: spacing.sm }}>
           {t("roomUtility.shareHint", { count: bill.memberCount })}{" "}
-          {t(`roomUtility.payableBy.${bill.payableBy}`)}
+          {t("roomUtility.anyMemberCanPay")}
         </Text>
       )}
 
@@ -182,24 +200,6 @@ export function RoomUtilityBillCard({
             {t("roomUtility.milestonesTitle")}
           </Text>
           <Timeline items={timeline} />
-        </View>
-      )}
-
-      {/* Người bị ghi lỗi */}
-      {bill.violatedStudents.length > 0 && (
-        <View style={{ marginTop: spacing.sm }}>
-          <Text style={{ color: colors.danger, fontWeight: "700" }}>
-            {t("roomUtility.violatedStudents")}
-            {bill.violationTarget
-              ? " · " + t(`roomUtility.violationTargets.${bill.violationTarget}`)
-              : ""}
-          </Text>
-          {bill.violatedStudents.map((s) => (
-            <Text key={s.id} style={{ color: colors.muted, marginTop: 2 }}>
-              {s.name} — {t(`roomUtility.reasons.${s.reason}`)} (
-              {t(`roomUtility.violationStatuses.${s.status}`)})
-            </Text>
-          ))}
         </View>
       )}
 
@@ -250,9 +250,7 @@ export function RoomUtilityBillCard({
             {t("roomUtility.reportTitle")}
           </Text>
           <Text style={{ color: colors.muted }}>
-            {t("roomUtility.reportHint", {
-              deadline: bill.reportDeadline ? Formatter.dateTime(bill.reportDeadline) : "—",
-            })}
+            {t("roomUtility.reportHint")}
           </Text>
           <Text style={{ color: colors.ink, fontWeight: "600" }}>
             {t("roomUtility.reportAccused")}

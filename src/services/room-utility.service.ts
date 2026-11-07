@@ -5,7 +5,6 @@ import type {
   RoomUtilityHandover,
   RoomUtilityPolicy,
   RoomUtilityReport,
-  RoomUtilityViolation,
 } from "../models/room-utility.model";
 import type { BillPaymentQr } from "../models/debt.model";
 
@@ -68,11 +67,6 @@ export class RoomUtilityService {
   /** Quy định đang áp dụng (con số lấy từ cấu hình thật). */
   policy() {
     return this.request<RoomUtilityPolicy>("/student/room-utilities/policy");
-  }
-  violations() {
-    return this.request<RoomUtilityViolation[]>(
-      "/student/room-utilities/violations",
-    );
   }
   status(id: string) {
     return this.request<{

@@ -1,13 +1,9 @@
 import type {
   BillMilestoneKey,
-  RoomServiceState,
   RoomUtilityBillStage,
-  RoomUtilityPayer,
   UtilityReportStatus,
+  UtilityCommodity,
   UtilityReportType,
-  ViolationReason,
-  ViolationStatus,
-  ViolationTarget,
 } from "../enums/room-utility.enum";
 
 export type RoomUtilityAccount = {
@@ -44,9 +40,26 @@ export type RoomUtilityReport = {
   reviewedAt: string | null;
   reviewedByName: string | null;
   reviewNote: string | null;
-  reportDeadline: string | null;
   mine: boolean;
   aboutMe: boolean;
+};
+
+/** Tiền một bậc giá trong hóa đơn. */
+export type RoomUtilityChargeLine = {
+  from: number | null;
+  to: number | null;
+  quantity: number | null;
+  unitPrice: number | null;
+  amount: number | null;
+};
+
+/** Tiền của một loại (điện hoặc nước) trong hóa đơn. */
+export type RoomUtilityCharge = {
+  commodity: UtilityCommodity;
+  unit: string;
+  consumption: number | null;
+  amount: number;
+  lines: RoomUtilityChargeLine[];
 };
 
 export type RoomUtilityBill = {
@@ -61,50 +74,29 @@ export type RoomUtilityBill = {
   electricityKwh: number;
   waterM3: number;
   amount: number;
+  /** Tiền điện, tiền nước; tổng bằng amount. Rỗng với hóa đơn quyết toán 0 ₫. */
+  charges: RoomUtilityCharge[];
   status: "PENDING" | "PAID" | "OVERDUE";
   paidAt: string | null;
   stage: RoomUtilityBillStage;
   milestones: RoomUtilityMilestone[];
   /** Mốc sắp tới gần nhất (null nếu đã đóng hoặc đã qua mọi mốc). */
   nextMilestone: RoomUtilityMilestone | null;
+  /** Hết thời gian được đóng trễ; chưa đóng sau mốc này là quá hạn. */
+  lateUntil: string;
+  /** Số ngày đã qua ngày thanh toán (0 nếu chưa qua hoặc đã đóng). */
   overdueDays: number;
   memberCount: number;
-  /** Số tiền mỗi người, chỉ để tham khảo khi góp cho trưởng phòng. */
+  /** Số tiền mỗi người, chỉ để tham khảo khi góp cho người đóng. */
   sharePerMember: number;
-  payableBy: RoomUtilityPayer;
+  /** Người xem là thành viên phòng và hóa đơn chưa đóng: được đóng toàn bộ. */
   canPay: boolean;
   canReport: boolean;
-  /** Hạn cuối gửi báo cáo (= hết ân hạn). */
-  reportDeadline: string | null;
   reportableMembers: { id: string; name: string }[];
   myReport: RoomUtilityReport | null;
   reportedAgainstMe: boolean;
-  violationTarget: ViolationTarget | null;
-  violationRecordedAt: string | null;
-  violatedStudents: {
-    id: string;
-    name: string;
-    reason: ViolationReason;
-    status: ViolationStatus;
-  }[];
-  suspensionEnabled: boolean;
-  serviceState: RoomServiceState;
-  serviceNote: string | null;
-  disciplineProposedAt: string | null;
   paymentMethod: "SEPAY" | "CASH" | "ZERO" | null;
   cashReceiptNo: string | null;
-};
-
-export type RoomUtilityViolation = {
-  id: string;
-  billId: string;
-  roomCode: string;
-  reason: ViolationReason;
-  status: ViolationStatus;
-  amount: number;
-  overdueDays: number;
-  createdAt: string;
-  revokeReason: string | null;
 };
 
 export type RoomUtilityHandover = {
@@ -118,21 +110,18 @@ export type RoomUtilityHandover = {
 
 /** Quy định đóng tiền điện nước đang áp dụng và các mốc ví dụ của kỳ hiện tại. */
 export type RoomUtilityPolicy = {
+  /** Null khi BQL chưa cấu hình (áp dụng mặc định: chốt 01, hạn 10, trễ 5 ngày, nhắc trước 3 ngày). */
   schedule: {
-    dueSoonWarningHours: number;
-    dailyReminderHour: number;
-    gracePeriodDays: number;
-    suspensionEnabled: boolean;
-    disciplineOverdueDays: number;
-    disciplineViolationCount: number;
-    disciplineWindowMonths: number;
+    closeDay: number;
+    dueDay: number;
+    lateDays: number;
+    reminderDays: number;
   } | null;
   example: {
     month: string;
     closeAt: string;
-    dueSoonAt: string;
+    reminderAt: string;
     dueAt: string;
-    graceEndsAt: string;
-    disciplineAt: string;
+    lateUntil: string;
   };
 };
