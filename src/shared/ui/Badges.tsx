@@ -17,7 +17,6 @@ export function StatusBadge({
   const palette = useTheme().tones[tone];
   return (
     <View style={[styles.badge, { backgroundColor: palette.bg }, style]}>
-      <View style={[styles.dot, { backgroundColor: palette.fg }]} />
       <Text style={[styles.text, { color: palette.fg }]} numberOfLines={1}>
         {label}
       </Text>
@@ -64,6 +63,5 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: radius.pill,
   },
-  dot: { width: 6, height: 6, borderRadius: 3 },
   text: { fontSize: 12, fontWeight: "700" },
 });
