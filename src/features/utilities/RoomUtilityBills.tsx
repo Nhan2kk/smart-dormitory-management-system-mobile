@@ -4,13 +4,11 @@ import { ActivityIndicator, Text, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useAuth } from "../auth/AuthProvider";
 import { RoomUtilityService } from "../../services/room-utility.service";
-import { ViolationStatus } from "../../enums/room-utility.enum";
 import type {
   RoomUtilityAccount,
   RoomUtilityBill,
   RoomUtilityHandover,
   RoomUtilityPolicy,
-  RoomUtilityViolation,
 } from "../../models/room-utility.model";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Button, Card, InfoRow, BottomSheet, useToast } from "../../shared/ui";
@@ -19,15 +17,6 @@ import { Formatter } from "../../shared/format";
 import { errorMessage } from "../../shared/api";
 import { RoomUtilityBillCard } from "./RoomUtilityBillCard";
 import { RoomUtilityPolicySection } from "./RoomUtilityPolicySection";
-
-/** Số lỗi còn hiệu lực trong {@code months} tháng gần nhất (so với ngưỡng đề nghị kỷ luật). */
-function activeViolationsWithin(rows: RoomUtilityViolation[], months: number) {
-  const since = new Date();
-  since.setMonth(since.getMonth() - months);
-  return rows.filter(
-    (v) => v.status === ViolationStatus.Active && new Date(v.createdAt) > since,
-  ).length;
-}
 
 /**
  * Điện nước phòng của sinh viên: người đại diện và bàn giao, quy định đang áp dụng, các hóa đơn theo
@@ -46,19 +35,12 @@ export function RoomUtilityBills() {
   const [policy, setPolicy] = useState<RoomUtilityPolicy | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [violations, setViolations] = useState<RoomUtilityViolation[]>([]);
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [a, b, v, p] = await Promise.all([
-        api.mine(),
-        api.bills(),
-        api.violations(),
-        api.policy(),
-      ]);
+      const [a, b, p] = await Promise.all([api.mine(), api.bills(), api.policy()]);
       setAccount(a);
       setRows(b);
-      setViolations(v);
       setPolicy(p);
       setHistory(a ? await api.history(a.roomId) : []);
     } catch (e) {
@@ -89,8 +71,6 @@ export function RoomUtilityBills() {
       setBusy(false);
     }
   };
-  const months = policy?.schedule?.disciplineWindowMonths ?? 12;
-  const limit = policy?.schedule?.disciplineViolationCount ?? 3;
   return (
     <>
       <Button
@@ -211,36 +191,6 @@ export function RoomUtilityBills() {
             onBeforePay={() => setOpen(false)}
           />
         ))}
-        {violations.length > 0 && (
-          <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
-            <Text style={{ color: colors.danger, fontWeight: "700" }}>
-              {t("roomUtility.myViolations")} ({violations.length})
-            </Text>
-            <Text style={{ color: colors.muted, marginTop: spacing.xs }}>
-              {t("roomUtility.myViolationCount", {
-                count: activeViolationsWithin(violations, months),
-                months,
-                limit,
-              })}
-            </Text>
-            {violations.map((v) => (
-              <View key={v.id} style={{ marginTop: spacing.sm }}>
-                <Text style={{ color: colors.ink, fontWeight: "600" }}>
-                  {t(`roomUtility.reasons.${v.reason}`)} ·{" "}
-                  {t(`roomUtility.violationStatuses.${v.status}`)}
-                </Text>
-                <Text style={{ color: colors.muted }}>
-                  {v.roomCode} · {Formatter.currency(v.amount)} ·{" "}
-                  {t("roomUtility.overdueDaysValue", { count: v.overdueDays })} ·{" "}
-                  {Formatter.dateTime(v.createdAt)}
-                </Text>
-                {v.revokeReason && (
-                  <Text style={{ color: colors.muted }}>{v.revokeReason}</Text>
-                )}
-              </View>
-            ))}
-          </Card>
-        )}
         <Button
           label={t("roomUtility.refresh")}
           variant="secondary"
