@@ -17,6 +17,7 @@ import type { BillPaymentEvent } from "../../models/debt.model";
 import type { RegistrationPaymentEvent } from "../../models/registration-payment.model";
 import { useAuth } from "../auth/AuthProvider";
 import type { ChatRealtimeEvent } from "../../models/chat.model";
+import type { RoomUtilityAccountEvent } from "../../models/room-utility.model";
 
 type RealtimeValue = {
   lastChat: ChatRealtimeEvent | null;
@@ -28,6 +29,8 @@ type RealtimeValue = {
   lastTelemetry: TelemetryUpdate | null;
   lastRegistrationPayment: RegistrationPaymentEvent | null;
   lastBillPayment: BillPaymentEvent | null;
+  /** Trưởng phòng / đề nghị bàn giao vừa đổi: màn điện nước đang mở tải lại ngay. */
+  lastRoomUtilityAccount: RoomUtilityAccountEvent | null;
 };
 
 const RealtimeContext = createContext<RealtimeValue | null>(null);
@@ -50,6 +53,8 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const [lastRegistrationPayment, setLastRegistrationPayment] =
     useState<RegistrationPaymentEvent | null>(null);
   const [lastBillPayment, setLastBillPayment] = useState<BillPaymentEvent | null>(null);
+  const [lastRoomUtilityAccount, setLastRoomUtilityAccount] =
+    useState<RoomUtilityAccountEvent | null>(null);
   /** Token đã thử làm mới: lỗi STOMP lặp lại với token mới thì không làm mới nữa (tránh vòng lặp). */
   const refreshedFor = useRef<string | null>(null);
 
@@ -83,6 +88,12 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         {
           destination: "/user/queue/bill-payments",
           onMessage: (body) => setLastBillPayment(body as BillPaymentEvent),
+        },
+        {
+          destination: "/user/queue/room-utility-accounts",
+          // Bản sao mới mỗi lần để effect của màn hình chạy lại cả khi hai sự kiện giống hệt nhau.
+          onMessage: (body) =>
+            setLastRoomUtilityAccount({ ...(body as RoomUtilityAccountEvent) }),
         },
         {
           destination: "/user/queue/iot/incidents",
@@ -119,8 +130,9 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       lastTelemetry,
       lastRegistrationPayment,
       lastBillPayment,
+      lastRoomUtilityAccount,
     }),
-    [live, notifySignal, lastIncident, lastTelemetry, lastRegistrationPayment, lastBillPayment, lastChat, reconnectSignal],
+    [live, notifySignal, lastIncident, lastTelemetry, lastRegistrationPayment, lastBillPayment, lastRoomUtilityAccount, lastChat, reconnectSignal],
   );
   return (
     <RealtimeContext.Provider value={value}>

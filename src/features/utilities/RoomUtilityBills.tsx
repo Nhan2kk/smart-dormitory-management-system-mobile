@@ -1,8 +1,9 @@
 import { roomUtilityError } from "../../shared/i18n/room-utility-messages";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useAuth } from "../auth/AuthProvider";
+import { useRealtime } from "../realtime/RealtimeProvider";
 import { RoomUtilityService } from "../../services/room-utility.service";
 import type {
   RoomUtilityAccount,
@@ -54,6 +55,23 @@ export function RoomUtilityBills() {
       if (open) void load();
     }, [open, load]),
   );
+  // Realtime: đề nghị / chấp nhận / từ chối / hủy bàn giao trưởng phòng → tải lại ngay.
+  const { lastRoomUtilityAccount, reconnectSignal } = useRealtime();
+  const roomId = account?.roomId;
+  // Mỗi sự kiện chỉ tải lại một lần (effect còn chạy lại khi mở màn hình hoặc đổi phòng).
+  const handledEvent = useRef(lastRoomUtilityAccount);
+  useEffect(() => {
+    if (!open || !lastRoomUtilityAccount || handledEvent.current === lastRoomUtilityAccount) return;
+    if (roomId && lastRoomUtilityAccount.roomId !== roomId) return;
+    handledEvent.current = lastRoomUtilityAccount;
+    const timer = setTimeout(() => void load(), 0);
+    return () => clearTimeout(timer);
+  }, [lastRoomUtilityAccount, open, roomId, load]);
+  useEffect(() => {
+    if (!open || !reconnectSignal) return;
+    const timer = setTimeout(() => void load(), 0);
+    return () => clearTimeout(timer);
+  }, [reconnectSignal, open, load]);
   const run = async (
     fn: () => Promise<unknown>,
     done: string = t("roomUtility.saved"),
@@ -161,7 +179,9 @@ export function RoomUtilityBills() {
                       ? t("roomUtility.action.APPOINTED")
                       : h.action === "ACCEPTED"
                         ? t("roomUtility.action.ACCEPTED")
-                        : t("roomUtility.action.DEBT_RESPONSIBILITY_CONFIRMED")}
+                        : h.action === "CHECK_IN"
+                          ? t("roomUtility.action.CHECK_IN")
+                          : t("roomUtility.action.DEBT_RESPONSIBILITY_CONFIRMED")}
                   </Text>
                 ))}
               </View>

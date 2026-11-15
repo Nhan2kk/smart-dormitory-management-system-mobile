@@ -163,6 +163,7 @@ export const en: Dictionary = {
     },
     action: {
       APPOINTED: "Appointed by management",
+      CHECK_IN: "First to check in",
       ACCEPTED: "Handover accepted",
       DEBT_RESPONSIBILITY_CONFIRMED: "Debt handling confirmed",
     },

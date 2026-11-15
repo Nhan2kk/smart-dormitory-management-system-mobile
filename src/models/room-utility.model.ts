@@ -125,3 +125,11 @@ export type RoomUtilityPolicy = {
     lateUntil: string;
   };
 };
+
+/** Sự kiện `/user/queue/room-utility-accounts`: trưởng phòng hoặc đề nghị bàn giao của phòng vừa đổi. */
+export interface RoomUtilityAccountEvent {
+  roomId: string;
+  action: "PROPOSED" | "ACCEPTED" | "REJECTED" | "CANCELLED" | "APPOINTED" | "CHECK_IN";
+  representativeId: string | null;
+  proposedRepresentativeId: string | null;
+}

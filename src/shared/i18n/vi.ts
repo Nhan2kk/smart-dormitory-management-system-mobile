@@ -161,6 +161,7 @@ export const vi = {
     },
     action: {
       APPOINTED: "BQL chỉ định",
+      CHECK_IN: "Nhận phòng đầu tiên",
       ACCEPTED: "Đã chấp nhận bàn giao",
       DEBT_RESPONSIBILITY_CONFIRMED: "BQL xác nhận công nợ",
     },
