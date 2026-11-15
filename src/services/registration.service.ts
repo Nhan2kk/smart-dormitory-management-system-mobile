@@ -1,4 +1,4 @@
-import type { ApiClient } from "../shared/api";
+import { isNotFound, type ApiClient } from "../shared/api";
 import type {
   PaymentQr,
   PaymentStatus,
@@ -52,8 +52,17 @@ export class RegistrationService {
     );
   }
 
-  mine(): Promise<Registration> {
-    return this.request<Registration>("/student/registrations/mine");
+  /** Đơn mới nhất; null khi chưa có đơn (BE trả 200 body rỗng, bản BE cũ trả 404). */
+  async mine(): Promise<Registration | null> {
+    try {
+      const record = await this.request<Registration | undefined>(
+        "/student/registrations/mine",
+      );
+      return record ?? null;
+    } catch (error) {
+      if (isNotFound(error)) return null;
+      throw error;
+    }
   }
 
   create(body: RegistrationCreateBody): Promise<Registration> {
