@@ -971,7 +971,6 @@ export const en: Dictionary = {
       pending_payment: "Awaiting payment",
       paid: "Paid",
       approved: "Paid · Awaiting check-in",
-      rejected: "Rejected",
       cancelled: "Cancelled",
       expired: "Payment expired",
     },

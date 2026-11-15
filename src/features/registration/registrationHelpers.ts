@@ -31,7 +31,6 @@ export const applicationTone: Record<
   pending_payment: "warning",
   paid: "info",
   approved: "success",
-  rejected: "danger",
   cancelled: "neutral",
   expired: "danger",
   completed: "neutral",

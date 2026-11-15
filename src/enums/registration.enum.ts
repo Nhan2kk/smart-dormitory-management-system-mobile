@@ -28,7 +28,6 @@ export const RegistrationStatus = {
   PendingPayment: "pending_payment",
   Paid: "paid",
   Approved: "approved",
-  Rejected: "rejected",
   Cancelled: "cancelled",
   Expired: "expired",
   Completed: "completed",

@@ -974,7 +974,6 @@ export const vi = {
       pending_payment: "Chờ thanh toán",
       paid: "Đã thanh toán",
       approved: "Đã thanh toán · Chờ nhận phòng",
-      rejected: "Bị từ chối",
       cancelled: "Đã huỷ",
       expired: "Hết hạn thanh toán",
     },
