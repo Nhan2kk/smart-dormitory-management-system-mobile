@@ -187,7 +187,7 @@ function UtilitiesContent({ usage }: { usage: UtilityUsage }) {
       <Card>
         <Text style={[styles.caption, { marginBottom: spacing.md }]}>
           {t("utilities.calendarHint")}
-          {usage.visibleFrom ? ` ${t("utilities.visibleSince", { time: Formatter.dateTime(usage.visibleFrom) })}` : ""}
+          {usage.visibleFrom ? ` ${t(usage.roomWide ? "utilities.visibleSinceRoom" : "utilities.visibleSince", { time: Formatter.dateTime(usage.visibleFrom) })}` : ""}
         </Text>
         <UtilityCalendar month={usage.month} records={usage.days()} firstStayDate={usage.firstStayDate} metric={metric} onSelect={setDay} />
       </Card>

@@ -39,6 +39,8 @@ export class UtilityUsage {
   readonly notCheckedIn: boolean;
   /** Mốc bắt đầu xem số đo (ISO); null khi BE cũ không trả hoặc chưa nhận phòng. */
   readonly visibleFrom: string | null;
+  /** Mốc là lúc phòng có người nhận đầu tiên (điện nước tính theo phòng), không phải ngày mình nhận. */
+  readonly roomWide: boolean;
   /** Ngày (giờ Việt Nam) bắt đầu ở; các ngày trước đó không phải "thiếu số đo". */
   readonly firstStayDate: string | null;
 
@@ -49,6 +51,7 @@ export class UtilityUsage {
     this.today = local.date;
     this.month = local.date.slice(0, 7);
     this.notCheckedIn = current.residencyStatus === "NOT_CHECKED_IN";
+    this.roomWide = current.visibleFromSource === "ROOM_CHECK_IN";
     const visibleFrom = [current.visibleFrom, previous?.visibleFrom]
       .map((value) => (value ? Date.parse(value) : NaN))
       .filter(Number.isFinite)

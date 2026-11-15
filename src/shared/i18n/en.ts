@@ -438,6 +438,7 @@ export const en: Dictionary = {
     notCheckedInBody:
       "There is no usage data yet. Readings start from the time you sign the check-in record.",
     visibleSince: "Readings counted from {{time}} (check-in time).",
+    visibleSinceRoom: "Room readings counted from {{time}} (first check-in in the room).",
     beforeStay: "Before stay",
     noReading: "N/A",
     liveIncidentTitle: "Active alert in your room",
