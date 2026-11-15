@@ -285,10 +285,12 @@ export const en: Dictionary = {
     female: "Female",
   },
   time: {
-    justNow: "Just now",
+    seconds: "{{count}} sec ago",
     minutes: "{{count}} min ago",
     hours: "{{count}} h ago",
     days: "{{count}} days ago",
+    months: "{{count}} mo ago",
+    years: "{{count}} yr ago",
     morning: "Good morning",
     noon: "Good afternoon",
     afternoon: "Good afternoon",

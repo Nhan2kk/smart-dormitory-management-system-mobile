@@ -283,10 +283,12 @@ export const vi = {
     female: "Nữ",
   },
   time: {
-    justNow: "Vừa xong",
+    seconds: "{{count}} giây trước",
     minutes: "{{count}} phút trước",
     hours: "{{count}} giờ trước",
     days: "{{count}} ngày trước",
+    months: "{{count}} tháng trước",
+    years: "{{count}} năm trước",
     morning: "Chào buổi sáng",
     noon: "Chào buổi trưa",
     afternoon: "Chào buổi chiều",

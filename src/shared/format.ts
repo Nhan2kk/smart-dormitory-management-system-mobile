@@ -18,10 +18,12 @@ export class Formatter {
 
   private static text(
     path:
-      | "justNow"
+      | "seconds"
       | "minutes"
       | "hours"
       | "days"
+      | "months"
+      | "years"
       | "morning"
       | "noon"
       | "afternoon"
@@ -96,19 +98,28 @@ export class Formatter {
     return names[value.getDay()];
   }
 
-  /** "Vừa xong", "5 phút trước", "2 giờ trước", "3 ngày trước". */
+  /**
+   * "12 giây trước", "1 phút trước", "3 giờ trước", "5 ngày trước", "2 tháng trước", "1 năm trước":
+   * dưới 1 phút → giây, dưới 1 giờ → phút, dưới 1 ngày → giờ, dưới 30 ngày → ngày, dưới 1 năm → tháng
+   * (theo lịch), còn lại → năm. Thời điểm ở tương lai (lệch đồng hồ) coi như 1 giây trước.
+   */
   static relative(value: string, now: Date = Formatter.now): string {
-    const minutes = Math.max(
-      0,
-      Math.round((now.getTime() - new Date(value).getTime()) / 60000),
-    );
-    if (minutes < 1) return Formatter.text("justNow");
+    const at = new Date(value);
+    const elapsed = Math.max(0, now.getTime() - at.getTime());
+    const seconds = Math.floor(elapsed / 1000);
+    if (seconds < 60) return Formatter.text("seconds", Math.max(1, seconds));
+    const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return Formatter.text("minutes", minutes);
-    const hours = Math.round(minutes / 60);
+    const hours = Math.floor(minutes / 60);
     if (hours < 24) return Formatter.text("hours", hours);
-    const days = Math.round(hours / 24);
-    if (days < 7) return Formatter.text("days", days);
-    return Formatter.date(value);
+    const days = Math.floor(hours / 24);
+    if (days < 30) return Formatter.text("days", days);
+    let months =
+      (now.getFullYear() - at.getFullYear()) * 12 + (now.getMonth() - at.getMonth());
+    if (now.getDate() < at.getDate()) months -= 1;
+    months = Math.max(1, months);
+    if (months < 12) return Formatter.text("months", months);
+    return Formatter.text("years", Math.floor(months / 12));
   }
 
   static countdown(totalSeconds: number): string {
