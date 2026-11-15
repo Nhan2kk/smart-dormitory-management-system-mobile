@@ -365,12 +365,12 @@ export function CheckInScreen() {
             <Card style={styles.meter}>
               <IconBadge icon="flash" tone="primary" size={40} rounded="circle" />
               <Text style={styles.caption}>{t("utilities.electricity")}</Text>
-              <Text style={styles.meterValue}>{record.initialElectricity != null ? `${Formatter.decimal(record.initialElectricity)} kWh` : t("checkIn.meterPending")}</Text>
+              <Text style={styles.meterValue}>{record.initialElectricity != null ? `${Formatter.decimal(record.initialElectricity, 1)} kWh` : t("checkIn.meterPending")}</Text>
             </Card>
             <Card style={styles.meter}>
               <IconBadge icon="water" tone="info" size={40} rounded="circle" />
               <Text style={styles.caption}>{t("utilities.water")}</Text>
-              <Text style={styles.meterValue}>{record.initialWater != null ? `${Formatter.decimal(record.initialWater)} m³` : t("checkIn.meterPending")}</Text>
+              <Text style={styles.meterValue}>{record.initialWater != null ? `${Formatter.decimal(record.initialWater, 1)} m³` : t("checkIn.meterPending")}</Text>
             </Card>
           </View>
           {!!(record.stayStartDate ?? record.expectedCheckInDate) && (
