@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
-import { errorMessage } from "../../shared/api";
+import { ApiError, errorMessage } from "../../shared/api";
 import { useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { useRealtime } from "../realtime/RealtimeProvider";
@@ -11,6 +11,8 @@ import { useI18n } from "../../shared/i18n/I18nProvider";
 
 /** Chu kỳ hỏi thông báo mới khi app đang mở nhưng WebSocket chưa kết nối được (dự phòng). */
 const POLL_MS = 30_000;
+/** Khoảng cách tối thiểu giữa hai lượt tải danh sách (server cho tối đa 5 lượt / 2 giây). */
+const MIN_RELOAD_GAP_MS = 2_000;
 
 type NotificationsValue = {
   items: AppNotification[] | null;
@@ -37,8 +39,20 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [lastIncoming, setLastIncoming] = useState<AppNotification | null>(null);
   const seen = useRef<Set<string> | null>(null);
+  const alive = useRef(true);
+  /** Lượt tải đang chạy, lượt đang chờ chạy (gộp mọi lần gọi trong lúc chờ) và thời điểm bắt đầu lượt gần nhất. */
+  const running = useRef<Promise<void> | null>(null);
+  const queued = useRef<Promise<void> | null>(null);
+  const lastStartedAt = useRef(0);
 
-  const reload = useCallback(async () => {
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  const fetchNow = useCallback(async () => {
     try {
       const [list, unread] = await Promise.all([api.list(), api.unreadCount()]);
       // Lần tải đầu chỉ ghi nhận; các lần sau, thông báo chưa đọc chưa từng thấy là "mới đến".
@@ -55,31 +69,70 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       setUnreadCount(unread);
       setError(null);
     } catch (reason) {
+      // Bị giới hạn tần suất (429): giữ danh sách đang có, không hiện lỗi, tự thử lại ở lượt sau.
+      if (reason instanceof ApiError && reason.status === 429) return true;
       setError(errorMessage(reason));
     }
+    return false;
   }, [api, notify, t]);
+
+  /**
+   * Tải lại có gộp: đang tải hoặc vừa tải chưa đủ MIN_RELOAD_GAP_MS thì các lần gọi dồn lại thành một lượt chạy sau.
+   * Tránh WebSocket nối/rớt liên tục hoặc nhiều tín hiệu cùng lúc làm gọi API dồn dập (server trả 429).
+   */
+  const reload = useCallback((): Promise<void> => {
+    if (queued.current) return queued.current;
+    // Gán trước lần `await` đầu tiên nên bên trong luôn đọc được `task`.
+    let task!: Promise<void>;
+    task = (async () => {
+      for (;;) {
+        await running.current;
+        const wait = lastStartedAt.current + MIN_RELOAD_GAP_MS - Date.now();
+        if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+        // Rời hàng chờ trước khi gọi API: tín hiệu mới đến trong lúc tải sẽ xếp một lượt mới.
+        if (queued.current === task) queued.current = null;
+        if (!alive.current) return;
+        lastStartedAt.current = Date.now();
+        let rateLimited = false;
+        const current = fetchNow().then((limited) => {
+          rateLimited = limited;
+        });
+        running.current = current;
+        await current;
+        if (running.current === current) running.current = null;
+        // Bị 429 thì thử lại sau một khoảng giãn cách, trừ khi đã có lượt mới xếp hàng thay.
+        if (!rateLimited || queued.current || !alive.current) return;
+        queued.current = task;
+      }
+    })();
+    queued.current = task;
+    return task;
+  }, [fetchNow]);
+
+  // Tải lần đầu, và mỗi khi app quay lại trước màn hình.
+  useEffect(() => {
+    void reload();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") void reload();
+    });
+    return () => subscription.remove();
+  }, [reload]);
 
   // Có thông báo mới qua WebSocket (hoặc vừa nối lại) → tải lại danh sách.
   useEffect(() => {
-    if (notifySignal > 0) reload();
+    if (notifySignal > 0) void reload();
   }, [notifySignal, reload]);
 
+  // Vừa kết nối WebSocket: tải bù phần có thể đã lỡ. Chưa kết nối: hỏi định kỳ làm dự phòng.
   useEffect(() => {
-    let timer: ReturnType<typeof setInterval> | null = null;
-    const start = () => {
-      reload();
-      if (!connected) timer ??= setInterval(reload, POLL_MS);
-    };
-    const stop = () => {
-      if (timer) clearInterval(timer);
-      timer = null;
-    };
-    start();
-    const subscription = AppState.addEventListener("change", (state) => (state === "active" ? start() : stop()));
-    return () => {
-      stop();
-      subscription.remove();
-    };
+    if (connected) {
+      void reload();
+      return;
+    }
+    const timer = setInterval(() => {
+      if (AppState.currentState === "active") void reload();
+    }, POLL_MS);
+    return () => clearInterval(timer);
   }, [connected, reload]);
 
   const replace = useCallback((updated: AppNotification) => {

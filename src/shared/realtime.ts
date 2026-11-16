@@ -1,4 +1,8 @@
 import { Client, ReconnectionTimeMode, type IMessage } from "@stomp/stompjs";
+import { Platform } from "react-native";
+
+/** Bản web (trình duyệt) dùng WebSocket chuẩn; các bản vá khung STOMP chỉ dành cho React Native. */
+const isNative = Platform.OS !== "web";
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "");
 /**
@@ -38,6 +42,8 @@ export class RealtimeConnection {
     const url = RealtimeConnection.url();
     this.client = new Client({
       webSocketFactory: () => {
+        // Trình duyệt tự gửi Origin và không nhận tham số header.
+        if (!isNative) return new WebSocket(url, STOMP_PROTOCOLS);
         // React Native nhận tham số thứ ba để đặt header (không có trong WebSocket của trình duyệt).
         const NativeWebSocket = WebSocket as unknown as new (
           url: string,
@@ -51,8 +57,8 @@ export class RealtimeConnection {
         );
       },
       connectHeaders: { Authorization: `Bearer ${token}` },
-      forceBinaryWSFrames: true,
-      appendMissingNULLonIncoming: true,
+      forceBinaryWSFrames: isNative,
+      appendMissingNULLonIncoming: isNative,
       connectionTimeout: 10_000,
       reconnectDelay: 2_000,
       reconnectTimeMode: ReconnectionTimeMode.EXPONENTIAL,
