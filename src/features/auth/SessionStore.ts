@@ -1,5 +1,5 @@
-import * as SecureStore from "expo-secure-store";
 import { ApiError } from "../../shared/api";
+import { DeviceStorage } from "../../shared/DeviceStorage";
 import type { AuthUser } from "../../models/auth.model";
 
 const SESSION_KEY = "sdms.session";
@@ -9,13 +9,13 @@ const LEGACY_TOKEN_KEY = "sdms.refreshToken";
 export type SavedSession = { refreshToken: string; user: AuthUser | null };
 
 /**
- * Phiên đăng nhập lưu an toàn trên máy (SecureStore) để mở app là vào thẳng như Zalo:
+ * Phiên đăng nhập lưu trên máy (SecureStore trên mobile, localStorage trên web) để mở app là vào thẳng như Zalo:
  * giữ refresh token và thông tin người dùng cho tới khi đăng xuất hoặc server từ chối phiên.
  */
 export class SessionStore {
   static async load(): Promise<SavedSession | null> {
     try {
-      const raw = await SecureStore.getItemAsync(SESSION_KEY);
+      const raw = await DeviceStorage.getItem(SESSION_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as SavedSession;
         if (parsed?.refreshToken)
@@ -24,7 +24,7 @@ export class SessionStore {
             user: parsed.user ?? null,
           };
       }
-      const legacy = await SecureStore.getItemAsync(LEGACY_TOKEN_KEY);
+      const legacy = await DeviceStorage.getItem(LEGACY_TOKEN_KEY);
       return legacy ? { refreshToken: legacy, user: null } : null;
     } catch {
       return null;
@@ -32,18 +32,18 @@ export class SessionStore {
   }
 
   static async save(refreshToken: string, user: AuthUser): Promise<void> {
-    await SecureStore.setItemAsync(
+    await DeviceStorage.setItem(
       SESSION_KEY,
       JSON.stringify({ refreshToken, user } satisfies SavedSession),
     );
-    await SecureStore.deleteItemAsync(LEGACY_TOKEN_KEY).catch(() => undefined);
+    await DeviceStorage.removeItem(LEGACY_TOKEN_KEY).catch(() => undefined);
   }
 
   static async clear(): Promise<void> {
     await Promise.all(
       [
-        SecureStore.deleteItemAsync(SESSION_KEY),
-        SecureStore.deleteItemAsync(LEGACY_TOKEN_KEY),
+        DeviceStorage.removeItem(SESSION_KEY),
+        DeviceStorage.removeItem(LEGACY_TOKEN_KEY),
       ].map((task) => task.catch(() => undefined)),
     );
   }

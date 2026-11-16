@@ -1,4 +1,3 @@
-import * as SecureStore from "expo-secure-store";
 import {
   createContext,
   ReactNode,
@@ -8,7 +7,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Platform } from "react-native";
+import { DeviceStorage } from "./DeviceStorage";
 import { I18nProvider, Language } from "./i18n/I18nProvider";
 import {
   GlassLevel,
@@ -48,10 +47,7 @@ export class PreferencesStore {
 
   static async load(): Promise<Partial<Preferences>> {
     try {
-      const raw =
-        Platform.OS === "web"
-          ? globalThis.localStorage?.getItem(PreferencesStore.key)
-          : await SecureStore.getItemAsync(PreferencesStore.key);
+      const raw = await DeviceStorage.getItem(PreferencesStore.key);
       return raw ? (JSON.parse(raw) as Partial<Preferences>) : {};
     } catch {
       return {};
@@ -60,10 +56,7 @@ export class PreferencesStore {
 
   static async save(preferences: Preferences): Promise<void> {
     try {
-      const raw = JSON.stringify(preferences);
-      if (Platform.OS === "web")
-        globalThis.localStorage?.setItem(PreferencesStore.key, raw);
-      else await SecureStore.setItemAsync(PreferencesStore.key, raw);
+      await DeviceStorage.setItem(PreferencesStore.key, JSON.stringify(preferences));
     } catch {
       // Lưu thất bại không ảnh hưởng phiên hiện tại.
     }
