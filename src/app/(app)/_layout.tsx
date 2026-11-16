@@ -5,6 +5,10 @@ import { NotificationsProvider } from "../../features/notifications/Notification
 import { RealtimeProvider } from "../../features/realtime/RealtimeProvider";
 import { useTheme } from "../../shared/theme";
 import { SupportChatProvider } from "../../features/chat/SupportChatProvider";
+import { webScreenLayout } from "../../shared/ui";
+
+// Nhóm tab hiện dần (tránh trượt chồng với hiệu ứng của tầng gốc); màn hình con trượt từ phải.
+const appScreenLayout = webScreenLayout((name) => (name === "(tabs)" ? "fade" : "push"));
 
 /** Nhóm màn hình yêu cầu đăng nhập. */
 export default function ProtectedLayout() {
@@ -16,7 +20,10 @@ export default function ProtectedLayout() {
     <RealtimeProvider>
     <SupportChatProvider>
     <NotificationsProvider>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+      <Stack
+        screenLayout={appScreenLayout}
+        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}
+      >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="request/new" options={{ presentation: "transparentModal", animation: "fade", contentStyle: { backgroundColor: "transparent" } }} />
         <Stack.Screen name="debts/pay/[id]" options={{ presentation: "modal" }} />

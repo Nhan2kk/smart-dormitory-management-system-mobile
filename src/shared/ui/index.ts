@@ -29,6 +29,9 @@ export {
 } from "./Layout";
 export { PhotoBackground } from "./PhotoBackground";
 export { Screen } from "./Screen";
+export { Motion } from "./Motion";
+export { ScreenTransition, webScreenLayout } from "./ScreenTransition";
+export type { ScreenTransitionKind } from "./ScreenTransition";
 export { SegmentedControl } from "./SegmentedControl";
 export { StepProgress, Timeline } from "./Steps";
 export type { TimelineItem } from "./Steps";
