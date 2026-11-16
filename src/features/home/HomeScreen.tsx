@@ -275,9 +275,10 @@ export function HomeScreen() {
                 style={styles.quick}
                 pressScale={0.92}
               >
-                <Glass strong style={styles.quickIcon}>
+                {/* Nền đặc thay cho kính mờ: Safari iPhone vẽ hỏng backdrop-filter ở ô đầu hàng cuộn ngang (mất icon). */}
+                <View style={styles.quickIcon}>
                   <Ionicons name={service.icon} size={22} color={colors.ink} />
-                </Glass>
+                </View>
                 <Text style={styles.quickLabel} numberOfLines={2}>
                   {t(service.key)}
                 </Text>
@@ -646,6 +647,9 @@ const useStyles = makeStyles(({ colors, font, shadow }) => ({
     borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   quickLabel: {
     fontSize: 12,
