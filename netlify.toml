@@ -1,0 +1,15 @@
+# Deploy bản web của app Expo lên Netlify.
+# Biến môi trường (EXPO_PUBLIC_API_URL, EXPO_PUBLIC_MOCK_AUTH) khai báo trên dashboard Netlify,
+# vì .env không được commit. Đổi biến xong phải deploy lại vì giá trị được ghi vào bundle lúc build.
+[build]
+  command = "npx expo export --platform web"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# expo-router điều hướng phía client: mọi đường dẫn trả về index.html để F5 không bị 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
