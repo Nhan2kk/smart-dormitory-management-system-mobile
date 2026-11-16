@@ -29,6 +29,7 @@ export {
 } from "./Layout";
 export { PhotoBackground } from "./PhotoBackground";
 export { Screen } from "./Screen";
+export { TabBarMetrics, useTabBarSpace } from "./TabBarSpace";
 export { WebStatusBarStrip } from "./WebStatusBarStrip";
 export { Motion } from "./Motion";
 export { ScreenTransition, webScreenLayout } from "./ScreenTransition";

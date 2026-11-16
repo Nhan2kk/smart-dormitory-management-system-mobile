@@ -12,7 +12,6 @@ import {
   makeStyles,
   radius,
   spacing,
-  TAB_BAR_SPACE,
   Tone,
   useTheme,
   withAlpha,
@@ -31,6 +30,7 @@ import {
   SectionHeader,
   StatusBadge,
   Touchable,
+  useTabBarSpace,
 } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { useDebts } from "../debts/useDebts";
@@ -108,6 +108,7 @@ export function HomeScreen() {
   const { colors, glass, isDark } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const tabBarSpace = useTabBarSpace();
   const [menuOpen, setMenuOpen] = useState(false);
   const name = user?.fullName ?? "";
   // Lời chào theo buổi và ngày hiện tại trên máy; tên gọi là 2 chữ cuối của họ tên.
@@ -133,7 +134,7 @@ export function HomeScreen() {
       <Backdrop ambient={false} />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: TAB_BAR_SPACE }}
+        contentContainerStyle={{ paddingBottom: tabBarSpace }}
       >
         {/* Thanh trên + tiêu đề */}
         <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>

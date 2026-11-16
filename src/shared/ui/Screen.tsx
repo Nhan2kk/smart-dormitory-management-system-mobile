@@ -5,8 +5,9 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { spacing, TAB_BAR_SPACE, useTheme } from "../theme";
+import { spacing, useTheme } from "../theme";
 import { Backdrop } from "./Backdrop";
+import { useTabBarSpace } from "./TabBarSpace";
 
 type Props = {
   children: ReactNode;
@@ -34,8 +35,9 @@ export function Screen({
 }: Props) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const tabBarSpace = useTabBarSpace();
   const padding = padded ? spacing.xl : 0;
-  const bottom = inTabs ? TAB_BAR_SPACE : footer ? spacing.xl : spacing.xxxl;
+  const bottom = inTabs ? tabBarSpace : footer ? spacing.xl : spacing.xxxl;
   return (
     <View style={[styles.flex, { backgroundColor: colors.background }]}>
       <Backdrop />

@@ -11,8 +11,8 @@ import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Photos } from "../../shared/images";
 import { usePreferences } from "../../shared/preferences";
-import { makeStyles, radius, spacing, TAB_BAR_SPACE, useTheme } from "../../shared/theme";
-import { Avatar, Backdrop, BottomSheet, Button, Card, CircleButton, IconName, ListRow, PhotoBackground, Touchable, useToast } from "../../shared/ui";
+import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
+import { Avatar, Backdrop, BottomSheet, Button, Card, CircleButton, IconName, ListRow, PhotoBackground, Touchable, useTabBarSpace, useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { useDebts } from "../debts/useDebts";
 import { requestStats } from "../requests/requestModel";
@@ -34,6 +34,7 @@ export function ProfileScreen() {
   const prefs = usePreferences();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const tabBarSpace = useTabBarSpace();
   const remainingDays = useResidency().overview?.remainingDays() ?? null;
   const unpaidDebt = useDebts().ledger?.totalUnpaid() ?? 0;
   const { profile } = useProfile();
@@ -85,7 +86,7 @@ export function ProfileScreen() {
   return (
     <View style={styles.root}>
       <Backdrop />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + spacing.md, paddingBottom: TAB_BAR_SPACE, paddingHorizontal: spacing.xl }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + spacing.md, paddingBottom: tabBarSpace, paddingHorizontal: spacing.xl }}>
         <View style={styles.topBar}>
           <CircleButton icon="chevron-back" label={t("common.back")} onPress={() => (router.canGoBack() ? router.back() : router.navigate("/"))} />
         </View>
