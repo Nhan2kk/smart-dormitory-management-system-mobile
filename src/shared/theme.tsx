@@ -298,6 +298,8 @@ export const spacing = {
   xxxl: 32,
 };
 export const radius = { sm: 10, md: 14, lg: 20, xl: 26, pill: 999 };
+/** Khoảng trống dưới cùng để nội dung không bị thanh tab nổi che. */
+export const TAB_BAR_SPACE = 120;
 
 /** Độ đục của bề mặt khi bật chế độ kính (càng nhỏ càng trong). */
 const GLASS_ALPHA: Record<GlassLevel, number> = {

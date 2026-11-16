@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, useTheme } from "../../shared/theme";
-import { Glass, IconName, TabBarMetrics, Touchable } from "../../shared/ui";
+import { Glass, IconName, Touchable } from "../../shared/ui";
 import { SupportLauncherMenu } from "../support/SupportLauncherMenu";
 import { useSupportChatState } from "../chat/SupportChatProvider";
 
@@ -21,6 +21,14 @@ const tabs: Record<string, { icons: [IconName, IconName]; label: "tabs.home" | "
   profile: { icons: ["person-outline", "person"], label: "tabs.profile" },
 };
 
+/**
+ * Khoảng cách từ thanh tab tới mép dưới. Bản web (app cài ra màn hình chính) để thanh sát đáy, vạch home
+ * của iPhone nằm đè lên mép dưới thanh như ứng dụng gốc; bản native giữ khoảng tránh vạch home.
+ */
+function bottomGap(insetBottom: number) {
+  return Platform.OS === "web" ? Math.max(insetBottom - 24, 10) : Math.max(insetBottom - 6, 12);
+}
+
 /** Thanh tab nổi bằng kính mờ, nút tạo yêu cầu nhô lên ở giữa (vùng ngón cái dễ chạm). */
 export function FloatingTabBar({ state, emitter, navigateToTab, insets }: TabBarProps) {
   const styles = useStyles();
@@ -29,7 +37,7 @@ export function FloatingTabBar({ state, emitter, navigateToTab, insets }: TabBar
   const [supportOpen, setSupportOpen] = useState(false);
   const { unread } = useSupportChatState();
   return (
-    <View pointerEvents="box-none" style={[styles.wrap, { paddingBottom: TabBarMetrics.bottomGap(insets.bottom) }]}>
+    <View pointerEvents="box-none" style={[styles.wrap, { paddingBottom: bottomGap(insets.bottom) }]}>
       <View style={[styles.shadow, shadow(3)]}>
         <Glass intensity={70} style={styles.bar}>
           {state.routes.map((route, index) => {
@@ -83,7 +91,7 @@ const useStyles = makeStyles(({ colors, tones }) => ({
   wrap: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 16 },
   shadow: { borderRadius: radius.pill, width: "100%", maxWidth: 520, alignSelf: "center" },
   // Bo tròn hoàn toàn hai đầu; chừa lề trong rộng hơn để icon ngoài cùng không sát mép cong.
-  bar: { flexDirection: "row", alignItems: "center", borderRadius: radius.pill, height: TabBarMetrics.HEIGHT, paddingHorizontal: 14 },
+  bar: { flexDirection: "row", alignItems: "center", borderRadius: radius.pill, height: 72, paddingHorizontal: 14 },
   item: { flex: 1, alignItems: "center", justifyContent: "center", gap: 3, height: "100%" },
   // Nền icon đang chọn là hình tròn (rộng = cao).
   iconWrap: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
