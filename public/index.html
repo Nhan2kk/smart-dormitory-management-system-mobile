@@ -44,45 +44,40 @@
           height: 100dvh;
         }
       }
-      /* Mở từ icon ở màn hình chính (iOS): khóa trang tại chỗ để bàn phím không đẩy lệch giao diện; chiều cao
-         cố định theo lúc mở app (--app-height do script bên dưới tính) để bàn phím không làm co giao diện. */
+      /* Mở từ icon ở màn hình chính (iOS): khóa trang tại chỗ để bàn phím không đẩy lệch giao diện. Kích thước
+         lấy theo màn hình hiện tại (inset: 0) chứ không đóng băng số đo lúc mở, nên ra vào app vẫn vừa khít. */
       html.standalone,
       html.standalone body {
         position: fixed;
         inset: 0;
+        height: auto;
         overflow: hidden;
         overscroll-behavior: none;
       }
-      html.standalone,
-      html.standalone body,
       html.standalone #root {
-        height: var(--app-height, 100dvh);
+        height: 100%;
       }
     </style>
     <script>
-      /* Chế độ màn hình chính: chiều cao lấy một lần lúc mở (và khi xoay máy), không theo bàn phím; bàn phím
-         đóng thì đưa trang về vị trí cũ (iOS cuộn trang để lộ ô nhập nhưng không tự cuộn lại). */
+      /* Chế độ màn hình chính: bàn phím đóng hoặc quay lại app thì đưa trang về vị trí cũ (iOS cuộn trang để lộ
+         ô nhập nhưng không tự cuộn lại). */
       (function () {
         var standalone =
           window.navigator.standalone === true ||
           (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
         if (!standalone) return;
-        var root = document.documentElement;
-        root.classList.add("standalone");
-        function fit() {
-          root.style.setProperty("--app-height", window.innerHeight + "px");
-        }
+        document.documentElement.classList.add("standalone");
         function settle() {
           window.scrollTo(0, 0);
           document.body.scrollTop = 0;
         }
-        fit();
-        window.addEventListener("orientationchange", function () {
-          setTimeout(fit, 300);
-        });
         document.addEventListener("focusout", function () {
           setTimeout(settle, 50);
         });
+        document.addEventListener("visibilitychange", function () {
+          if (document.visibilityState === "visible") setTimeout(settle, 50);
+        });
+        window.addEventListener("pageshow", settle);
         if (window.visualViewport) {
           window.visualViewport.addEventListener("resize", function () {
             if (window.visualViewport.height >= window.innerHeight - 1) settle();
