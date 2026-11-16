@@ -41,7 +41,58 @@
           height: 100dvh;
         }
       }
+      /* Mở từ icon ở màn hình chính (iOS): khóa trang tại chỗ để bàn phím không đẩy lệch giao diện, và cao
+         đúng cả màn hình (--app-height do script bên dưới tính). */
+      html.standalone,
+      html.standalone body {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      html.standalone,
+      html.standalone body,
+      html.standalone #root {
+        height: var(--app-height, 100dvh);
+      }
     </style>
+    <script>
+      /* iOS ở chế độ màn hình chính với thanh trạng thái trong suốt báo chiều cao trang thiếu đúng bằng phần
+         tai thỏ, để lại dải trống dưới thanh tab. Dùng chiều cao màn hình thật; bàn phím đóng thì đưa trang
+         về vị trí cũ (iOS cuộn trang để lộ ô nhập nhưng không tự cuộn lại). */
+      (function () {
+        var standalone =
+          window.navigator.standalone === true ||
+          (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+        if (!standalone) return;
+        var root = document.documentElement;
+        root.classList.add("standalone");
+        function fit() {
+          var portrait = window.innerHeight >= window.innerWidth;
+          var screenHeight = portrait
+            ? Math.max(window.screen.height, window.screen.width)
+            : Math.min(window.screen.height, window.screen.width);
+          root.style.setProperty("--app-height", Math.max(window.innerHeight, screenHeight) + "px");
+        }
+        function settle() {
+          window.scrollTo(0, 0);
+          document.body.scrollTop = 0;
+        }
+        fit();
+        window.addEventListener("orientationchange", function () {
+          setTimeout(fit, 300);
+        });
+        window.addEventListener("resize", fit);
+        document.addEventListener("focusout", function () {
+          setTimeout(settle, 50);
+        });
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener("resize", function () {
+            if (window.visualViewport.height >= window.innerHeight - 1) settle();
+          });
+        }
+      })();
+    </script>
   </head>
 
   <body>
