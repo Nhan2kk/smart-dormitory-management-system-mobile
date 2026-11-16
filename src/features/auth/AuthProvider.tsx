@@ -9,6 +9,7 @@ import {
 } from "react";
 import { ApiCallOptions, ApiClient, ApiError, apiCall } from "../../shared/api";
 import { AuthService } from "../../services/auth.service";
+import { WebPushService } from "../../services/web-push.service";
 import { AuthResponse, AuthUser } from "../../models/auth.model";
 import { SessionStore } from "./SessionStore";
 
@@ -127,10 +128,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const current = accessToken
       ? { refreshToken: token, accessToken }
       : await AuthService.refresh(token).catch(() => null);
-    if (current)
+    if (current) {
+      // Bản web: máy này thôi nhận thông báo đẩy của tài khoản vừa đăng xuất.
+      await new WebPushService((path, options) =>
+        apiCall(path, { ...options, accessToken: current.accessToken }),
+      ).detach().catch(() => undefined);
       await AuthService.logout(current.refreshToken, current.accessToken).catch(
         () => undefined,
       );
+    }
   }, [session]);
 
   /** Dùng chung một lượt refresh khi nhiều request cùng gặp 401. */

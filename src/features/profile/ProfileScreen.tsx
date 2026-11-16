@@ -2,8 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { Href, router } from "expo-router";
 import { ReactNode, useMemo, useState } from "react";
 import { AvatarService } from "../../services/avatar.service";
+import { WebPushService } from "../../services/web-push.service";
+import { WebPushEnableResult } from "../../enums/web-push.enum";
 import { errorMessage } from "../../shared/api";
-import { ScrollView, Switch, Text, View } from "react-native";
+import { Platform, ScrollView, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
@@ -23,6 +25,7 @@ import { useProfile } from "./useProfile";
 export function ProfileScreen() {
   const { user, signOut, request, updateUser } = useAuth();
   const avatarService = useMemo(() => new AvatarService(request), [request]);
+  const webPush = useMemo(() => new WebPushService(request), [request]);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const avatarUrl = user?.avatarUrl ?? null;
   const { notify } = useToast();
@@ -160,10 +163,32 @@ export function ProfileScreen() {
             title={t("profile.push")}
             subtitle={t("profile.pushSub")}
             right={switchControl(
-              prefs.push,
+              // Bản web: chỉ coi là bật khi trình duyệt đã cấp quyền thông báo.
+              Platform.OS === "web" ? prefs.push && WebPushService.granted : prefs.push,
               (value) => {
-                prefs.update({ push: value });
-                notify(value ? t("profile.pushOn") : t("profile.pushOff"), "info");
+                if (Platform.OS !== "web") {
+                  prefs.update({ push: value });
+                  notify(value ? t("profile.pushOn") : t("profile.pushOff"), "info");
+                  return;
+                }
+                if (!value) {
+                  prefs.update({ push: false });
+                  void webPush.disable();
+                  notify(t("profile.pushOff"), "info");
+                  return;
+                }
+                // Gọi ngay trong sự kiện bấm: iOS chỉ cho xin quyền thông báo khi người dùng thao tác.
+                webPush
+                  .enable()
+                  .then((result) => {
+                    if (result === WebPushEnableResult.Enabled) {
+                      prefs.update({ push: true });
+                      notify(t("profile.pushOn"), "success");
+                    } else if (result === WebPushEnableResult.Denied) notify(t("profile.pushDenied"), "danger");
+                    else if (result === WebPushEnableResult.ServerDisabled) notify(t("profile.pushServerOff"), "danger");
+                    else notify(t("profile.pushUnsupported"), "info");
+                  })
+                  .catch((error) => notify(errorMessage(error), "danger"));
               },
               t("profile.push"),
             )}

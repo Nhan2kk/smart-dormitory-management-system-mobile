@@ -2,6 +2,7 @@ import { Redirect, Stack } from "expo-router";
 import { useAuth } from "../../features/auth/AuthProvider";
 import { SplashView } from "../../features/auth/SplashView";
 import { NotificationsProvider } from "../../features/notifications/NotificationsProvider";
+import { WebPushSync } from "../../features/notifications/WebPushSync";
 import { RealtimeProvider } from "../../features/realtime/RealtimeProvider";
 import { useTheme } from "../../shared/theme";
 import { SupportChatProvider } from "../../features/chat/SupportChatProvider";
@@ -20,6 +21,7 @@ export default function ProtectedLayout() {
     <RealtimeProvider>
     <SupportChatProvider>
     <NotificationsProvider>
+      <WebPushSync />
       <Stack
         screenLayout={appScreenLayout}
         screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}
