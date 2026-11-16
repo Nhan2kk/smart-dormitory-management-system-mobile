@@ -9,7 +9,10 @@ import { Touchable } from "./Touchable";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
-/** Nút tròn kính mờ: "surface" theo theme, "photo" dùng trên ảnh. */
+/**
+ * Nút tròn: "surface" nền đặc theo theme, viền rõ, không làm mờ và không đổ bóng để mép nút sắc nét;
+ * "photo" là kính tối dùng trên ảnh.
+ */
 export function CircleButton({
   icon,
   onPress,
@@ -26,28 +29,32 @@ export function CircleButton({
   badge?: boolean | number;
   size?: number;
 }) {
-  const { colors, shadow } = useTheme();
+  const { colors } = useTheme();
   const styles = useStyles();
   return (
     <Touchable
       onPress={onPress}
       accessibilityLabel={label}
-      style={[{ borderRadius: size / 2 }, variant === "surface" && shadow(1)]}
+      style={{ borderRadius: size / 2 }}
     >
-      <Glass
-        variant={variant}
-        strong={variant === "surface"}
-        style={[
-          styles.circle,
-          { width: size, height: size, borderRadius: size / 2 },
-        ]}
-      >
-        <Ionicons
-          name={icon}
-          size={size * 0.47}
-          color={variant === "photo" ? colors.white : colors.ink}
-        />
-      </Glass>
+      {variant === "photo" ? (
+        <Glass
+          variant="photo"
+          style={[styles.circle, { width: size, height: size, borderRadius: size / 2 }]}
+        >
+          <Ionicons name={icon} size={size * 0.47} color={colors.white} />
+        </Glass>
+      ) : (
+        <View
+          style={[
+            styles.circle,
+            styles.solid,
+            { width: size, height: size, borderRadius: size / 2 },
+          ]}
+        >
+          <Ionicons name={icon} size={size * 0.47} color={colors.ink} />
+        </View>
+      )}
       {typeof badge === "number"
         ? badge > 0 && (
             <View style={styles.countBadge} pointerEvents="none">
@@ -133,6 +140,7 @@ const useStyles = makeStyles(({ colors, font }) => ({
   onPhoto: { color: colors.white },
   onPhotoSoft: { color: "rgba(255,255,255,0.82)" },
   circle: { alignItems: "center", justifyContent: "center" },
+  solid: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   badge: {
     position: "absolute",
     top: 9,
