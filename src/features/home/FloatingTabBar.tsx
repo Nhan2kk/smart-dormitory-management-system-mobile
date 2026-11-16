@@ -62,7 +62,7 @@ export function FloatingTabBar({ state, emitter, navigateToTab, insets }: TabBar
                 pressScale={0.92}
               >
                 <View style={[styles.iconWrap, focused && styles.iconActive]}>
-                  <Ionicons name={focused ? meta.icons[1] : meta.icons[0]} size={22} color={focused ? colors.primary : colors.muted} />
+                  <Ionicons name={focused ? meta.icons[1] : meta.icons[0]} size={19} color={focused ? colors.primary : colors.muted} />
                 </View>
                 <Text style={[styles.label, focused && styles.labelActive]} numberOfLines={1}>
                   {label}
@@ -85,7 +85,8 @@ const useStyles = makeStyles(({ colors, tones }) => ({
   // Bo tròn hoàn toàn hai đầu; chừa lề trong rộng hơn để icon ngoài cùng không sát mép cong.
   bar: { flexDirection: "row", alignItems: "center", borderRadius: radius.pill, height: 72, paddingHorizontal: 14 },
   item: { flex: 1, alignItems: "center", justifyContent: "center", gap: 3, height: "100%" },
-  iconWrap: { width: 46, height: 30, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
+  // Nền icon đang chọn là hình tròn (rộng = cao).
+  iconWrap: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   iconActive: { backgroundColor: colors.primarySoft },
   label: { fontSize: 11, fontWeight: "600", color: colors.muted },
   labelActive: { color: colors.primary, fontWeight: "800" },
