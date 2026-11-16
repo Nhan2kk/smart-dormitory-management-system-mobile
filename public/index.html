@@ -32,6 +32,15 @@
         height: 100%;
         flex: 1;
       }
+      /* Safari iPhone: 100% chỉ bằng chiều cao lúc thanh trình duyệt đang hiện, thu thanh lại thì đáy
+         lộ khoảng trống. 100dvh luôn bằng phần đang nhìn thấy nên thanh tab bám sát đáy như app. */
+      @supports (height: 100dvh) {
+        html,
+        body,
+        #root {
+          height: 100dvh;
+        }
+      }
     </style>
   </head>
 
