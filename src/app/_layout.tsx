@@ -6,7 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../features/auth/AuthProvider";
 import { PreferencesProvider } from "../shared/preferences";
 import { useTheme } from "../shared/theme";
-import { ToastProvider, webScreenLayout } from "../shared/ui";
+import { ToastProvider, WebStatusBarStrip, webScreenLayout } from "../shared/ui";
 
 // Màn đăng nhập trượt vào; màn chào và nhóm màn hình đã đăng nhập chỉ hiện dần.
 const rootScreenLayout = webScreenLayout((name) => (name === "login" ? "push" : "fade"));
@@ -44,6 +44,8 @@ function ThemedStack() {
         <Stack.Screen name="welcome" options={{ animation: "fade" }} />
         <Stack.Screen name="login" />
       </Stack>
+      {/* Đặt sau Stack để nằm trên cùng: vùng tai thỏ màu đặc theo giao diện, không bị Safari làm mờ. */}
+      <WebStatusBarStrip color={colors.background} />
     </>
   );
 }
