@@ -21,12 +21,12 @@ const tabs: Record<string, { icons: [IconName, IconName]; label: "tabs.home" | "
   profile: { icons: ["person-outline", "person"], label: "tabs.profile" },
 };
 
-/**
- * Khoảng cách từ thanh tab tới mép dưới. Bản web (app cài ra màn hình chính) để thanh sát đáy, vạch home
- * của iPhone nằm đè lên mép dưới thanh như ứng dụng gốc; bản native giữ khoảng tránh vạch home.
- */
+/** Bản web: thanh tab luôn cách mép dưới cố định 10pt, không tính vùng an toàn (vạch home nằm đè lên mép thanh). */
+const WEB_BOTTOM_GAP = 10;
+
+/** Khoảng cách từ thanh tab tới mép dưới; bản native giữ khoảng tránh vạch home như cũ. */
 function bottomGap(insetBottom: number) {
-  return Platform.OS === "web" ? Math.max(insetBottom - 24, 10) : Math.max(insetBottom - 6, 12);
+  return Platform.OS === "web" ? WEB_BOTTOM_GAP : Math.max(insetBottom - 6, 12);
 }
 
 /** Thanh tab nổi bằng kính mờ, nút tạo yêu cầu nhô lên ở giữa (vùng ngón cái dễ chạm). */
