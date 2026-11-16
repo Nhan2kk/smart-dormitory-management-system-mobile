@@ -13,9 +13,9 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="KTX DN" />
-    <!-- "default": iOS tự chừa vùng tai thỏ (thanh trạng thái đặc, nội dung bắt đầu bên dưới). Không dùng
-         "black-translucent": ở chế độ màn hình chính iOS báo chiều cao trang thiếu, để hở dải trống ở đáy. -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- "black-translucent": app vẽ cả vùng tai thỏ để thanh trạng thái cùng màu nền app ("default" luôn trắng).
+         iOS báo chiều cao trang thiếu đúng phần tai thỏ ở chế độ này: script bên dưới bù lại. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
@@ -45,7 +45,7 @@
         }
       }
       /* Mở từ icon ở màn hình chính (iOS): khóa trang tại chỗ để bàn phím không đẩy lệch giao diện; chiều cao
-         cố định theo lúc mở app (--app-height do script bên dưới tính) để bàn phím không làm co giao diện. */
+         bằng cả màn hình (--app-height do script bên dưới tính), không co theo bàn phím. */
       html.standalone,
       html.standalone body {
         position: fixed;
@@ -60,8 +60,9 @@
       }
     </style>
     <script>
-      /* Chế độ màn hình chính: chiều cao lấy một lần lúc mở (và khi xoay máy), không theo bàn phím; bàn phím
-         đóng thì đưa trang về vị trí cũ (iOS cuộn trang để lộ ô nhập nhưng không tự cuộn lại). */
+      /* Chế độ màn hình chính: iOS báo chiều cao trang thiếu đúng phần tai thỏ khi thanh trạng thái trong suốt,
+         để hở dải trống ở đáy. Dùng chiều cao màn hình thật (lấy số lớn hơn nên iOS sửa lỗi cũng không dư),
+         không theo bàn phím; bàn phím đóng thì đưa trang về vị trí cũ (iOS không tự cuộn lại). */
       (function () {
         var standalone =
           window.navigator.standalone === true ||
@@ -70,7 +71,11 @@
         var root = document.documentElement;
         root.classList.add("standalone");
         function fit() {
-          root.style.setProperty("--app-height", window.innerHeight + "px");
+          var portrait = window.innerHeight >= window.innerWidth;
+          var screenHeight = portrait
+            ? Math.max(window.screen.height, window.screen.width)
+            : Math.min(window.screen.height, window.screen.width);
+          root.style.setProperty("--app-height", Math.max(window.innerHeight, screenHeight) + "px");
         }
         function settle() {
           window.scrollTo(0, 0);
