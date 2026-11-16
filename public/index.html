@@ -12,7 +12,9 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="KTX DN" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- "default": iOS tự chừa vùng tai thỏ (thanh trạng thái đặc, nội dung bắt đầu bên dưới). Không dùng
+         "black-translucent": ở chế độ màn hình chính iOS báo chiều cao trang thiếu, để hở dải trống ở đáy. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
@@ -41,8 +43,8 @@
           height: 100dvh;
         }
       }
-      /* Mở từ icon ở màn hình chính (iOS): khóa trang tại chỗ để bàn phím không đẩy lệch giao diện, và cao
-         đúng cả màn hình (--app-height do script bên dưới tính). */
+      /* Mở từ icon ở màn hình chính (iOS): khóa trang tại chỗ để bàn phím không đẩy lệch giao diện; chiều cao
+         cố định theo lúc mở app (--app-height do script bên dưới tính) để bàn phím không làm co giao diện. */
       html.standalone,
       html.standalone body {
         position: fixed;
@@ -57,9 +59,8 @@
       }
     </style>
     <script>
-      /* iOS ở chế độ màn hình chính với thanh trạng thái trong suốt báo chiều cao trang thiếu đúng bằng phần
-         tai thỏ, để lại dải trống dưới thanh tab. Dùng chiều cao màn hình thật; bàn phím đóng thì đưa trang
-         về vị trí cũ (iOS cuộn trang để lộ ô nhập nhưng không tự cuộn lại). */
+      /* Chế độ màn hình chính: chiều cao lấy một lần lúc mở (và khi xoay máy), không theo bàn phím; bàn phím
+         đóng thì đưa trang về vị trí cũ (iOS cuộn trang để lộ ô nhập nhưng không tự cuộn lại). */
       (function () {
         var standalone =
           window.navigator.standalone === true ||
@@ -68,11 +69,7 @@
         var root = document.documentElement;
         root.classList.add("standalone");
         function fit() {
-          var portrait = window.innerHeight >= window.innerWidth;
-          var screenHeight = portrait
-            ? Math.max(window.screen.height, window.screen.width)
-            : Math.min(window.screen.height, window.screen.width);
-          root.style.setProperty("--app-height", Math.max(window.innerHeight, screenHeight) + "px");
+          root.style.setProperty("--app-height", window.innerHeight + "px");
         }
         function settle() {
           window.scrollTo(0, 0);
@@ -82,7 +79,6 @@
         window.addEventListener("orientationchange", function () {
           setTimeout(fit, 300);
         });
-        window.addEventListener("resize", fit);
         document.addEventListener("focusout", function () {
           setTimeout(settle, 50);
         });
