@@ -13,7 +13,7 @@ const rootScreenLayout = webScreenLayout((name) => (name === "login" ? "push" : 
 
 /**
  * Bản web: thanh trình duyệt / vùng tai thỏ lấy màu nền trang và theme-color. Đồng bộ theo giao diện
- * đang chọn để không còn dải trắng phía trên (index.html đặt sẵn #FFFFFF).
+ * đang chọn để không còn dải trắng phía trên (index.html đặt sẵn màu nền mặc định #EFEDE7).
  */
 function useWebChromeColor(color: string) {
   useEffect(() => {
