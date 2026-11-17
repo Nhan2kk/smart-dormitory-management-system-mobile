@@ -78,7 +78,7 @@ export function AppUpdateBanner() {
       {/* Nền đặc thay cho kính mờ: Safari iPhone vẽ hỏng backdrop-filter ở phần tử nổi. */}
       <View style={[styles.card, shadow(3)]}>
         <View style={[styles.icon, { backgroundColor: tones.info.bg }]}>
-          <Ionicons name="sparkles" size={17} color={tones.info.fg} />
+          <Ionicons name="refresh" size={17} color={tones.info.fg} />
         </View>
         <View style={styles.texts}>
           <Text style={styles.title}>{t("appUpdate.title")}</Text>
