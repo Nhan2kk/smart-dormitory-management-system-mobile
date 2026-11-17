@@ -240,6 +240,11 @@ export const vi = {
     lateUntil: "Được đóng trễ tới {{time}}",
     anyMemberCanPay: "Thành viên nào đang ở phòng cũng có thể đóng toàn bộ hóa đơn.",
   },
+  appUpdate: {
+    title: "Đã có phiên bản mới",
+    body: "Tải lại để dùng bản cập nhật mới nhất.",
+    reload: "Tải lại",
+  },
   common: {
     back: "Quay lại",
     close: "Đóng",

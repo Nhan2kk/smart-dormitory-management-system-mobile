@@ -242,6 +242,11 @@ export const en: Dictionary = {
     lateUntil: "Late payment allowed until {{time}}",
     anyMemberCanPay: "Any member living in the room can pay the whole bill.",
   },
+  appUpdate: {
+    title: "A new version is available",
+    body: "Reload to get the latest update.",
+    reload: "Reload",
+  },
   common: {
     back: "Back",
     close: "Close",

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AppUpdateBanner } from "../features/app-update/AppUpdateBanner";
 import { AuthProvider } from "../features/auth/AuthProvider";
 import { PreferencesProvider } from "../shared/preferences";
 import { useTheme } from "../shared/theme";
@@ -46,6 +47,7 @@ function ThemedStack() {
       </Stack>
       {/* Đặt sau Stack để nằm trên cùng: vùng tai thỏ màu đặc theo giao diện, không bị Safari làm mờ. */}
       <WebStatusBarStrip color={colors.background} />
+      <AppUpdateBanner />
     </>
   );
 }
