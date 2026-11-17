@@ -16,7 +16,7 @@ export function RoomUtilityPolicySection({ policy }: { policy: RoomUtilityPolicy
   const [open, setOpen] = useState(false);
   const e = policy.example;
   const s = policy.schedule;
-  const rules = { reminderDays: s?.reminderDays ?? 3, lateDays: s?.lateDays ?? 5 };
+  const rules = { reminderDays: s?.reminderDays ?? 3, lateDays: s?.lateDays ?? 0 };
   const items = [
     t("roomUtility.policyRules.close", { time: Formatter.dateTime(e.closeAt) }),
     t("roomUtility.policyRules.due", { time: Formatter.dateTime(e.dueAt) }),
