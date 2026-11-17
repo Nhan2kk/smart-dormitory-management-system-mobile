@@ -1,16 +1,33 @@
 import { Text, View } from "react-native";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
-import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
+import { makeStyles, radius, spacing, useTheme, withAlpha } from "../../shared/theme";
 import { Touchable } from "../../shared/ui";
 import { DailyRecord } from "../../models/utilities.model";
 import { UtilityMetric } from "../../enums/utilities.enum";
 import { UtilityUsage } from "./UtilityUsage";
 
+/** Kiểm tra ô màu `hex` ở độ mờ `alpha` trên nền `backdropHex` có tối không để chọn chữ trắng hay tối. */
+function isDarkFill(hex: string, alpha: number, backdropHex: string) {
+  const parse = (value: string) => {
+    const raw = value.startsWith("#") ? value.slice(1) : "";
+    if (raw.length !== 6) return null;
+    const n = parseInt(raw, 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  };
+  const fg = parse(hex);
+  const bg = parse(backdropHex);
+  if (!fg || !bg) return alpha > 0.45;
+  const r = fg.r * alpha + bg.r * (1 - alpha);
+  const g = fg.g * alpha + bg.g * (1 - alpha);
+  const b = fg.b * alpha + bg.b * (1 - alpha);
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.52;
+}
+
 /** Lịch nhiệt theo ngày của một tháng (yyyy-MM): ô càng đậm tiêu thụ càng cao; ngày chưa có số đo để mờ. */
 export function UtilityCalendar({ month, records, firstStayDate = null, metric = "electricity", onSelect }: { month: string; records: DailyRecord[]; firstStayDate?: string | null; metric?: UtilityMetric; onSelect: (record: DailyRecord) => void }) {
   const styles = useStyles();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { t } = useI18n();
   const color = metric === "electricity" ? colors.primary : colors.info;
   const unit = metric === "electricity" ? "kWh" : "m³";
@@ -54,15 +71,16 @@ export function UtilityCalendar({ month, records, firstStayDate = null, metric =
             );
           }
           const level = (record[metric] - min) / Math.max(0.0001, max - min);
-          const strong = level > 0.55;
+          const alpha = 0.18 + level * 0.82;
+          const darkCell = isDarkFill(color, alpha, isDark ? colors.background : colors.white);
           return (
             <View key={date} style={styles.cell}>
               <Touchable
                 onPress={() => onSelect(record)}
                 accessibilityLabel={`${Formatter.date(UtilityUsage.dateOf(date))}: ${Formatter.decimal(record[metric], metric === "electricity" ? 2 : 3)} ${unit}`}
-                style={[styles.day, { backgroundColor: color, opacity: 0.18 + level * 0.82 }]}
+                style={[styles.day, { backgroundColor: withAlpha(color, alpha) }]}
               >
-                <Text style={[styles.dayText, { color: strong ? colors.onPrimary : colors.ink }]}>{dayNumber}</Text>
+                <Text style={[styles.dayText, { color: darkCell ? colors.white : isDark ? colors.background : colors.ink }]}>{dayNumber}</Text>
               </Touchable>
             </View>
           );
@@ -71,7 +89,7 @@ export function UtilityCalendar({ month, records, firstStayDate = null, metric =
       <View style={styles.legend}>
         <Text style={styles.legendText}>{t("utilities.less")}</Text>
         {[0.2, 0.4, 0.6, 0.8, 1].map((value) => (
-          <View key={value} style={[styles.legendCell, { backgroundColor: color, opacity: value }]} />
+          <View key={value} style={[styles.legendCell, { backgroundColor: withAlpha(color, value) }]} />
         ))}
         <Text style={styles.legendText}>{t("utilities.more")}</Text>
       </View>

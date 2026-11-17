@@ -13,9 +13,9 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="KTX DN" />
-    <!-- "default": iOS tự chừa vùng tai thỏ (thanh trạng thái đặc, nội dung bắt đầu bên dưới). Không dùng
-         "black-translucent": ở chế độ màn hình chính iOS báo chiều cao trang thiếu, để hở dải trống ở đáy. -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- "black-translucent": cho phép nền app tràn lên vùng tai thỏ thay vì dải trắng mặc định của iOS.
+         Kết hợp với `html.standalone { position: fixed; inset: 0; }` bên dưới để giữ đúng chiều cao toàn màn hình. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->

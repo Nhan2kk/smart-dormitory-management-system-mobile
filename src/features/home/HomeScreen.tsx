@@ -13,7 +13,6 @@ import {
   radius,
   spacing,
   TAB_BAR_SPACE,
-  Tone,
   useTheme,
   withAlpha,
 } from "../../shared/theme";
@@ -49,55 +48,46 @@ const services: {
   key: TranslationKey;
   icon: IconName;
   href: Href;
-  tone: Tone;
 }[] = [
   {
     key: "home.service.register",
     icon: "clipboard-outline",
     href: "/register-dorm",
-    tone: "violet",
   },
   {
     key: "home.service.checkIn",
     icon: "key-outline",
     href: "/check-in",
-    tone: "success",
   },
   {
     key: "home.service.residency",
     icon: "id-card-outline",
     href: "/residency-record",
-    tone: "info",
   },
   {
     key: "home.service.debts",
     icon: "wallet-outline",
     href: "/debts",
-    tone: "warning",
   },
   {
     key: "home.service.utilities",
     icon: "flash-outline",
     href: "/utilities",
-    tone: "primary",
   },
   {
     key: "home.service.support",
     icon: "construct-outline",
     href: "/request/create/supportMaintenance",
-    tone: "danger",
   },
   {
     key: "home.service.assistant",
     icon: "sparkles-outline",
     href: "/assistant",
-    tone: "violet",
   },
   {
     key: "home.service.notifications",
     icon: "notifications-outline",
     href: "/notifications",
-    tone: "info",
   },
 ];
 
@@ -150,7 +140,7 @@ export function HomeScreen() {
               onPress={open("/notifications")}
             />
           </View>
-          <Text style={styles.dateLine}>
+          <Text style={[styles.dateLine, glass && { color: colors.inkSoft }]}>
             {Formatter.weekdayLong(now)}, {Formatter.date(now)}
           </Text>
           <Text style={styles.headline} accessibilityRole="header">
@@ -184,17 +174,17 @@ export function HomeScreen() {
           )}
         </PhotoBackground>
 
-        {/* Thẻ nổi: trắng ở trên, chuyển dần xuống màu nền ở dưới */}
+        {/* Thẻ nổi: mặc định chuyển dần xuống màu nền; chế độ kính tách dưới ảnh để không lộ mép cắt ngang qua các ô. */}
         <Gradient
           colors={
             glass
-              ? [colors.glassStrong, withAlpha(colors.background, 0)]
+              ? [colors.glassStrong, colors.glass]
               : // Thẻ "Chỗ ở của tôi": trên trắng, dưới chuyển dần về màu nền dùng chung.
                 [isDark ? colors.surface : "#FFFFFF", colors.background]
           }
           direction="vertical"
           eased
-          style={styles.sheet}
+          style={[styles.sheet, glass && styles.sheetGlass]}
         >
           <View style={styles.sheetHead}>
             <Text style={styles.sheetTitle}>{t("home.myPlace")}</Text>
@@ -424,7 +414,7 @@ export function HomeScreen() {
               style={styles.menuItem}
               pressScale={0.92}
             >
-              <IconBadge icon={service.icon} tone={service.tone} size={52} />
+              <IconBadge icon={service.icon} size={52} />
               <Text style={styles.quickLabel} numberOfLines={2}>
                 {t(service.key)}
               </Text>
@@ -572,6 +562,7 @@ const useStyles = makeStyles(({ colors, font, shadow }) => ({
   },
   photo: { height: 320, marginTop: -55 },
   photoGlass: {
+    height: 230,
     marginTop: spacing.xl,
     marginHorizontal: spacing.lg,
     borderRadius: radius.xl,
@@ -593,6 +584,14 @@ const useStyles = makeStyles(({ colors, font, shadow }) => ({
     paddingBottom: 0,
     borderTopWidth: 1,
     borderColor: withAlpha("#FFFFFF", 0.6),
+  },
+  sheetGlass: {
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
+    borderRadius: radius.xl + 4,
+    paddingBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
   sheetHead: {
     flexDirection: "row",
