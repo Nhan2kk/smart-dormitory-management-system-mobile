@@ -12,7 +12,7 @@ import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Photos } from "../../shared/images";
 import { usePreferences } from "../../shared/preferences";
 import { makeStyles, radius, spacing, TAB_BAR_SPACE, useTheme } from "../../shared/theme";
-import { Avatar, Backdrop, BottomSheet, Button, Card, CircleButton, IconName, ListRow, PhotoBackground, Touchable, useToast } from "../../shared/ui";
+import { Avatar, Backdrop, BottomSheet, Card, CircleButton, IconName, ListRow, PhotoBackground, Touchable, useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { useDebts } from "../debts/useDebts";
 import { requestStats } from "../requests/requestModel";
@@ -23,7 +23,7 @@ import { useProfile } from "./useProfile";
 
 /** Tab Cá nhân: hồ sơ, tài khoản, lưu trú, tuỳ chọn và hỗ trợ (bố cục kiểu trang Settings). */
 export function ProfileScreen() {
-  const { user, signOut, request, updateUser } = useAuth();
+  const { user, request, updateUser } = useAuth();
   const avatarService = useMemo(() => new AvatarService(request), [request]);
   const webPush = useMemo(() => new WebPushService(request), [request]);
   const [avatarBusy, setAvatarBusy] = useState(false);
@@ -39,7 +39,6 @@ export function ProfileScreen() {
   const { profile } = useProfile();
   const name = profile?.fullName || user?.fullName || "";
   const [avatarSheet, setAvatarSheet] = useState(false);
-  const [confirmLogout, setConfirmLogout] = useState(false);
   const processingRequests = requestStats(useMyRequests().requests ?? []).processing;
   const go =(href: Href) => () => router.push(href);
 
@@ -196,8 +195,7 @@ export function ProfileScreen() {
         </Section>
 
         <Section title={t("profile.sectionSupport")}>
-          <Row icon="help-circle-outline" title={t("profile.helpCenter")} subtitle={t("profile.helpCenterSub")} onPress={go("/assistant")} divider />
-          <ListRow icon="log-out-outline" title={t("profile.logout")} subtitle={t("profile.logoutSub")} destructive onPress={() => setConfirmLogout(true)} />
+          <Row icon="help-circle-outline" title={t("profile.helpCenter")} subtitle={t("profile.helpCenterSub")} onPress={go("/assistant")} />
         </Section>
 
         <Text style={styles.version}>KTX DN · {t("profile.version")} 1.0.0</Text>
@@ -219,27 +217,6 @@ export function ProfileScreen() {
         </Card>
       </BottomSheet>
 
-      <BottomSheet
-        visible={confirmLogout}
-        onClose={() => setConfirmLogout(false)}
-        title={t("profile.logoutTitle")}
-        subtitle={t("profile.logoutBody")}
-        footer={
-          <View style={{ flexDirection: "row", gap: spacing.md }}>
-            <Button label={t("common.cancel")} variant="ghost" onPress={() => setConfirmLogout(false)} style={{ flex: 1 }} />
-            <Button
-              label={t("profile.logout")}
-              variant="dark"
-              icon="log-out-outline"
-              onPress={() => {
-                setConfirmLogout(false);
-                signOut();
-              }}
-              style={{ flex: 1 }}
-            />
-          </View>
-        }
-      />
     </View>
   );
 }
