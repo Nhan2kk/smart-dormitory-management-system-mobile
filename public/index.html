@@ -59,6 +59,33 @@
       }
     </style>
     <script>
+      /* Safari iOS 26 bỏ theme-color: thanh trên lấy màu nền của html/body ngay khi trang tải, trước khi app
+         chạy. Tô sẵn màu nền theo giao diện đã lưu (giữ khớp bảng màu trong src/shared/theme.tsx) để vùng
+         giờ/pin không ra trắng. */
+      (function () {
+        var colors = {
+          sunset: ["#F7F3EE", "#16110E"],
+          lavender: ["#F4F4FB", "#10122B"],
+          sage: ["#F5F3EE", "#121610"],
+          forest: ["#EFEDE7", "#0D1713"],
+          lagoon: ["#EEF5F4", "#0B1F22"],
+          fresh: ["#F7F9F5", "#0F1610"],
+        };
+        var prefs = {};
+        try {
+          prefs = JSON.parse(window.localStorage.getItem("sdms.preferences") || "{}") || {};
+        } catch (error) {}
+        var pair = colors[prefs.preset] || colors.forest;
+        var systemDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var dark = prefs.mode === "dark" || (prefs.mode === "system" && systemDark);
+        var color = pair[dark ? 1 : 0];
+        document.documentElement.style.backgroundColor = color;
+        document.addEventListener("DOMContentLoaded", function () {
+          if (!document.body.style.backgroundColor) document.body.style.backgroundColor = color;
+        });
+      })();
+    </script>
+    <script>
       /* Chế độ màn hình chính: bàn phím đóng hoặc quay lại app thì đưa trang về vị trí cũ (iOS cuộn trang để lộ
          ô nhập nhưng không tự cuộn lại). */
       (function () {
