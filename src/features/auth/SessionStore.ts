@@ -1,10 +1,15 @@
 import { ApiError } from "../../shared/api";
 import { DeviceStorage } from "../../shared/DeviceStorage";
-import type { AuthUser } from "../../models/auth.model";
+import { AuthService } from "../../services/auth.service";
+import type { AuthResponse, AuthUser } from "../../models/auth.model";
 
 const SESSION_KEY = "sdms.session";
 /** Khoá cũ chỉ lưu refresh token (trước khi lưu kèm thông tin người dùng). */
 const LEGACY_TOKEN_KEY = "sdms.refreshToken";
+/** Khoá Web Locks: các tab cùng trình duyệt làm mới phiên lần lượt, không giẫm lên nhau. */
+const REFRESH_LOCK = "sdms.session.refresh";
+
+type LockManagerLike = { request<T>(name: string, callback: () => Promise<T>): Promise<T> };
 
 export type SavedSession = { refreshToken: string; user: AuthUser | null };
 
@@ -46,6 +51,25 @@ export class SessionStore {
         DeviceStorage.removeItem(LEGACY_TOKEN_KEY),
       ].map((task) => task.catch(() => undefined)),
     );
+  }
+
+  /**
+   * Đổi refresh token lấy phiên mới rồi lưu lại. Luôn dùng token mới nhất đang lưu trên máy (tab khác có thể
+   * vừa đổi), chỉ khi máy không còn gì mới dùng {@code fallbackToken}. Trên web chạy trong Web Lock để hai tab
+   * không cùng đem một token đi đổi.
+   */
+  static exchange(fallbackToken: string): Promise<AuthResponse> {
+    return SessionStore.withLock(async () => {
+      const saved = await SessionStore.load();
+      const next = await AuthService.refresh(saved?.refreshToken ?? fallbackToken);
+      await SessionStore.save(next.refreshToken, next.user);
+      return next;
+    });
+  }
+
+  private static withLock<T>(task: () => Promise<T>): Promise<T> {
+    const locks = (globalThis.navigator as { locks?: LockManagerLike } | undefined)?.locks;
+    return locks ? locks.request(REFRESH_LOCK, task) : task();
   }
 
   /** Server từ chối phiên (token sai, hết hạn, bị thu hồi) → phải đăng nhập lại; lỗi mạng thì giữ phiên. */

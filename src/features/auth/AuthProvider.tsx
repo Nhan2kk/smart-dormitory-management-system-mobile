@@ -42,56 +42,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     sessionRef.current = session;
   }, [session]);
 
-  useEffect(() => {
-    let mounted = true;
-    /**
-     * Mở app như Zalo: có phiên đã lưu thì vào thẳng (access token để trống, request đầu tiên tự làm mới),
-     * đồng thời làm mới phiên ngầm. Chỉ đăng xuất khi server từ chối phiên; mất mạng thì vẫn giữ.
-     */
-    async function restore() {
-      const saved = await SessionStore.load();
-      if (!saved) {
-        if (mounted) setLoading(false);
-        return;
-      }
-      if (saved.user && mounted) {
-        const cached: AuthResponse = {
-          accessToken: "",
-          refreshToken: saved.refreshToken,
-          user: saved.user,
-        };
-        sessionRef.current = cached;
-        setSession(cached);
-        setLoading(false);
-      }
-      try {
-        const refreshed = await AuthService.refresh(saved.refreshToken);
-        if (refreshed.user.role === "STUDENT") {
-          await SessionStore.save(refreshed.refreshToken, refreshed.user);
-          if (mounted) {
-            sessionRef.current = refreshed;
-            setSession(refreshed);
-          }
-        } else {
-          await SessionStore.clear();
-          if (mounted) setSession(null);
-        }
-      } catch (error) {
-        if (SessionStore.isRejected(error)) {
-          await SessionStore.clear();
-          if (mounted) setSession(null);
-        }
-        // Lỗi mạng / server tạm lỗi: giữ phiên đã lưu, lần gọi API sau sẽ làm mới lại.
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-    restore();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   const signIn = useCallback(async (username: string, password: string) => {
     if (MOCK_AUTH) {
       setSession({
@@ -139,13 +89,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session]);
 
-  /** Dùng chung một lượt refresh khi nhiều request cùng gặp 401. */
-  const refreshSession = useCallback(async () => {
-    const current = sessionRef.current;
-    if (!current || MOCK_AUTH) return null;
-    refreshing.current ??= AuthService.refresh(current.refreshToken)
-      .then(async (next) => {
-        await SessionStore.save(next.refreshToken, next.user);
+  /**
+   * Dùng chung một lượt refresh cho mọi nơi cần (mở app, nhiều request cùng gặp 401, WebSocket bị từ chối):
+   * hai lượt chạy song song bằng cùng một refresh token thì lượt sau bị server từ chối và văng ra đăng nhập.
+   */
+  const refreshSession = useCallback(async (fallbackToken?: string) => {
+    const token = sessionRef.current?.refreshToken || fallbackToken;
+    if (!token || MOCK_AUTH) return null;
+    refreshing.current ??= SessionStore.exchange(token)
+      .then((next) => {
         sessionRef.current = next;
         setSession(next);
         return next;
@@ -163,6 +115,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     return refreshing.current;
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    /**
+     * Mở app như Zalo: có phiên đã lưu thì vào thẳng (access token để trống, request đầu tiên tự làm mới),
+     * đồng thời làm mới phiên ngầm qua cùng lượt refresh với các request. Chỉ đăng xuất khi server từ chối
+     * phiên; mất mạng thì vẫn giữ.
+     */
+    async function restore() {
+      const saved = await SessionStore.load();
+      if (!saved) {
+        if (mounted) setLoading(false);
+        return;
+      }
+      if (saved.user && mounted) {
+        const cached: AuthResponse = {
+          accessToken: "",
+          refreshToken: saved.refreshToken,
+          user: saved.user,
+        };
+        sessionRef.current = cached;
+        setSession(cached);
+        setLoading(false);
+      }
+      try {
+        const refreshed = await refreshSession(saved.refreshToken);
+        if (refreshed && refreshed.user.role !== "STUDENT") {
+          await SessionStore.clear();
+          sessionRef.current = null;
+          if (mounted) setSession(null);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    restore();
+    return () => {
+      mounted = false;
+    };
+  }, [refreshSession]);
 
   const request = useCallback(
     async <T,>(
