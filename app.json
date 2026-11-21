@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "KTX DN",
+    "name": "SDMS",
     "slug": "ktx-dn",
     "scheme": "ktxdn",
     "version": "1.0.0",
@@ -30,8 +30,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Cho phép KTX DN chọn ảnh đại diện, gửi tin nhắn và minh chứng yêu cầu.",
-          "cameraPermission": "Cho phép KTX DN chụp ảnh đại diện, gửi tin nhắn và minh chứng yêu cầu."
+          "photosPermission": "Cho phép SDMS chọn ảnh đại diện, gửi tin nhắn và minh chứng yêu cầu.",
+          "cameraPermission": "Cho phép SDMS chụp ảnh đại diện, gửi tin nhắn và minh chứng yêu cầu."
         }
       ],
       "expo-font",

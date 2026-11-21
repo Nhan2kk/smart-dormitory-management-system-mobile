@@ -1,4 +1,4 @@
-# KTX DN Mobile
+# SDMS Mobile
 
 Ứng dụng Expo SDK 57 cho sinh viên. Đăng nhập gọi backend thật; các màn hình bên trong hiện dùng dữ liệu mock (lớp `*Repository` trong từng `features/*/*.mock.ts`) để thay bằng API sau.
 

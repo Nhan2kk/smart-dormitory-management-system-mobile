@@ -11,7 +11,7 @@ self.addEventListener("push", (event) => {
   } catch {
     data = { body: event.data ? event.data.text() : "" };
   }
-  const title = data.title || "KTX DN";
+  const title = data.title || "SDMS";
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || "",

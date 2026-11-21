@@ -198,7 +198,7 @@ export function ProfileScreen() {
           <Row icon="help-circle-outline" title={t("profile.helpCenter")} subtitle={t("profile.helpCenterSub")} onPress={go("/assistant")} />
         </Section>
 
-        <Text style={styles.version}>KTX DN · {t("profile.version")} 1.0.0</Text>
+        <Text style={styles.version}>SDMS · {t("profile.version")} 1.0.0</Text>
       </ScrollView>
 
       <BottomSheet visible={avatarSheet} onClose={() => setAvatarSheet(false)} title={t("profile.changeAvatar")} subtitle={t("profile.avatarHint")}>

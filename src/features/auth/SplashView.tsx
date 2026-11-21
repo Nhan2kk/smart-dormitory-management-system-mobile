@@ -12,7 +12,7 @@ export function SplashView() {
       <View style={styles.logo}>
         <Image source={require("../../../assets/brand-logo.png")} style={{ width: 44, height: 44 }} resizeMode="contain" />
       </View>
-      <Text style={styles.name}>KTX DN</Text>
+      <Text style={styles.name}>SDMS</Text>
       <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />
     </View>
   );

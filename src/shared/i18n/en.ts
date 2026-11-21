@@ -323,7 +323,7 @@ export const en: Dictionary = {
     getStarted: "Get started",
     welcomeNote: "For students with an issued dormitory account",
     welcomeBack: "Welcome back",
-    portal: "DN Dormitory · Student portal",
+    portal: "SDMS · Student portal",
     login: "Sign in",
     loginHint: "Use the student ID and password issued by the university.",
     studentCode: "Student ID",

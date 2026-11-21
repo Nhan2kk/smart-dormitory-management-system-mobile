@@ -1,7 +1,7 @@
 {
-  "name": "KTX DN",
-  "short_name": "KTX DN",
-  "description": "Cổng sinh viên Ký túc xá DN",
+  "name": "SDMS",
+  "short_name": "SDMS",
+  "description": "Cổng sinh viên SDMS",
   "lang": "vi",
   "start_url": "/",
   "scope": "/",

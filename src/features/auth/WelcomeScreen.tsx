@@ -33,7 +33,7 @@ export function WelcomeScreen() {
             <View style={styles.logo}>
               <Image source={require("../../../assets/brand-logo.png")} style={{ width: 20, height: 20 }} resizeMode="contain" />
             </View>
-            <Text style={styles.brandText}>KTX DN</Text>
+            <Text style={styles.brandText}>SDMS</Text>
           </Glass>
           <LanguageToggle />
         </View>

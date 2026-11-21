@@ -321,7 +321,7 @@ export const vi = {
     getStarted: "Bắt đầu",
     welcomeNote: "Dành cho sinh viên đã được cấp tài khoản KTX",
     welcomeBack: "Chào mừng trở lại",
-    portal: "Ký túc xá DN · Cổng sinh viên",
+    portal: "SDMS · Cổng sinh viên",
     login: "Đăng nhập",
     loginHint: "Dùng MSSV và mật khẩu được nhà trường cấp.",
     studentCode: "Mã số sinh viên",
