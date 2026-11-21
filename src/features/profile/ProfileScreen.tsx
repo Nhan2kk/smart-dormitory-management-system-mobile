@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Href, router } from "expo-router";
-import { ReactNode, useMemo, useState } from "react";
+import { ReactNode, useMemo, useState, useSyncExternalStore } from "react";
 import { AvatarService } from "../../services/avatar.service";
 import { WebPushService } from "../../services/web-push.service";
 import { WebPushEnableResult } from "../../enums/web-push.enum";
@@ -26,6 +26,7 @@ export function ProfileScreen() {
   const { user, request, updateUser } = useAuth();
   const avatarService = useMemo(() => new AvatarService(request), [request]);
   const webPush = useMemo(() => new WebPushService(request), [request]);
+  const pushConfirmed = useSyncExternalStore(WebPushService.observe, WebPushService.isConfirmed, () => false);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const avatarUrl = user?.avatarUrl ?? null;
   const { notify } = useToast();
@@ -162,8 +163,8 @@ export function ProfileScreen() {
             title={t("profile.push")}
             subtitle={t("profile.pushSub")}
             right={switchControl(
-              // Bản web: chỉ coi là bật khi trình duyệt đã cấp quyền thông báo.
-              Platform.OS === "web" ? prefs.push && WebPushService.granted : prefs.push,
+              // Bản web: chỉ hiện bật sau khi máy chủ xác nhận đăng ký.
+              Platform.OS === "web" ? prefs.push && pushConfirmed : prefs.push,
               (value) => {
                 if (Platform.OS !== "web") {
                   prefs.update({ push: value });

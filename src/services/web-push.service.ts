@@ -11,6 +11,19 @@ const SERVICE_WORKER_PATH = "/sw.js";
  * chính (iOS 16.4+). Bản iOS/Android gốc không dùng lớp này.
  */
 export class WebPushService {
+  private static confirmed = false;
+  private static listeners = new Set<() => void>();
+  static isConfirmed = () => WebPushService.confirmed && WebPushService.granted;
+  static observe = (listener: () => void) => {
+    WebPushService.listeners.add(listener);
+    return () => { WebPushService.listeners.delete(listener); };
+  };
+
+  private static confirm(value: boolean) {
+    WebPushService.confirmed = value;
+    WebPushService.listeners.forEach((listener) => listener());
+  }
+
   constructor(private readonly request: ApiClient) {}
 
   /** Trình duyệt hiện tại có đủ API để nhận thông báo đẩy. */
@@ -32,7 +45,7 @@ export class WebPushService {
   /** Đăng ký service worker (gọi sớm khi mở app; an toàn khi gọi lại). */
   static registerWorker(): Promise<ServiceWorkerRegistration | null> {
     if (!WebPushService.supported) return Promise.resolve(null);
-    return navigator.serviceWorker.register(SERVICE_WORKER_PATH).catch(() => null);
+    return navigator.serviceWorker.register(SERVICE_WORKER_PATH);
   }
 
   /**
@@ -51,12 +64,13 @@ export class WebPushService {
    * để đổi tài khoản trên cùng máy thì thông báo về đúng người. Không hỏi quyền.
    */
   async sync(): Promise<void> {
-    if (!WebPushService.granted) return;
-    await this.subscribe().catch(() => undefined);
+    if (!WebPushService.granted) return WebPushService.confirm(false);
+    await this.subscribe().catch(() => WebPushService.confirm(false));
   }
 
   /** Tắt thông báo đẩy trên máy này: bỏ đăng ký ở máy chủ và ở trình duyệt. */
   async disable(): Promise<void> {
+    WebPushService.confirm(false);
     const subscription = await WebPushService.currentSubscription();
     if (!subscription) return;
     await this.request("/notifications/push/unsubscribe", { body: { endpoint: subscription.endpoint } }).catch(
@@ -67,6 +81,7 @@ export class WebPushService {
 
   /** Bỏ liên kết máy này với tài khoản ở máy chủ (khi đăng xuất), giữ quyền của trình duyệt. */
   async detach(): Promise<void> {
+    WebPushService.confirm(false);
     const subscription = await WebPushService.currentSubscription();
     if (!subscription) return;
     await this.request("/notifications/push/unsubscribe", { body: { endpoint: subscription.endpoint } }).catch(
@@ -76,9 +91,12 @@ export class WebPushService {
 
   private async subscribe(): Promise<WebPushEnableResult> {
     const key = await this.request<WebPushPublicKeyResponse>("/notifications/push/public-key");
-    if (!key.enabled || !key.publicKey) return WebPushEnableResult.ServerDisabled;
-    const registration = (await WebPushService.registerWorker()) ?? (await navigator.serviceWorker.ready);
-    await navigator.serviceWorker.ready;
+    if (!key.enabled || !key.publicKey) {
+      WebPushService.confirm(false);
+      return WebPushEnableResult.ServerDisabled;
+    }
+    await WebPushService.registerWorker();
+    const registration = await navigator.serviceWorker.ready;
     const applicationServerKey = WebPushService.decodeKey(key.publicKey);
     let subscription = await registration.pushManager.getSubscription();
     // Máy chủ đổi khóa VAPID thì đăng ký cũ không dùng được nữa: tạo lại.
@@ -91,6 +109,7 @@ export class WebPushService {
       applicationServerKey,
     });
     await this.request("/notifications/push/subscribe", { body: WebPushService.toRequest(subscription) });
+    WebPushService.confirm(true);
     return WebPushEnableResult.Enabled;
   }
 

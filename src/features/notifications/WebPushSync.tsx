@@ -15,7 +15,17 @@ export function WebPushSync() {
 
   useEffect(() => {
     if (!WebPushService.supported || !userId || !ready) return;
-    void WebPushService.registerWorker().then(() => (push ? service.sync() : undefined));
+    if (!push) return;
+    const sync = () => {
+      if (document.visibilityState === "visible") void service.sync();
+    };
+    sync();
+    window.addEventListener("online", sync);
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      window.removeEventListener("online", sync);
+      document.removeEventListener("visibilitychange", sync);
+    };
     // Chỉ chạy lại khi đổi người dùng hoặc bật/tắt, không theo mỗi lần làm mới token.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, push, ready]);
