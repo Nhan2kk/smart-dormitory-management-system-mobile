@@ -1,0 +1,50 @@
+# Deploy bản web của app Expo lên GitHub Pages mỗi khi push lên main (hoặc bấm Run workflow).
+# Cần khai báo trong Settings → Secrets and variables → Actions → Variables:
+#   EXPO_PUBLIC_API_URL, EXPO_PUBLIC_WS_ORIGIN (và EXPO_PUBLIC_MOCK_AUTH nếu cần).
+# Settings → Pages → Source chọn "GitHub Actions".
+name: Deploy web to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      EXPO_PUBLIC_BASE_URL: /${{ github.event.repository.name }}
+      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
+      EXPO_PUBLIC_WS_ORIGIN: ${{ vars.EXPO_PUBLIC_WS_ORIGIN }}
+      EXPO_PUBLIC_MOCK_AUTH: ${{ vars.EXPO_PUBLIC_MOCK_AUTH }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx expo export --platform web
+      - run: node scripts/prepare-github-pages.cjs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
