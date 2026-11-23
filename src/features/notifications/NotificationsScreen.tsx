@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Text, View } from "react-native";
 import { errorMessage } from "../../shared/api";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
@@ -9,6 +9,8 @@ import { AppHeader, Button, Callout, Card, ChipGroup, CircleButton, EmptyState, 
 import { AppNotification } from "../../models/notification.model";
 import { notificationKindMeta } from "./notificationMeta";
 import { useNotifications } from "./NotificationsProvider";
+import { PushPromptCard } from "./PushPromptCard";
+import { usePushNotifications } from "./usePushNotifications";
 
 type Filter = "all" | "unread" | "important" | "announcement";
 
@@ -20,6 +22,8 @@ export function NotificationsScreen() {
   const { colors } = useTheme();
   const { items, unreadCount, error, reload, markRead, markAllRead } = useNotifications();
   const [filter, setFilter] = useState<Filter>("all");
+  const push = usePushNotifications();
+  const [pushDismissed, setPushDismissed] = useState(false);
   const all = items ?? [];
   const filtered = all.filter((item) =>
     filter === "unread" ? !item.read : filter === "important" ? item.priority !== "NORMAL" : filter === "announcement" ? item.source === "ANNOUNCEMENT" : true,
@@ -47,6 +51,12 @@ export function NotificationsScreen() {
         />
       }
     >
+      {/* Bản web chưa bật thông báo đẩy: mời bật ngay tại đây để không phải vào tab Cá nhân. */}
+      {Platform.OS === "web" && !push.enabled && !pushDismissed && (
+        <View style={{ marginBottom: spacing.lg }}>
+          <PushPromptCard onEnable={() => push.setEnabled(true)} onDismiss={() => setPushDismissed(true)} />
+        </View>
+      )}
       <ChipGroup<Filter>
         value={filter}
         onChange={setFilter}
@@ -67,7 +77,7 @@ export function NotificationsScreen() {
       {items === null && !error ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xxl }} />
       ) : filtered.length === 0 ? (
-        <EmptyState icon="notifications-off-outline" title={t("notifications.emptyTitle")} description={t("notifications.emptyBody")} />
+        <EmptyState art="search" icon="notifications-off-outline" title={t("notifications.emptyTitle")} description={t("notifications.emptyBody")} />
       ) : (
         <>
           {recent.length > 0 && <Group title={t("notifications.recent")} items={recent} onOpen={markRead} />}

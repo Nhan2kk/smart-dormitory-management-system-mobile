@@ -1,32 +1,31 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Href, router } from "expo-router";
-import { ReactNode, useMemo, useState, useSyncExternalStore } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import { AvatarService } from "../../services/avatar.service";
-import { WebPushService } from "../../services/web-push.service";
-import { WebPushEnableResult } from "../../enums/web-push.enum";
 import { errorMessage } from "../../shared/api";
-import { Platform, ScrollView, Switch, Text, View } from "react-native";
+import { ScrollView, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Photos } from "../../shared/images";
 import { usePreferences } from "../../shared/preferences";
 import { makeStyles, radius, spacing, TAB_BAR_SPACE, useTheme } from "../../shared/theme";
-import { Avatar, Backdrop, BottomSheet, Card, CircleButton, IconName, ListRow, PhotoBackground, Touchable, useToast } from "../../shared/ui";
+import { Avatar, Backdrop, BottomSheet, Button, Card, CircleButton, IconName, ListRow, PhotoBackground, Touchable, useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
+import { usePushNotifications } from "../notifications/usePushNotifications";
 import { useDebts } from "../debts/useDebts";
 import { requestStats } from "../requests/requestModel";
 import { useMyRequests } from "../requests/useMyRequests";
 import { useResidency } from "../residency/useResidency";
 import { AvatarPicker } from "./AvatarPicker";
+import { APP_VERSION, ContactSheet, FaqSheet, VersionSheet } from "./SupportSheets";
 import { useProfile } from "./useProfile";
 
 /** Tab Cá nhân: hồ sơ, tài khoản, lưu trú, tuỳ chọn và hỗ trợ (bố cục kiểu trang Settings). */
 export function ProfileScreen() {
-  const { user, request, updateUser } = useAuth();
+  const { user, signOut, request, updateUser } = useAuth();
   const avatarService = useMemo(() => new AvatarService(request), [request]);
-  const webPush = useMemo(() => new WebPushService(request), [request]);
-  const pushConfirmed = useSyncExternalStore(WebPushService.observe, WebPushService.isConfirmed, () => false);
+  const push = usePushNotifications();
   const [avatarBusy, setAvatarBusy] = useState(false);
   const avatarUrl = user?.avatarUrl ?? null;
   const { notify } = useToast();
@@ -40,6 +39,9 @@ export function ProfileScreen() {
   const { profile } = useProfile();
   const name = profile?.fullName || user?.fullName || "";
   const [avatarSheet, setAvatarSheet] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [supportSheet, setSupportSheet] = useState<"contact" | "faq" | "version" | null>(null);
+  const closeSupport = () => setSupportSheet(null);
   const processingRequests = requestStats(useMyRequests().requests ?? []).processing;
   const go =(href: Href) => () => router.push(href);
 
@@ -162,44 +164,19 @@ export function ProfileScreen() {
             icon="phone-portrait-outline"
             title={t("profile.push")}
             subtitle={t("profile.pushSub")}
-            right={switchControl(
-              // Bản web: chỉ hiện bật sau khi máy chủ xác nhận đăng ký.
-              Platform.OS === "web" ? prefs.push && pushConfirmed : prefs.push,
-              (value) => {
-                if (Platform.OS !== "web") {
-                  prefs.update({ push: value });
-                  notify(value ? t("profile.pushOn") : t("profile.pushOff"), "info");
-                  return;
-                }
-                if (!value) {
-                  prefs.update({ push: false });
-                  void webPush.disable();
-                  notify(t("profile.pushOff"), "info");
-                  return;
-                }
-                // Gọi ngay trong sự kiện bấm: iOS chỉ cho xin quyền thông báo khi người dùng thao tác.
-                webPush
-                  .enable()
-                  .then((result) => {
-                    if (result === WebPushEnableResult.Enabled) {
-                      prefs.update({ push: true });
-                      notify(t("profile.pushOn"), "success");
-                    } else if (result === WebPushEnableResult.Denied) notify(t("profile.pushDenied"), "danger");
-                    else if (result === WebPushEnableResult.ServerDisabled) notify(t("profile.pushServerOff"), "danger");
-                    else notify(t("profile.pushUnsupported"), "info");
-                  })
-                  .catch((error) => notify(errorMessage(error), "danger"));
-              },
-              t("profile.push"),
-            )}
+            right={switchControl(push.enabled, push.setEnabled, t("profile.push"))}
           />
         </Section>
 
         <Section title={t("profile.sectionSupport")}>
-          <Row icon="help-circle-outline" title={t("profile.helpCenter")} subtitle={t("profile.helpCenterSub")} onPress={go("/assistant")} />
+          <Row icon="help-circle-outline" title={t("profile.helpCenter")} subtitle={t("profile.helpCenterSub")} onPress={go("/assistant")} divider />
+          <Row icon="call-outline" title={t("profile.contactTitle")} subtitle={t("profile.contactRowSub")} onPress={() => setSupportSheet("contact")} divider />
+          <Row icon="help-buoy-outline" title={t("profile.faqTitle")} subtitle={t("profile.faqRowSub")} onPress={() => setSupportSheet("faq")} divider />
+          <Row icon="sync-outline" title={t("profile.versionTitle")} subtitle={t("profile.versionRowSub", { version: APP_VERSION })} onPress={() => setSupportSheet("version")} divider />
+          <ListRow icon="log-out-outline" title={t("profile.logout")} subtitle={t("profile.logoutSub")} destructive onPress={() => setConfirmLogout(true)} />
         </Section>
 
-        <Text style={styles.version}>SDMS · {t("profile.version")} 1.0.0</Text>
+        <Text style={styles.version}>SDMS · {t("profile.version")} {APP_VERSION}</Text>
       </ScrollView>
 
       <BottomSheet visible={avatarSheet} onClose={() => setAvatarSheet(false)} title={t("profile.changeAvatar")} subtitle={t("profile.avatarHint")}>
@@ -218,6 +195,31 @@ export function ProfileScreen() {
         </Card>
       </BottomSheet>
 
+      <ContactSheet visible={supportSheet === "contact"} onClose={closeSupport} />
+      <FaqSheet visible={supportSheet === "faq"} onClose={closeSupport} />
+      <VersionSheet visible={supportSheet === "version"} onClose={closeSupport} />
+
+      <BottomSheet
+        visible={confirmLogout}
+        onClose={() => setConfirmLogout(false)}
+        title={t("profile.logoutTitle")}
+        subtitle={t("profile.logoutBody")}
+        footer={
+          <View style={{ flexDirection: "row", gap: spacing.md }}>
+            <Button label={t("common.cancel")} variant="ghost" onPress={() => setConfirmLogout(false)} style={{ flex: 1 }} />
+            <Button
+              label={t("profile.logout")}
+              variant="dark"
+              icon="log-out-outline"
+              onPress={() => {
+                setConfirmLogout(false);
+                void signOut();
+              }}
+              style={{ flex: 1 }}
+            />
+          </View>
+        }
+      />
     </View>
   );
 }
