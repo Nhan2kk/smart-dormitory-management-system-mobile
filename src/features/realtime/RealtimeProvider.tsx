@@ -40,7 +40,7 @@ const RealtimeContext = createContext<RealtimeValue | null>(null);
  * Ngắt khi app vào nền, mở lại khi quay lại; token hết hạn thì làm mới rồi kết nối lại.
  */
 export function RealtimeProvider({ children }: { children: ReactNode }) {
-  const { accessToken, refresh } = useAuth();
+  const { accessToken, refresh, request } = useAuth();
   const [active, setActive] = useState(AppState.currentState === "active");
   const [connected, setConnected] = useState(false);
   const [notifySignal, setNotifySignal] = useState(0);
@@ -81,6 +81,14 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         { destination: "/user/queue/chat", onMessage: body => setLastChat(body as ChatRealtimeEvent) },
         { destination: "/user/queue/notifies", onMessage: bump },
         {
+          // Tài khoản vừa đăng nhập mobile ở đâu đó: hỏi lại server, nếu máy này đã bị thay thì request trả
+          // SESSION_REPLACED và AuthProvider hiện thông báo, đưa về màn đăng nhập. Máy mới thì không có gì xảy ra.
+          destination: "/user/queue/session",
+          onMessage: () => {
+            void request("/auth/session", { method: "POST" }).catch(() => undefined);
+          },
+        },
+        {
           destination: "/user/queue/registration-payments",
           onMessage: (body) =>
             setLastRegistrationPayment(body as RegistrationPaymentEvent),
@@ -116,7 +124,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         },
       },
     );
-  }, [active, accessToken, refresh]);
+  }, [active, accessToken, refresh, request]);
 
   // App ở nền thì coi như chưa kết nối (để thông báo quay về hỏi định kỳ khi mở lại cho tới lúc nối xong).
   const live = connected && active;

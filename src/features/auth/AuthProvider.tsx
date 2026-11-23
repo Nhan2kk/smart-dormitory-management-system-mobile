@@ -28,13 +28,21 @@ type AuthContextValue = {
   refresh: () => Promise<string | null>;
   /** Cập nhật thông tin user trong phiên (vd. ảnh đại diện mới) và lưu lại trên máy. */
   updateUser: (patch: Partial<AuthUser>) => Promise<void>;
+  /** Thông báo khi máy này bị đẩy ra vì tài khoản vừa đăng nhập trên thiết bị khác; null nếu không có. */
+  sessionNotice: string | null;
+  /** Người dùng đã xác nhận thông báo bị đẩy ra. */
+  dismissSessionNotice: () => void;
 };
+
+/** Mã lỗi server trả khi tài khoản vừa đăng nhập mobile trên thiết bị khác. */
+export const SESSION_REPLACED = "SESSION_REPLACED";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<AuthResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionNotice, setSessionNotice] = useState<string | null>(null);
   const sessionRef = useRef<AuthResponse | null>(null);
   const refreshing = useRef<Promise<AuthResponse | null> | null>(null);
 
@@ -64,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error("Ứng dụng này dành cho tài khoản sinh viên.");
     }
     await SessionStore.save(result.refreshToken, result.user);
+    setSessionNotice(null);
     setSession(result);
   }, []);
 
@@ -105,6 +114,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(async (error: unknown) => {
         // Chỉ đăng xuất khi server từ chối phiên; mất mạng thì giữ phiên để thử lại sau.
         if (!SessionStore.isRejected(error)) return null;
+        // Bị đăng nhập đè từ máy khác: báo cho người dùng biết vì sao phải đăng nhập lại.
+        if (error instanceof ApiError && error.code === SESSION_REPLACED) setSessionNotice(error.message);
         await SessionStore.clear();
         sessionRef.current = null;
         setSession(null);
@@ -190,6 +201,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!MOCK_AUTH) await SessionStore.save(next.refreshToken, next.user);
   }, []);
 
+  const dismissSessionNotice = useCallback(() => setSessionNotice(null), []);
+
   const value = useMemo(
     () => ({
       user: session?.user ?? null,
@@ -200,8 +213,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       request,
       refresh,
       updateUser,
+      sessionNotice,
+      dismissSessionNotice,
     }),
-    [session, loading, signIn, signOut, request, refresh, updateUser],
+    [session, loading, signIn, signOut, request, refresh, updateUser, sessionNotice, dismissSessionNotice],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
