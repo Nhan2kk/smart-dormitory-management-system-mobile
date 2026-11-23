@@ -56,7 +56,7 @@
         right: 0;
         bottom: auto;
         left: 0;
-        height: max(100%, 100vh);
+        height: max(100%, 100vh, var(--screen-height, 0px));
         overflow: hidden;
         overscroll-behavior: none;
       }
@@ -100,6 +100,19 @@
           (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
         if (!standalone) return;
         document.documentElement.classList.add("standalone");
+        /* Chiều cao màn hình thật (máy dọc) làm mốc tối thiểu: không đổi theo bàn phím hay khi mở lại app,
+           nên trang luôn phủ tới đáy kể cả khi iOS tính 100% / 100vh hụt vùng tai thỏ. */
+        function measureScreen() {
+          // Chỉ iOS (navigator.standalone): Android tính cả thanh hệ thống vào screen.height nên sẽ cao quá.
+          if (window.navigator.standalone !== true) return;
+          var portrait = !window.matchMedia || window.matchMedia("(orientation: portrait)").matches;
+          var value = portrait ? Math.max(window.screen.height, window.screen.width) + "px" : "0px";
+          document.documentElement.style.setProperty("--screen-height", value);
+        }
+        measureScreen();
+        window.addEventListener("orientationchange", function () {
+          setTimeout(measureScreen, 300);
+        });
         function settle() {
           window.scrollTo(0, 0);
           document.body.scrollTop = 0;
