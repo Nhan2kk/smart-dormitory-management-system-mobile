@@ -260,7 +260,8 @@ const useStyles = makeStyles(({ colors, font }) => ({
   hero: { flexDirection: "row", alignItems: "flex-end", gap: spacing.md, marginBottom: spacing.xl },
   heroText: { flex: 1, paddingBottom: spacing.sm },
   eyebrow: { ...font.caption, fontSize: 13, fontWeight: "700", color: colors.primary, letterSpacing: 0.4 },
-  heroTitle: { ...font.serif, fontSize: 27, lineHeight: 33, marginTop: 6 },
+  // Cùng font tiêu đề với các màn khác (không dùng font có chân).
+  heroTitle: { ...font.display, fontSize: 27, lineHeight: 33, marginTop: 6 },
   heroBody: { ...font.body, fontSize: 13, lineHeight: 19, color: colors.muted, marginTop: spacing.sm },
   arch: { width: 118, height: 160, borderTopLeftRadius: 59, borderTopRightRadius: 59, borderBottomLeftRadius: radius.md, borderBottomRightRadius: radius.md },
   homeBadge: { position: "absolute", left: -14, top: 18, width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: colors.background },
