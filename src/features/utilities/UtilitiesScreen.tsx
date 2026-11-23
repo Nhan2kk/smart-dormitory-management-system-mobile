@@ -8,7 +8,7 @@ import { DonutChart } from "../../shared/charts/DonutChart";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
-import { AppHeader, BottomSheet, Button, Callout, Card, EmptyState, Gradient, IconBadge, IconName, InfoRow, Screen, SectionHeader, SegmentedControl } from "../../shared/ui";
+import { AppHeader, BottomSheet, Button, Callout, Card, EmptyState, Gradient, IconBadge, IconName, InfoRow, Screen, SectionHeader, SegmentedControl, LoadErrorCard } from "../../shared/ui";
 import { UtilityCalendar } from "./UtilityCalendar";
 import { DailyRecord } from "../../models/utilities.model";
 import { UtilityInsightKind, UtilityMetric, UtilityRange } from "../../enums/utilities.enum";
@@ -47,9 +47,7 @@ export function UtilitiesScreen() {
       )}
       {error && (
         <View style={{ marginBottom: spacing.lg }}>
-          <Callout tone="danger" icon="cloud-offline-outline" title={t("utilities.loadError")} action={retry}>
-            {error}
-          </Callout>
+          <LoadErrorCard title={t("utilities.loadError")} message={error} onRetry={reload} />
         </View>
       )}
       {loading ? (

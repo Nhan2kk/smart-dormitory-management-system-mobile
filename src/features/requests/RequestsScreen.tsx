@@ -6,7 +6,7 @@ import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import type { TranslationKey } from "../../shared/i18n/types";
 import { makeStyles, radius, spacing, Tone, useTheme } from "../../shared/theme";
-import { AppHeader, Button, Callout, Card, ChipGroup, CircleButton, EmptyState, IconBadge, IconName, Screen } from "../../shared/ui";
+import { AppHeader, Button, Card, ChipGroup, CircleButton, EmptyState, IconBadge, IconName, Screen, LoadErrorCard } from "../../shared/ui";
 import { RequestAction, RequestKind } from "../../enums/request.enum";
 import type { StudentRequest } from "../../models/request.model";
 import { requestKindMeta, requestStats, requestStatusTone } from "./requestModel";
@@ -68,9 +68,7 @@ export function RequestsScreen() {
 
       {error && (
         <View style={{ marginBottom: spacing.lg }}>
-          <Callout tone="danger" icon="cloud-offline-outline" action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />}>
-            {error}
-          </Callout>
+          <LoadErrorCard message={error} onRetry={reload} />
         </View>
       )}
 

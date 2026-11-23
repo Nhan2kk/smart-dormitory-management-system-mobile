@@ -6,7 +6,7 @@ import { errorMessage } from "../../shared/api";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, spacing, useTheme } from "../../shared/theme";
-import { AppHeader, BottomSheet, Button, Callout, Card, ChipGroup, Field, IconBadge, InfoRow, ListRow, Screen, SectionHeader, Touchable, useToast } from "../../shared/ui";
+import { AppHeader, BottomSheet, Button, Card, ChipGroup, Field, IconBadge, InfoRow, ListRow, Screen, SectionHeader, Touchable, useToast, LoadErrorCard } from "../../shared/ui";
 import { Gender } from "../../enums/profile.enum";
 import type { PasswordDraft, StudentProfileResponse } from "../../models/profile.model";
 import { useAuth } from "../auth/AuthProvider";
@@ -45,9 +45,7 @@ export function ProfileEditScreen() {
         <ProfileTab tab={tab} profile={profile} />
       ) : (
         <View style={{ marginTop: spacing.xl }}>
-          <Callout tone="danger" icon="cloud-offline-outline" title={t("profileEdit.loadError")} action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />}>
-            {error}
-          </Callout>
+          <LoadErrorCard title={t("profileEdit.loadError")} message={error} onRetry={reload} />
         </View>
       )}
     </Screen>

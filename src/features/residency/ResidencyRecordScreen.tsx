@@ -8,7 +8,7 @@ import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Photos } from "../../shared/images";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
-import { AppHeader, BottomSheet, Button, Callout, Card, CircleButton, EmptyState, Glass, InfoRow, LightStatusBar, PhotoBackground, Screen, SectionHeader, StatusBadge, Touchable, useToast } from "../../shared/ui";
+import { AppHeader, BottomSheet, Card, CircleButton, EmptyState, Glass, InfoRow, LightStatusBar, PhotoBackground, Screen, SectionHeader, StatusBadge, Touchable, useToast, LoadErrorCard } from "../../shared/ui";
 import { ResidencyRecordType } from "../../enums/residency.enum";
 import type { ResidencyHistory, ResidencyLocation } from "../../models/residency.model";
 import { ResidencyOverview } from "./ResidencyOverview";
@@ -29,9 +29,7 @@ export function ResidencyRecordScreen() {
       ) : none ? (
         <EmptyState icon="home-outline" title={t("residency.noneTitle")} description={t("residency.noneBody")} />
       ) : (
-        <Callout tone="danger" icon="cloud-offline-outline" title={t("residency.loadError")} action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />}>
-          {error}
-        </Callout>
+        <LoadErrorCard title={t("residency.loadError")} message={error} onRetry={reload} />
       )}
     </Screen>
   );

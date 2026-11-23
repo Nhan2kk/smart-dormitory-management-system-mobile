@@ -5,7 +5,7 @@ import { errorMessage } from "../../shared/api";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
-import { AppHeader, Button, Callout, Card, ChipGroup, CircleButton, EmptyState, GroupLabel, IconBadge, Screen, useToast } from "../../shared/ui";
+import { AppHeader, Card, ChipGroup, CircleButton, EmptyState, GroupLabel, IconBadge, Screen, useToast, LoadErrorCard } from "../../shared/ui";
 import { AppNotification } from "../../models/notification.model";
 import { notificationKindMeta } from "./notificationMeta";
 import { useNotifications } from "./NotificationsProvider";
@@ -69,12 +69,10 @@ export function NotificationsScreen() {
       )}
       {error && (
         <View style={{ marginTop: spacing.lg }}>
-          <Callout tone="danger" icon="cloud-offline-outline" action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />}>
-            {error}
-          </Callout>
+          <LoadErrorCard message={error} onRetry={reload} />
         </View>
       )}
-      {items === null && !error ? (
+      {items === null && error ? null : items === null ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xxl }} />
       ) : filtered.length === 0 ? (
         <EmptyState art="search" icon="notifications-off-outline" title={t("notifications.emptyTitle")} description={t("notifications.emptyBody")} />

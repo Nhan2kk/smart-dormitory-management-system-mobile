@@ -6,7 +6,7 @@ import { errorMessage } from "../../shared/api";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
-import { Avatar, Button, Callout, Card, SectionHeader, StatusBadge } from "../../shared/ui";
+import { Avatar, Card, SectionHeader, StatusBadge, LoadErrorCard } from "../../shared/ui";
 import type { RoommateResponse } from "../../models/residency.model";
 import { ResidencyService } from "../../services/residency.service";
 import { useAuth } from "../auth/AuthProvider";
@@ -40,9 +40,7 @@ export function RoommatesSection() {
     <>
       <SectionHeader title={t("residency.roommates.title")} />
       {error && !roommates ? (
-        <Callout tone="danger" icon="cloud-offline-outline" title={t("residency.roommates.loadError")} action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />}>
-          {error}
-        </Callout>
+        <LoadErrorCard title={t("residency.roommates.loadError")} message={error} onRetry={reload} />
       ) : !roommates ? (
         <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.lg }} />
       ) : roommates.length === 0 ? (

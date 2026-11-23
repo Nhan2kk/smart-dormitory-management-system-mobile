@@ -27,6 +27,7 @@ export {
   ProgressBar,
   SectionHeader,
 } from "./Layout";
+export { LoadErrorCard } from "./LoadErrorCard";
 export { PhotoBackground } from "./PhotoBackground";
 export { Screen } from "./Screen";
 export { WebStatusBarStrip } from "./WebStatusBarStrip";

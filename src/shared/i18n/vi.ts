@@ -262,6 +262,7 @@ export const vi = {
     remove: "Xoá",
     done: "Hoàn tất",
     retry: "Thử lại",
+    loadErrorTitle: "Không tải được dữ liệu",
     home: "Về trang chủ",
     loading: "Đang tải",
     notFound: "Không tìm thấy dữ liệu",

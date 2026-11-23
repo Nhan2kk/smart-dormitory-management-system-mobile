@@ -264,6 +264,7 @@ export const en: Dictionary = {
     remove: "Remove",
     done: "Done",
     retry: "Retry",
+    loadErrorTitle: "Couldn't load data",
     home: "Back to home",
     loading: "Loading",
     notFound: "Nothing found",

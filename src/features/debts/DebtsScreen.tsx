@@ -6,7 +6,7 @@ import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
 import type { Tone } from "../../shared/theme";
-import { AppHeader, BottomSheet, Button, Callout, Card, EmptyState, Gradient, IconBadge, IconName, InfoRow, Screen, SegmentedControl, StatusBadge, Touchable } from "../../shared/ui";
+import { AppHeader, BottomSheet, Button, Callout, Card, EmptyState, Gradient, IconBadge, IconName, InfoRow, Screen, SegmentedControl, StatusBadge, Touchable, LoadErrorCard } from "../../shared/ui";
 import { BillStatus, BillType, ChargeType, DebtSource, DebtStatus } from "../../enums/debt.enum";
 import type { BillResponse, Debt, StudentDebt } from "../../models/debt.model";
 import { DebtLedger } from "./DebtLedger";
@@ -51,9 +51,7 @@ export function DebtsScreen() {
     <Screen header={<AppHeader title={t("debts.title")} subtitle={ledger ? t("debts.unpaidCount", { count: ledger.unpaid().length }) : undefined} />}>
       {error && (
         <View style={{ marginBottom: spacing.lg }}>
-          <Callout tone="danger" icon="cloud-offline-outline" title={t("debts.loadError")} action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />}>
-            {error}
-          </Callout>
+          <LoadErrorCard title={t("debts.loadError")} message={error} onRetry={reload} />
         </View>
       )}
       {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : ledger ? <DebtsContent ledger={ledger} /> : null}
