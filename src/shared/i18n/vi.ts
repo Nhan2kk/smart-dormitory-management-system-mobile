@@ -465,7 +465,6 @@ export const vi = {
     unitPrice: "{{amount}} × ≈{{price}}",
     priceUnavailable:
       "Chưa có bảng giá điện nước cho tháng này nên chưa tính được tiền.",
-    loadError: "Không tải được dữ liệu điện nước.",
     emptyTitle: "Chưa có số đo tháng này",
     emptyBody: "Cảm biến của phòng chưa gửi số điện nước nào trong tháng này.",
     noRoomTitle: "Bạn chưa có phòng",
@@ -751,7 +750,6 @@ export const vi = {
       roomTransferSettlement: "Tất toán chuyển phòng",
       registration: "Đăng ký KTX",
     },
-    loadError: "Không tải được hoá đơn.",
     allPaid: "Không còn khoản cần thanh toán",
     allPaidBody:
       "Các hoá đơn phát sinh (sửa chữa, chuyển phòng, trả phòng) sẽ hiện ở đây.",
@@ -877,7 +875,6 @@ export const vi = {
       you: "Bạn",
       representative: "Trưởng phòng",
       empty: "Chưa có sinh viên nào đang ở phòng này.",
-      loadError: "Không tải được danh sách sinh viên trong phòng",
     },
     history: "Lịch sử & biến động",
     active: "Đang hiệu lực",
@@ -902,7 +899,6 @@ export const vi = {
     },
     noneTitle: "Chưa có hồ sơ lưu trú",
     noneBody: "Hồ sơ lưu trú được tạo khi bạn nhận phòng KTX.",
-    loadError: "Không tải được hồ sơ lưu trú.",
     previousStay: "Nơi ở trước",
     historyNote:
       "Hiển thị hồ sơ đang hiệu lực và phòng trước khi chuyển (nếu có).",
@@ -945,7 +941,6 @@ export const vi = {
     newApplication: "Tạo đăng ký mới",
     continuePayment: "Tiếp tục thanh toán",
     goCheckIn: "Làm thủ tục nhận phòng",
-    loadFailed: "Không tải được dữ liệu đăng ký.",
     debtWarningTitle: "Bạn còn công nợ chưa thanh toán",
     debtWarning: "Hãy thanh toán hết công nợ trước khi đăng ký KTX mới.",
     payDebt: "Thanh toán công nợ",
@@ -1280,7 +1275,6 @@ export const vi = {
     passwordMismatch: "Mật khẩu nhập lại không khớp.",
     passwordWeak: "Mật khẩu mới chưa đủ mạnh.",
     passwordChanged: "Đã đổi mật khẩu.",
-    loadError: "Không tải được thông tin cá nhân.",
     noEmergency: "Chưa có liên hệ khẩn cấp.",
     region: "Khu vực",
   },

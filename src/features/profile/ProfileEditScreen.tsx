@@ -45,7 +45,7 @@ export function ProfileEditScreen() {
         <ProfileTab tab={tab} profile={profile} />
       ) : (
         <View style={{ marginTop: spacing.xl }}>
-          <LoadErrorCard title={t("profileEdit.loadError")} message={error} onRetry={reload} />
+          <LoadErrorCard message={error} onRetry={reload} />
         </View>
       )}
     </Screen>

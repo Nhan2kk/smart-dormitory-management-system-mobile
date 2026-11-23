@@ -29,7 +29,7 @@ export function ResidencyRecordScreen() {
       ) : none ? (
         <EmptyState icon="home-outline" title={t("residency.noneTitle")} description={t("residency.noneBody")} />
       ) : (
-        <LoadErrorCard title={t("residency.loadError")} message={error} onRetry={reload} />
+        <LoadErrorCard message={error} onRetry={reload} />
       )}
     </Screen>
   );

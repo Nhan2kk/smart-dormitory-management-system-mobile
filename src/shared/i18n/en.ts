@@ -468,7 +468,6 @@ export const en: Dictionary = {
     unitPrice: "{{amount}} × ≈{{price}}",
     priceUnavailable:
       "No utility tariff for this month yet, so the cost cannot be estimated.",
-    loadError: "Could not load utility data.",
     emptyTitle: "No readings this month",
     emptyBody: "Your room's sensors have not sent any readings this month yet.",
     noRoomTitle: "You have no room yet",
@@ -752,7 +751,6 @@ export const en: Dictionary = {
       roomTransferSettlement: "Transfer settlement",
       registration: "Dorm registration",
     },
-    loadError: "Could not load your bills.",
     allPaid: "Nothing to pay",
     allPaidBody:
       "Bills for repairs, room transfers and checkout will appear here.",
@@ -874,7 +872,6 @@ export const en: Dictionary = {
       you: "You",
       representative: "Room leader",
       empty: "No students are living in this room yet.",
-      loadError: "Could not load the students in this room",
     },
     history: "History & changes",
     active: "Active",
@@ -899,7 +896,6 @@ export const en: Dictionary = {
     },
     noneTitle: "No residency record",
     noneBody: "Your residency record is created when you check in to the dorm.",
-    loadError: "Could not load your residency record.",
     previousStay: "Previous stay",
     historyNote:
       "Showing the active record and the room before your transfer (if any).",
@@ -942,7 +938,6 @@ export const en: Dictionary = {
     newApplication: "New application",
     continuePayment: "Continue to payment",
     goCheckIn: "Go to check-in",
-    loadFailed: "Couldn't load registration data.",
     debtWarningTitle: "You have unpaid balances",
     debtWarning: "Please settle your balance before registering again.",
     payDebt: "Pay balance",
@@ -1274,7 +1269,6 @@ export const en: Dictionary = {
     passwordMismatch: "Passwords don't match.",
     passwordWeak: "The new password is too weak.",
     passwordChanged: "Password changed.",
-    loadError: "Could not load your profile.",
     noEmergency: "No emergency contacts yet.",
     region: "Region",
   },

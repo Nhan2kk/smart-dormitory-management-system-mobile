@@ -40,7 +40,7 @@ export function RoommatesSection() {
     <>
       <SectionHeader title={t("residency.roommates.title")} />
       {error && !roommates ? (
-        <LoadErrorCard title={t("residency.roommates.loadError")} message={error} onRetry={reload} />
+        <LoadErrorCard message={error} onRetry={reload} />
       ) : !roommates ? (
         <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.lg }} />
       ) : roommates.length === 0 ? (

@@ -14,6 +14,7 @@ import {
   BottomSheet,
   Button,
   Callout,
+  LoadErrorCard,
   Card,
   EmptyState,
   FooterBar,
@@ -338,21 +339,10 @@ function Overview({
       <View style={styles.body}>
         {loadError && (
           <View style={{ marginTop: spacing.xl }}>
-            <Callout
-              tone="danger"
-              icon="cloud-offline-outline"
-              title={t("registration.loadFailed")}
-              action={
-                <Button
-                  label={t("common.retry")}
-                  size="md"
-                  variant="secondary"
-                  onPress={onRetry}
-                />
-              }
-            >
-              {loadError}
-            </Callout>
+            <LoadErrorCard
+              message={loadError}
+              onRetry={onRetry}
+            />
           </View>
         )}
         {debt && (
@@ -1028,7 +1018,7 @@ function Wizard({
               <InfoRow label={t("residency.price")} value={`${Formatter.currency(preview.monthlyPrice)}${t("common.perMonth")}`} />
               <InfoRow label={t("registration.term.how")} value={preview.explanation} />
               <InfoRow label={t("registration.totalPay")} value={Formatter.currency(preview.totalAmount)} strong divider={false} />
-            </Card> : previewError ? <Callout tone="danger" action={<Button label={t("common.retry")} onPress={() => setPreviewAttempt(value => value + 1)} />}>{previewError}</Callout> : loader
+            </Card> : previewError ? <View style={{ marginTop: spacing.md }}><LoadErrorCard message={previewError} onRetry={() => setPreviewAttempt(value => value + 1)} /></View> : loader
           ) : <>
           <Text style={styles.subTitle}>{t("registration.duration")}</Text>
           <SegmentedControl<PricingPeriod>

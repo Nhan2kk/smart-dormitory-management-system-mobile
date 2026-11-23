@@ -47,7 +47,7 @@ export function UtilitiesScreen() {
       )}
       {error && (
         <View style={{ marginBottom: spacing.lg }}>
-          <LoadErrorCard title={t("utilities.loadError")} message={error} onRetry={reload} />
+          <LoadErrorCard message={error} onRetry={reload} />
         </View>
       )}
       {loading ? (

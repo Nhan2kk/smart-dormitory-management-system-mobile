@@ -51,7 +51,7 @@ export function DebtsScreen() {
     <Screen header={<AppHeader title={t("debts.title")} subtitle={ledger ? t("debts.unpaidCount", { count: ledger.unpaid().length }) : undefined} />}>
       {error && (
         <View style={{ marginBottom: spacing.lg }}>
-          <LoadErrorCard title={t("debts.loadError")} message={error} onRetry={reload} />
+          <LoadErrorCard message={error} onRetry={reload} />
         </View>
       )}
       {loading ? <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} /> : ledger ? <DebtsContent ledger={ledger} /> : null}
