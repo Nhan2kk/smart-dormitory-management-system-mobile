@@ -112,7 +112,7 @@ export function LoginScreen() {
               />
             </View>
 
-            <Touchable onPress={() => notify(t("auth.forgotMessage"), "info")} accessibilityLabel={t("auth.forgot")} style={styles.forgot}>
+            <Touchable onPress={() => router.push({ pathname: "/forgot-password", params: username.trim() ? { username: username.trim() } : {} })} accessibilityLabel={t("auth.forgot")} style={styles.forgot}>
               <Text style={styles.forgotText}>{t("auth.forgot")}</Text>
             </Touchable>
 
