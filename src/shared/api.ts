@@ -49,7 +49,7 @@ export async function apiCall<T>(
   } catch (error) {
     if (__DEV__) console.warn(`[api] ${method} ${path} failed:`, error);
     throw new ApiError(
-      "Không thể kết nối máy chủ. Kiểm tra mạng và địa chỉ API.",
+      "Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối mạng.",
       0,
     );
   }
