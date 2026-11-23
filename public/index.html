@@ -46,11 +46,17 @@
       }
       /* Mở từ icon ở màn hình chính (iOS): khóa trang tại chỗ để bàn phím không đẩy lệch giao diện. Kích thước
          lấy theo màn hình hiện tại (inset: 0) chứ không đóng băng số đo lúc mở, nên ra vào app vẫn vừa khít. */
+      /* iOS (black-translucent): trang vẽ từ mép trên nhưng `inset: 0` / 100% lại hụt đúng chiều cao vùng tai thỏ,
+         để lộ khoảng trống dưới đáy. 100vh ở chế độ này là cả màn hình và không đổi theo bàn phím, nên lấy số lớn
+         hơn giữa hai giá trị để trang luôn phủ tới đáy. */
       html.standalone,
       html.standalone body {
         position: fixed;
-        inset: 0;
-        height: auto;
+        top: 0;
+        right: 0;
+        bottom: auto;
+        left: 0;
+        height: max(100%, 100vh);
         overflow: hidden;
         overscroll-behavior: none;
       }
