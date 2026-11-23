@@ -16,7 +16,7 @@ const TINT: Record<GlassLevel, number> = {
  * - Chế độ kính: ảnh nền người dùng chọn làm mờ toàn màn hình, phủ một lớp màu nền theo độ trong.
  * - Mặc định: ảnh khuôn viên mờ nhạt ở đầu màn hình, nhạt dần vào màu nền (tắt bằng `ambient={false}`).
  */
-export function Backdrop({ ambient = true }: { ambient?: boolean }) {
+export function Backdrop({ ambient = false }: { ambient?: boolean }) {
   const { colors, isDark, glass, glassLevel, wallpaper } = useTheme();
   if (glass)
     return (
