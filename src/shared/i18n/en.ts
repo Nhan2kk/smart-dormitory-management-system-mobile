@@ -386,6 +386,8 @@ export const en: Dictionary = {
     requestTile: "Requests",
     requestTileSub: "{{count}} in progress",
     createRequest: "Create new request",
+    ctaRegister: "Register for a room",
+    ctaCheckIn: "Check in now",
     quickServices: "Quick services",
     yourRoom: "Your room",
     staying: "Residing",

@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Href, router } from "expo-router";
-import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StudentStage } from "../../enums/student-stage.enum";
 import { BarChart } from "../../shared/charts/BarChart";
 import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
@@ -18,11 +18,9 @@ import {
 } from "../../shared/theme";
 import {
   Backdrop,
-  BottomSheet,
   Button,
   Card,
   CircleButton,
-  Glass,
   Gradient,
   IconBadge,
   IconName,
@@ -43,53 +41,14 @@ import { useMyRequests } from "../requests/useMyRequests";
 import { useResidency } from "../residency/useResidency";
 import { UtilityUsage } from "../utilities/UtilityUsage";
 import { useUtilities } from "../utilities/useUtilities";
+import { useStudentStage } from "./useStudentStage";
 
-const services: {
-  key: TranslationKey;
-  icon: IconName;
-  href: Href;
-}[] = [
-  {
-    key: "home.service.register",
-    icon: "clipboard-outline",
-    href: "/register-dorm",
-  },
-  {
-    key: "home.service.checkIn",
-    icon: "key-outline",
-    href: "/check-in",
-  },
-  {
-    key: "home.service.residency",
-    icon: "id-card-outline",
-    href: "/residency-record",
-  },
-  {
-    key: "home.service.debts",
-    icon: "wallet-outline",
-    href: "/debts",
-  },
-  {
-    key: "home.service.utilities",
-    icon: "flash-outline",
-    href: "/utilities",
-  },
-  {
-    key: "home.service.support",
-    icon: "construct-outline",
-    href: "/request/create/supportMaintenance",
-  },
-  {
-    key: "home.service.assistant",
-    icon: "sparkles-outline",
-    href: "/assistant",
-  },
-  {
-    key: "home.service.notifications",
-    icon: "notifications-outline",
-    href: "/notifications",
-  },
-];
+/** Nút chính dưới thẻ "Chỗ ở của tôi": đổi theo giai đoạn đăng ký → nhận phòng → đang ở. */
+const primaryActions: Record<StudentStage, { label: TranslationKey; icon: IconName; href: Href }> = {
+  [StudentStage.Register]: { label: "home.ctaRegister", icon: "clipboard-outline", href: "/register-dorm" },
+  [StudentStage.CheckIn]: { label: "home.ctaCheckIn", icon: "key-outline", href: "/check-in" },
+  [StudentStage.Resident]: { label: "home.createRequest", icon: "add", href: "/request/new" },
+};
 
 /** Trang chủ kiểu "smart home": tiêu đề lớn, ảnh toà nhà hoà vào nền, thẻ "Chỗ ở của tôi" nổi lên trên ảnh. */
 export function HomeScreen() {
@@ -98,12 +57,13 @@ export function HomeScreen() {
   const { colors, glass, isDark } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const [menuOpen, setMenuOpen] = useState(false);
   const name = user?.fullName ?? "";
   // Lời chào theo buổi và ngày hiện tại trên máy; tên gọi là 2 chữ cuối của họ tên.
   const now = new Date();
   const callName = Formatter.callName(name);
-  const residence = useResidency().overview;
+  const residency = useResidency();
+  const residence = residency.overview;
+  const primaryAction = primaryActions[useStudentStage(residency.loading || residency.error ? null : !!residence)];
   const remainingDays = residence?.remainingDays() ?? null;
   const loadedUsage = useUtilities().usage;
   // Chưa nhận phòng: hiện "—", không vẽ số 0 giả.
@@ -128,11 +88,6 @@ export function HomeScreen() {
         {/* Thanh trên + tiêu đề */}
         <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
           <View style={styles.topBar}>
-            <CircleButton
-              icon="menu-outline"
-              label={t("home.menu")}
-              onPress={() => setMenuOpen(true)}
-            />
             <CircleButton
               icon="notifications-outline"
               label={t("home.notificationsLabel", { count: unread })}
@@ -209,7 +164,7 @@ export function HomeScreen() {
                   : t("home.roomTileNone")
               }
               action="arrow-forward"
-              onPress={open("/residency-record")}
+              onPress={open(residence ? "/residency-record" : "/register-dorm")}
             />
             <Tile
               icon="flash-outline"
@@ -237,45 +192,14 @@ export function HomeScreen() {
             />
           </View>
           <Button
-            label={t("home.createRequest")}
-            icon="add"
-            onPress={open("/request/new")}
+            label={t(primaryAction.label)}
+            icon={primaryAction.icon}
+            onPress={open(primaryAction.href)}
             style={{ marginTop: spacing.lg }}
           />
         </Gradient>
 
         <View style={styles.body}>
-          {/* Tiện ích nhanh */}
-          <SectionHeader
-            title={t("home.quickServices")}
-            action={t("common.seeAll")}
-            onAction={() => setMenuOpen(true)}
-          />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.quickScroller}
-            contentContainerStyle={styles.quickRow}
-          >
-            {services.map((service) => (
-              <Touchable
-                key={service.key}
-                onPress={open(service.href)}
-                accessibilityLabel={t(service.key)}
-                style={styles.quick}
-                pressScale={0.92}
-              >
-                {/* Nền đặc thay cho kính mờ: Safari iPhone vẽ hỏng backdrop-filter ở ô đầu hàng cuộn ngang (mất icon). */}
-                <View style={styles.quickIcon}>
-                  <Ionicons name={service.icon} size={22} color={colors.ink} />
-                </View>
-                <Text style={styles.quickLabel} numberOfLines={2}>
-                  {t(service.key)}
-                </Text>
-              </Touchable>
-            ))}
-          </ScrollView>
-
           {/* Điện nước */}
           <SectionHeader
             title={t("home.todayUsage")}
@@ -364,64 +288,8 @@ export function HomeScreen() {
               );
             })}
           </View>
-
-          {/* Trợ lý AI */}
-          <Touchable
-            onPress={open("/assistant")}
-            accessibilityLabel={t("home.askAi")}
-            pressScale={0.98}
-            style={{ marginTop: spacing.xxl }}
-          >
-            <PhotoBackground source={Photos.studyDesk()} style={styles.ai}>
-              <Glass variant="photo" strong style={styles.aiGlass}>
-                <View style={styles.aiIcon}>
-                  <Ionicons
-                    name="sparkles"
-                    size={22}
-                    color={colors.primaryLight}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.aiTitle}>{t("home.askAi")}</Text>
-                  <Text style={styles.aiBody}>{t("home.askAiBody")}</Text>
-                </View>
-                <Ionicons
-                  name="arrow-forward-circle"
-                  size={34}
-                  color={colors.primaryLight}
-                />
-              </Glass>
-            </PhotoBackground>
-          </Touchable>
         </View>
       </ScrollView>
-
-      {/* Menu tất cả dịch vụ */}
-      <BottomSheet
-        visible={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        title={t("home.menuTitle")}
-      >
-        <View style={styles.menuGrid}>
-          {services.map((service) => (
-            <Touchable
-              key={service.key}
-              onPress={() => {
-                setMenuOpen(false);
-                router.push(service.href);
-              }}
-              accessibilityLabel={t(service.key)}
-              style={styles.menuItem}
-              pressScale={0.92}
-            >
-              <IconBadge icon={service.icon} size={52} />
-              <Text style={styles.quickLabel} numberOfLines={2}>
-                {t(service.key)}
-              </Text>
-            </Touchable>
-          ))}
-        </View>
-      </BottomSheet>
     </View>
   );
 }
@@ -534,14 +402,12 @@ function UsageStat({
   );
 }
 
-const white = "#FFFFFF";
-
 const useStyles = makeStyles(({ colors, font, shadow }) => ({
   root: { flex: 1, backgroundColor: colors.background },
   header: { paddingHorizontal: spacing.xl, zIndex: 2 },
   topBar: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
     marginBottom: spacing.xl,
   },
@@ -637,26 +503,6 @@ const useStyles = makeStyles(({ colors, font, shadow }) => ({
   },
   body: { paddingHorizontal: spacing.xl },
   caption: { ...font.caption },
-  quickScroller: { marginHorizontal: -spacing.xl, flexGrow: 0 },
-  quickRow: { gap: spacing.md, paddingHorizontal: spacing.xl },
-  quick: { width: 72, alignItems: "center", gap: 8 },
-  quickIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  quickLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.inkSoft,
-    textAlign: "center",
-    lineHeight: 15,
-  },
   usageRow: {
     flexDirection: "row",
     alignItems: "stretch",
@@ -685,29 +531,4 @@ const useStyles = makeStyles(({ colors, font, shadow }) => ({
   },
   requestTitle: { ...font.label, fontSize: 15 },
   requestMeta: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  ai: { borderRadius: radius.lg, padding: spacing.sm },
-  aiGlass: {
-    borderRadius: radius.md + 2,
-    padding: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  aiIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.14)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  aiTitle: { color: white, fontSize: 16, fontWeight: "800" },
-  aiBody: { color: "rgba(255,255,255,0.82)", fontSize: 13, marginTop: 2 },
-  menuGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    rowGap: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  menuItem: { width: "25%", alignItems: "center", gap: 8 },
 }));

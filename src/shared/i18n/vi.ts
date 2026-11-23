@@ -383,6 +383,8 @@ export const vi = {
     requestTile: "Yêu cầu",
     requestTileSub: "{{count}} đang xử lý",
     createRequest: "Tạo yêu cầu mới",
+    ctaRegister: "Đăng ký ở KTX",
+    ctaCheckIn: "Nhận phòng ngay",
     quickServices: "Tiện ích nhanh",
     yourRoom: "Phòng của bạn",
     staying: "Đang lưu trú",
