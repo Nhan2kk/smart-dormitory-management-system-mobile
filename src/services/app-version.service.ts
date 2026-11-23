@@ -5,15 +5,15 @@ import { webPath } from "../shared/baseUrl";
 const BUNDLE_PATTERN = /\/_expo\/static\/js\/web\/[^"'\s]+\.js/g;
 
 /**
- * Phát hiện bản web mới đã deploy: so các tệp JS có mã hash trong `index.html` mới nhất trên máy chủ với
- * các tệp đang chạy. iPhone giữ app cài ra màn hình chính trong bộ nhớ, mở lại không tự tải bản mới.
+ * Phát hiện bản web mới đã deploy: so `index.html` mới nhất trên máy chủ với bản đang chạy, gồm các tệp JS có
+ * mã hash và phần CSS / script viết tay trong `<head>` (deploy chỉ sửa HTML thì tên tệp JS không đổi). iPhone giữ app cài ra màn hình chính trong bộ nhớ, mở lại không tự tải bản mới.
  * Chỉ chạy ở bản build web (dev server không có tệp hash nên luôn coi là không có bản mới).
  */
 export class AppVersionService {
   private readonly current: string | null;
 
   constructor() {
-    this.current = AppVersionService.supported ? AppVersionService.loadedFingerprint() : null;
+    this.current = AppVersionService.supported ? AppVersionService.fingerprint(document) : null;
   }
 
   static get supported(): boolean {
@@ -26,7 +26,8 @@ export class AppVersionService {
     try {
       const response = await fetch(`${webPath("/")}?v=${Date.now()}`, { cache: "no-store" });
       if (!response.ok) return null;
-      const latest = AppVersionService.fingerprint(await response.text());
+      const html = await response.text();
+      const latest = AppVersionService.fingerprint(new DOMParser().parseFromString(html, "text/html"));
       return latest && latest !== this.current ? latest : null;
     } catch {
       return null;
@@ -38,15 +39,31 @@ export class AppVersionService {
     window.location.reload();
   }
 
-  private static loadedFingerprint(): string | null {
-    const sources = Array.from(document.querySelectorAll("script[src]"))
+  /**
+   * Dấu vân tay của một bản build: tệp JS có mã hash + CSS reset + script viết tay trong `<head>`. Chỉ lấy những
+   * phần app không tự sửa lúc chạy (không lấy meta theme-color hay style do react-native-web chèn thêm).
+   * Không có tệp JS hash (dev server) thì trả null để không bao giờ báo bản mới.
+   */
+  private static fingerprint(doc: Document): string | null {
+    const sources = Array.from(doc.querySelectorAll("script[src]"))
       .map((script) => script.getAttribute("src") ?? "")
       .join(" ");
-    return AppVersionService.fingerprint(sources);
+    const files = Array.from(new Set(sources.match(BUNDLE_PATTERN) ?? [])).sort();
+    if (!files.length) return null;
+    const inline = [
+      doc.getElementById("expo-reset")?.textContent ?? "",
+      ...Array.from(doc.head.querySelectorAll("script:not([src])")).map((script) => script.textContent ?? ""),
+    ];
+    return [...files, AppVersionService.hash(inline.join("\n"))].join("|");
   }
 
-  private static fingerprint(text: string): string | null {
-    const files = Array.from(new Set(text.match(BUNDLE_PATTERN) ?? [])).sort();
-    return files.length ? files.join("|") : null;
+  /** Băm chuỗi ngắn gọn (FNV-1a 32-bit) để so sánh, không dùng cho bảo mật. */
+  private static hash(text: string): string {
+    let value = 0x811c9dc5;
+    for (let index = 0; index < text.length; index++) {
+      value ^= text.charCodeAt(index);
+      value = Math.imul(value, 0x01000193);
+    }
+    return (value >>> 0).toString(16);
   }
 }
