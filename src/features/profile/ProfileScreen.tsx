@@ -10,13 +10,9 @@ import { useI18n } from "../../shared/i18n/I18nProvider";
 import { Photos } from "../../shared/images";
 import { usePreferences } from "../../shared/preferences";
 import { makeStyles, radius, spacing, TAB_BAR_SPACE, useTheme } from "../../shared/theme";
-import { Avatar, Backdrop, BottomSheet, Button, Card, CircleButton, IconName, ListRow, PhotoBackground, Touchable, useToast } from "../../shared/ui";
+import { Avatar, Backdrop, BottomSheet, Button, Card, IconName, ListRow, PhotoBackground, Touchable, useToast } from "../../shared/ui";
 import { useAuth } from "../auth/AuthProvider";
 import { usePushNotifications } from "../notifications/usePushNotifications";
-import { useDebts } from "../debts/useDebts";
-import { requestStats } from "../requests/requestModel";
-import { useMyRequests } from "../requests/useMyRequests";
-import { useResidency } from "../residency/useResidency";
 import { AvatarPicker } from "./AvatarPicker";
 import { APP_VERSION, ContactSheet, FaqSheet, VersionSheet } from "./SupportSheets";
 import { useProfile } from "./useProfile";
@@ -30,19 +26,16 @@ export function ProfileScreen() {
   const avatarUrl = user?.avatarUrl ?? null;
   const { notify } = useToast();
   const { t } = useI18n();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const prefs = usePreferences();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const remainingDays = useResidency().overview?.remainingDays() ?? null;
-  const unpaidDebt = useDebts().ledger?.totalUnpaid() ?? 0;
   const { profile } = useProfile();
   const name = profile?.fullName || user?.fullName || "";
   const [avatarSheet, setAvatarSheet] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [supportSheet, setSupportSheet] = useState<"contact" | "faq" | "version" | null>(null);
   const closeSupport = () => setSupportSheet(null);
-  const processingRequests = requestStats(useMyRequests().requests ?? []).processing;
   const go =(href: Href) => () => router.push(href);
 
   const pickAvatar = async (source: "camera" | "library") => {
@@ -88,9 +81,6 @@ export function ProfileScreen() {
     <View style={styles.root}>
       <Backdrop />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + spacing.md, paddingBottom: TAB_BAR_SPACE, paddingHorizontal: spacing.xl }}>
-        <View style={styles.topBar}>
-          <CircleButton icon="chevron-back" label={t("common.back")} onPress={() => (router.canGoBack() ? router.back() : router.navigate("/"))} />
-        </View>
         {/* Tiêu đề + ảnh vòm */}
         <View style={styles.hero}>
           <View style={styles.heroText}>
@@ -100,12 +90,7 @@ export function ProfileScreen() {
             </Text>
             <Text style={styles.heroBody}>{t("profile.heroBody")}</Text>
           </View>
-          <View>
-            <PhotoBackground source={Photos.warmLobby(500)} style={styles.arch} />
-            <Touchable onPress={() => router.navigate("/")} accessibilityLabel={t("tabs.home")} style={[styles.homeBadge, { backgroundColor: colors.primary }]}>
-              <Ionicons name="home" size={18} color={colors.onPrimary} />
-            </Touchable>
-          </View>
+          <PhotoBackground source={Photos.warmLobby(500)} style={styles.arch} />
         </View>
 
         {/* Thẻ hồ sơ */}
@@ -126,22 +111,10 @@ export function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color={colors.muted} />
           </Touchable>
         </Card>
-        <View style={styles.stats}>
-          <Stat value={remainingDays != null ? `${remainingDays}` : "—"} label={t("profile.stayDays")} />
-          <Stat value={Formatter.compactCurrency(unpaidDebt)} label={t("profile.debt")} />
-          <Stat value={`${processingRequests}`} label={t("profile.processing")} />
-        </View>
 
         <Section title={t("profile.sectionAccount")}>
           <Row icon="person-outline" title={t("profile.personalTitle")} subtitle={t("profile.infoSub")} onPress={go("/profile-edit")} divider />
-          <Row icon="shield-checkmark-outline" title={t("profile.security")} subtitle={t("profile.securitySub")} onPress={go({ pathname: "/profile-edit", params: { tab: "account" } })} divider />
-          <Row icon="notifications-outline" title={t("profile.notifications")} subtitle={t("profile.notificationsSub")} onPress={go("/notifications")} divider />
-          <Row
-            icon={isDark ? "moon-outline" : "sunny-outline"}
-            title={t("profile.darkMode")}
-            subtitle={t("profile.darkModeSub")}
-            right={switchControl(isDark, (value) => prefs.update({ mode: value ? "dark" : "light" }), t("profile.darkMode"))}
-          />
+          <Row icon="phone-portrait-outline" title={t("profile.push")} subtitle={t("profile.pushSub")} right={switchControl(push.enabled, push.setEnabled, t("profile.push"))} />
         </Section>
 
         <Section title={t("profile.sectionStay")}>
@@ -152,24 +125,15 @@ export function ProfileScreen() {
         </Section>
 
         <Section title={t("profile.sectionPreferences")}>
-          <Row icon="globe-outline" title={t("profile.language")} subtitle={prefs.language === "vi" ? t("settings.vietnamese") : t("settings.english")} onPress={go("/settings")} divider />
           <Row
             icon="color-palette-outline"
-            title={t("profile.themeRow")}
-            subtitle={`${t(`settings.presets.${prefs.preset}`)}${prefs.glass ? ` · ${t("settings.glass")}` : ""}`}
+            title={t("settings.title")}
+            subtitle={`${prefs.language === "vi" ? t("settings.vietnamese") : t("settings.english")} · ${t(`settings.presets.${prefs.preset}`)}${prefs.glass ? ` · ${t("settings.glass")}` : ""}`}
             onPress={go("/settings")}
-            divider
-          />
-          <Row
-            icon="phone-portrait-outline"
-            title={t("profile.push")}
-            subtitle={t("profile.pushSub")}
-            right={switchControl(push.enabled, push.setEnabled, t("profile.push"))}
           />
         </Section>
 
         <Section title={t("profile.sectionSupport")}>
-          <Row icon="help-circle-outline" title={t("profile.helpCenter")} subtitle={t("profile.helpCenterSub")} onPress={go("/assistant")} divider />
           <Row icon="call-outline" title={t("profile.contactTitle")} subtitle={t("profile.contactRowSub")} onPress={() => setSupportSheet("contact")} divider />
           <Row icon="help-buoy-outline" title={t("profile.faqTitle")} subtitle={t("profile.faqRowSub")} onPress={() => setSupportSheet("faq")} divider />
           <Row icon="sync-outline" title={t("profile.versionTitle")} subtitle={t("profile.versionRowSub", { version: APP_VERSION })} onPress={() => setSupportSheet("version")} divider />
@@ -242,20 +206,7 @@ function Row(props: { icon: IconName; title: string; subtitle?: string; onPress?
   return <ListRow tone="primary" chevron={!!props.onPress && !props.right} {...props} />;
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
-  const styles = useStyles();
-  return (
-    <Card style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel} numberOfLines={1}>
-        {label}
-      </Text>
-    </Card>
-  );
-}
-
 const useStyles = makeStyles(({ colors, font }) => ({
-  topBar: { flexDirection: "row", marginBottom: spacing.md },
   root: { flex: 1, backgroundColor: colors.background },
   hero: { flexDirection: "row", alignItems: "flex-end", gap: spacing.md, marginBottom: spacing.xl },
   heroText: { flex: 1, paddingBottom: spacing.sm },
@@ -264,16 +215,11 @@ const useStyles = makeStyles(({ colors, font }) => ({
   heroTitle: { ...font.display, fontSize: 27, lineHeight: 33, marginTop: 6 },
   heroBody: { ...font.body, fontSize: 13, lineHeight: 19, color: colors.muted, marginTop: spacing.sm },
   arch: { width: 118, height: 160, borderTopLeftRadius: 59, borderTopRightRadius: 59, borderBottomLeftRadius: radius.md, borderBottomRightRadius: radius.md },
-  homeBadge: { position: "absolute", left: -14, top: 18, width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: colors.background },
   profileCard: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   profileInfo: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm, minHeight: 48 },
   camera: { position: "absolute", right: -2, bottom: -2, width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: colors.background },
   name: { ...font.heading, fontSize: 18 },
   role: { ...font.caption, fontSize: 13, marginTop: 2 },
-  stats: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
-  stat: { flex: 1, alignItems: "center", paddingVertical: spacing.md, paddingHorizontal: spacing.sm },
-  statValue: { fontSize: 18, fontWeight: "800", color: colors.ink },
-  statLabel: { ...font.caption, marginTop: 2 },
   sectionHead: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.xxl, marginBottom: spacing.md },
   sectionTitle: { ...font.heading, fontSize: 16 },
   sectionLine: { width: 32, height: 1.5, borderRadius: 1, backgroundColor: colors.border },
