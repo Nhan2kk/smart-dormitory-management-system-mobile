@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import { webPath } from "../shared/baseUrl";
 
 /** Tệp JS của bản build web (tên có mã hash, đổi mỗi lần deploy có thay đổi code). */
 const BUNDLE_PATTERN = /\/_expo\/static\/js\/web\/[^"'\s]+\.js/g;
@@ -23,7 +24,7 @@ export class AppVersionService {
   async newerVersion(): Promise<string | null> {
     if (!this.current) return null;
     try {
-      const response = await fetch(`/?v=${Date.now()}`, { cache: "no-store" });
+      const response = await fetch(`${webPath("/")}?v=${Date.now()}`, { cache: "no-store" });
       if (!response.ok) return null;
       const latest = AppVersionService.fingerprint(await response.text());
       return latest && latest !== this.current ? latest : null;

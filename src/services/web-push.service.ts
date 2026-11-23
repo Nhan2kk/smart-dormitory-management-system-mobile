@@ -2,8 +2,9 @@ import { Platform } from "react-native";
 import { WebPushEnableResult } from "../enums/web-push.enum";
 import type { WebPushPublicKeyResponse, WebPushSubscribeRequest } from "../models/web-push.model";
 import type { ApiClient } from "../shared/api";
+import { webPath } from "../shared/baseUrl";
 
-const SERVICE_WORKER_PATH = "/sw.js";
+const SERVICE_WORKER_PATH = webPath("/sw.js");
 
 /**
  * Thông báo đẩy trên thiết bị cho bản web (Web Push): đăng ký service worker, xin quyền, đăng ký với
