@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>%WEB_TITLE%</title>
 
     <!-- PWA: "Thêm vào màn hình chính" mở toàn màn hình, không có thanh trình duyệt. -->
@@ -13,9 +13,8 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="SDMS" />
-    <!-- "black-translucent": cho phép nền app tràn lên vùng tai thỏ thay vì dải trắng mặc định của iOS.
-         Kết hợp với `html.standalone { position: fixed; inset: 0; }` bên dưới để giữ đúng chiều cao toàn màn hình. -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- "default": iOS tự quản lý khung màn hình chuẩn, không tràn vào vùng safe area nên thanh tab dưới đáy không bị che/cắt. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
