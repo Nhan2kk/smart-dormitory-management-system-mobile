@@ -737,6 +737,7 @@ function Wizard({
             />
           ) : !visibleBuildings?.length ? (
             <EmptyState
+              art="search"
               icon="business-outline"
               title={t("registration.noBuildings")}
             />
@@ -916,7 +917,7 @@ function Wizard({
             {t("registration.chooseRoom", { floor: floorTitle(floor) })}
           </Text>
           {visibleRooms.length === 0 ? (
-            <EmptyState icon="grid-outline" title={t("registration.noRooms")} />
+            <EmptyState art="search" icon="grid-outline" title={t("registration.noRooms")} />
           ) : (
             <View style={{ gap: spacing.sm }}>
               {visibleRooms.map((item) => {
@@ -988,7 +989,7 @@ function Wizard({
             {t("registration.chooseBed", { room: room.code })}
           </Text>
           {room.beds.length === 0 ? (
-            <EmptyState icon="bed-outline" title={t("registration.noBeds")} />
+            <EmptyState art="search" icon="bed-outline" title={t("registration.noBeds")} />
           ) : (
             <BedMap beds={room.beds} value={bedId} onChange={selectBed} />
           )}

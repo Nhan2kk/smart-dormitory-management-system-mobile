@@ -152,7 +152,7 @@ function DebtsContent({ ledger }: { ledger: DebtLedger }) {
 
       {tab === "bills" &&
         (ledger.bills.length === 0 ? (
-          <EmptyState icon="receipt-outline" title={t("debts.noBills")} />
+          <EmptyState art="search" icon="receipt-outline" title={t("debts.noBills")} />
         ) : (
           <View style={{ gap: spacing.md }}>
             {ledger.bills.map((bill) => (
@@ -178,7 +178,7 @@ function DebtsContent({ ledger }: { ledger: DebtLedger }) {
 
       {tab === "history" &&
         (paid.length === 0 ? (
-          <EmptyState icon="receipt-outline" title={t("debts.empty")} />
+          <EmptyState art="search" icon="receipt-outline" title={t("debts.empty")} />
         ) : (
           <Card style={{ paddingVertical: spacing.xs }}>
             {paid.map((item, index, list) => (

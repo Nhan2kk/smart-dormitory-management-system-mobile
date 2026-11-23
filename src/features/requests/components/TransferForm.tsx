@@ -203,7 +203,7 @@ export function TransferForm({ checkInId }: { checkInId?: string }) {
         {!rooms ? (
           <ActivityIndicator color={colors.primary} />
         ) : rooms.length === 0 ? (
-          <EmptyState icon="bed-outline" title={t("requestForm.noRooms")} />
+          <EmptyState art="search" icon="bed-outline" title={t("requestForm.noRooms")} />
         ) : (
           <View style={{ gap: spacing.sm }}>
             {rooms.map((item) => {

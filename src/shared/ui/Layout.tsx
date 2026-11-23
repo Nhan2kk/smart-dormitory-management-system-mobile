@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import { StyleSheet, Text, View, ViewStyle } from "react-native";
 import { makeStyles, radius, spacing, Tone, useTheme } from "../theme";
 import { IconBadge, IconName } from "./Badges";
+import { EmptySearchArt } from "./EmptySearchArt";
 import { Glass } from "./Glass";
 import { Touchable } from "./Touchable";
 
@@ -124,24 +125,34 @@ export function InfoRow({
   );
 }
 
+/**
+ * Trạng thái trống. {@code art="search"} dùng hình minh hoạ "không tìm thấy" (theo màu chủ đạo của theme)
+ * thay cho icon tròn — dành cho danh sách lọc không ra kết quả hoặc dữ liệu không tồn tại.
+ */
 export function EmptyState({
   icon,
   title,
   description,
   action,
+  art,
 }: {
   icon: IconName;
   title: string;
   description?: string;
   action?: ReactNode;
+  art?: "search";
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
   return (
     <View style={styles.empty}>
-      <View style={styles.emptyIcon}>
-        <Ionicons name={icon} size={34} color={colors.primary} />
-      </View>
+      {art === "search" ? (
+        <EmptySearchArt color={colors.primary} />
+      ) : (
+        <View style={styles.emptyIcon}>
+          <Ionicons name={icon} size={34} color={colors.primary} />
+        </View>
+      )}
       <Text style={styles.emptyTitle}>{title}</Text>
       {!!description && (
         <Text style={styles.emptyDescription}>{description}</Text>

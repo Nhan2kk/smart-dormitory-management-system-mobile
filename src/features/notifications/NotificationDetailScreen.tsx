@@ -27,7 +27,7 @@ export function NotificationDetailScreen() {
   if (!item)
     return (
       <Screen header={<AppHeader title={t("notifications.title")} />}>
-        <EmptyState icon="search-outline" title={t("common.notFound")} />
+        <EmptyState art="search" icon="search-outline" title={t("common.notFound")} />
       </Screen>
     );
 
