@@ -811,7 +811,7 @@ export const vi = {
   notifications: {
     enablePush: "Bật thông báo",
     enablePushTitle: "Bật thông báo đẩy",
-    enablePushBody: "Nhận thông báo nhanh chóng về hạn thanh toán, yêu cầu và tin quan trọng từ KTX.",
+    enablePushBody: "Nhận thông báo nhanh chóng về các thông tin quan trọng từ KTX.",
     title: "Thông báo",
     unread: "{{count}} chưa đọc",
     allRead: "Đã đọc hết",

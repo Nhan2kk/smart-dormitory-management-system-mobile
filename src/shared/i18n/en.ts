@@ -812,7 +812,7 @@ export const en: Dictionary = {
   notifications: {
     enablePush: "Turn on",
     enablePushTitle: "Turn on push notifications",
-    enablePushBody: "Get payment reminders, request updates and important dorm news right away.",
+    enablePushBody: "Get important updates from the dorm right away.",
     title: "Notifications",
     unread: "{{count}} unread",
     allRead: "All caught up",

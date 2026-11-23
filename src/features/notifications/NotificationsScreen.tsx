@@ -51,22 +51,22 @@ export function NotificationsScreen() {
         />
       }
     >
-      {/* Bản web chưa bật thông báo đẩy: mời bật ngay tại đây để không phải vào tab Cá nhân. */}
-      {Platform.OS === "web" && !push.enabled && !pushDismissed && (
-        <View style={{ marginBottom: spacing.lg }}>
-          <PushPromptCard onEnable={() => push.setEnabled(true)} onDismiss={() => setPushDismissed(true)} />
-        </View>
-      )}
       <ChipGroup<Filter>
         value={filter}
         onChange={setFilter}
         options={[
-          { value: "all", label: t("notifications.all") },
-          { value: "unread", label: t("notifications.unreadFilter"), count: unreadCount },
-          { value: "important", label: t("notifications.important") },
-          { value: "announcement", label: t("notifications.fromManagement") },
+          { value: "all", label: t("notifications.all"), icon: "notifications-outline", count: items ? all.length : undefined },
+          { value: "unread", label: t("notifications.unreadFilter"), icon: "mail-unread-outline", count: unreadCount },
+          { value: "important", label: t("notifications.important"), icon: "star-outline" },
+          { value: "announcement", label: t("notifications.fromManagement"), icon: "business-outline" },
         ]}
       />
+      {/* Bản web chưa bật thông báo đẩy: mời bật ngay tại đây để không phải vào tab Cá nhân. */}
+      {Platform.OS === "web" && !push.enabled && !pushDismissed && (
+        <View style={{ marginTop: spacing.lg }}>
+          <PushPromptCard onEnable={() => push.setEnabled(true)} onDismiss={() => setPushDismissed(true)} />
+        </View>
+      )}
       {error && (
         <View style={{ marginTop: spacing.lg }}>
           <Callout tone="danger" icon="cloud-offline-outline" action={<Button label={t("common.retry")} size="md" variant="secondary" onPress={reload} />}>
