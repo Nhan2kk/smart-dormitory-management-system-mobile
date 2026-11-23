@@ -6,7 +6,7 @@ import { Formatter } from "../../shared/format";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import type { TranslationKey } from "../../shared/i18n/types";
 import { makeStyles, radius, spacing, useTheme } from "../../shared/theme";
-import { AppHeader, Backdrop, BottomSheet, Card, CircleButton, EmptyState, Field, Gradient, Touchable, useToast } from "../../shared/ui";
+import { AppHeader, Backdrop, BottomSheet, Card, CircleButton, EmptyState, Field, Gradient, Touchable, TypingDots, useToast } from "../../shared/ui";
 import { ChatFeedbackRating, ChatRole } from "../../enums/assistant.enum";
 import type { ChatBootstrapResponse, ChatMessage } from "../../models/assistant.model";
 import { useAssistant } from "./useAssistant";
@@ -250,9 +250,7 @@ function Typing() {
         <Ionicons name="sparkles" size={14} color={colors.primary} />
       </View>
       <View style={[styles.bubble, styles.bot, styles.typing]}>
-        <View style={[styles.typingDot, { opacity: 0.4 }]} />
-        <View style={[styles.typingDot, { opacity: 0.7 }]} />
-        <View style={styles.typingDot} />
+        <TypingDots color={colors.primary} />
         <Text style={[styles.caption, { marginLeft: 6 }]}>{t("assistant.thinking")}</Text>
       </View>
     </View>
@@ -283,7 +281,6 @@ const useStyles = makeStyles(({ colors, font }) => ({
   rate: { flexDirection: "row", gap: 4 },
   rateBtn: { width: 36, height: 32, alignItems: "center", justifyContent: "center", borderRadius: 16 },
   typing: { flexDirection: "row", alignItems: "center", gap: 5 },
-  typingDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.primary },
   composer: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm, marginHorizontal: spacing.lg, padding: 6, paddingLeft: spacing.lg, backgroundColor: colors.surface, borderRadius: 28, borderWidth: 1, borderColor: colors.border },
   input: { flex: 1, fontSize: 16, color: colors.ink, maxHeight: 120, paddingVertical: 12, outlineStyle: "none" } as object,
   send: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },

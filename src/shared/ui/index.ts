@@ -40,3 +40,4 @@ export { ToastProvider, useToast } from "./Toast";
 export { Touchable } from "./Touchable";
 export { LightStatusBar } from "./LightStatusBar";
 export { Backdrop } from "./Backdrop";
+export { TypingDots } from "./TypingDots";
