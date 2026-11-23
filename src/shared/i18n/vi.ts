@@ -344,7 +344,7 @@ export const vi = {
     welcomeTitle1: "Cuộc sống KTX,",
     welcomeTitle2: "gọn trong tầm tay.",
     welcomeBody:
-      "Quản lý phòng ở, hoá đơn, điện nước và yêu cầu hỗ trợ — tất cả trong một ứng dụng.",
+      "Quản lý phòng ở, hoá đơn, điện nước và yêu cầu hỗ trợ - tất cả trong một ứng dụng.",
     highlightQr: "Thanh toán QR",
     highlightIot: "Điện nước IoT",
     highlightAi: "Trợ lý AI",
@@ -1307,7 +1307,7 @@ export const vi = {
     system: "Theo máy",
     theme: "Bộ chủ đề",
     themeHint:
-      "Mỗi bộ gồm màu nền, bề mặt và màu nhấn — có cả bản sáng và tối.",
+      "Mỗi bộ gồm màu nền, bề mặt và màu nhấn - có cả bản sáng và tối.",
     presets: {
       sunset: "Hoàng hôn",
       lavender: "Oải hương",
