@@ -143,15 +143,18 @@ export class UtilityUsage {
   insights(): UtilityInsight[] {
     const items: UtilityInsight[] = [];
     const mtd = this.monthToDate();
+    // Chỉ kết luận "ổn định" khi thật sự so được với tháng trước (tháng trước có số liệu).
+    let compared = false;
     for (const metric of ["electricity", "water"] as const) {
       const change = UtilityUsage.change(mtd[metric].current, mtd[metric].previous);
       if (change == null) continue;
+      compared = true;
       if (change >= NOTABLE_CHANGE) items.push({ kind: metric === "electricity" ? "electricityUp" : "waterUp", tone: "warning", value: change });
       else if (change <= -NOTABLE_CHANGE) items.push({ kind: metric === "electricity" ? "electricityDown" : "waterDown", tone: "success", value: Math.abs(change) });
     }
     const peak = this.peakHour();
     if (peak != null) items.push({ kind: "peakHour", tone: "info", value: peak });
-    if (items.every((item) => item.kind === "peakHour") && this.hasData) items.unshift({ kind: "stable", tone: "success", value: 0 });
+    if (compared && items.every((item) => item.kind === "peakHour")) items.unshift({ kind: "stable", tone: "success", value: 0 });
     return items;
   }
 

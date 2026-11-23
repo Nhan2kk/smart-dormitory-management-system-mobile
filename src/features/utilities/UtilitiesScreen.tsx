@@ -219,8 +219,7 @@ function UtilitiesContent({ usage }: { usage: UtilityUsage }) {
       {insights.length > 0 && <SectionHeader title={t("utilities.alerts")} />}
       <View style={{ gap: spacing.md }}>
         {insights.map((insight) => (
-          <Card key={insight.kind} style={styles.alert}>
-            <View style={[styles.alertBar, { backgroundColor: tones[insight.tone].fg }]} />
+          <Card key={insight.kind} style={[styles.alert, { borderLeftColor: tones[insight.tone].fg }]}>
             <IconBadge icon={INSIGHT_ICONS[insight.kind]} tone={insight.tone} size={40} />
             <View style={{ flex: 1, gap: 3 }}>
               <Text style={styles.alertTitle}>{t(`utilities.insightTitle.${insight.kind}`)}</Text>
@@ -320,8 +319,8 @@ const useStyles = makeStyles(({ colors, font }) => ({
   meter: { flex: 1, gap: spacing.sm },
   meterValue: { fontSize: 18, fontWeight: "800", color: colors.ink },
   meterUpdated: { ...font.caption, marginTop: spacing.sm, textAlign: "center" },
-  alert: { flexDirection: "row", gap: spacing.md, overflow: "hidden", paddingLeft: spacing.lg + 4 },
-  alertBar: { position: "absolute", left: 0, top: 0, bottom: 0, width: 4 },
+  // Viền trái theo tông: dùng border của chính thẻ nên bo cong theo góc thẻ.
+  alert: { flexDirection: "row", gap: spacing.md, borderLeftWidth: 4 },
   alertTitle: { ...font.label, fontSize: 15 },
   alertBody: { ...font.body, fontSize: 13, lineHeight: 18 },
   sheetHead: { flexDirection: "row", alignItems: "center", gap: 6, paddingTop: spacing.md },
