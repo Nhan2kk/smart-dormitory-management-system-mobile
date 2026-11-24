@@ -1,38 +1,163 @@
-# SDMS Mobile
+<div align="center">
 
-Ứng dụng Expo SDK 57 cho sinh viên. Đăng nhập gọi backend thật; các màn hình bên trong hiện dùng dữ liệu mock (lớp `*Repository` trong từng `features/*/*.mock.ts`) để thay bằng API sau.
+<img src=".github/assets/sdms-logo.png" alt="SDMS logo" width="120" />
 
-Màn hình: Trang chủ · Điện & nước (biểu đồ, lịch tiêu thụ theo ngày) · Yêu cầu (hỗ trợ/chuyển phòng/trả phòng, tất toán, hoàn tiền) · Cá nhân (ảnh đại diện, thông tin, đổi mật khẩu) · Giao diện & ngôn ngữ (sáng/tối, 4 màu chủ đạo, Việt/Anh) · Công nợ + hoá đơn + biên lai + thanh toán QR · Thông báo · Hồ sơ lưu trú · Đăng ký KTX (đơn của tôi, 5 bước, giữ chỗ/huỷ) · Nhận phòng (kiểm tra tài sản) · Trợ lý AI (lịch sử trò chuyện).
+# Smart Dormitory Management System
 
-Giao diện dùng theme động (`src/shared/theme.tsx`: `useTheme`, `makeStyles`), đa ngôn ngữ (`src/shared/i18n`: `useI18n().t/l`), lớp kính mờ `Glass` (expo-blur; Android dùng lớp phủ bán trong suốt) và ảnh thật từ Unsplash (`src/shared/images.ts`, cần mạng; ảnh nội bộ làm ảnh chờ).
+### Hệ thống quản lý ký túc xá thông minh — Ứng dụng Di động
 
-## Cấu trúc
+Mọi thủ tục ký túc xá của sinh viên, gói gọn trong một ứng dụng trên điện thoại.
 
+<p>
+  <img src="https://img.shields.io/badge/React_Native-0.88-61DAFB?style=for-the-badge&logo=react&logoColor=white" alt="React Native 0.88" />
+  <img src="https://img.shields.io/badge/Expo-SDK_58-000020?style=for-the-badge&logo=expo&logoColor=white" alt="Expo SDK 58" />
+  <img src="https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 6" />
+  <img src="https://img.shields.io/badge/Platform-Android_%7C_iOS-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Platform Android | iOS" />
+  <img src="https://img.shields.io/badge/i18n-VI_%7C_EN-0d1e4c?style=for-the-badge" alt="i18n VI | EN" />
+</p>
+
+[Giới thiệu](#gioi-thieu) · [Điểm nổi bật](#diem-noi-bat) · [Chức năng](#chuc-nang) · [Kiến trúc](#kien-truc) · [Hệ sinh thái](#he-sinh-thai) · [Công nghệ](#cong-nghe)
+
+</div>
+
+---
+
+<a id="gioi-thieu"></a>
+
+## Giới thiệu
+
+**SDMS – Smart Dormitory Management System** là hệ thống quản lý ký túc xá thông minh, số hóa toàn bộ vòng đời lưu trú của sinh viên: từ **đăng ký, xếp phòng, nhận phòng, đóng tiền, theo dõi điện nước** cho đến **chuyển phòng, trả phòng và hoàn tiền**. Hệ thống kết hợp **thiết bị IoT** đo điện nước tại từng phòng và **trí tuệ nhân tạo** để tự động hóa vận hành, phát hiện sớm sự cố và hỗ trợ sinh viên 24/7.
+
+Repository này là **ứng dụng di động dành cho sinh viên**. Sinh viên dùng chung tài khoản với cổng thông tin web để đăng ký ở, đóng tiền, theo dõi điện nước của phòng, gửi yêu cầu và nhận thông báo ngay trên điện thoại.
+
+<a id="diem-noi-bat"></a>
+
+## Điểm nổi bật
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**Tự phục vụ mọi lúc**<br/>
+Đăng ký, nhận phòng, đóng tiền, gửi yêu cầu — không cần đến văn phòng.
+
+</td>
+<td width="50%" valign="top">
+
+**Thanh toán một chạm**<br/>
+Thanh toán hóa đơn và phí đăng ký bằng mã QR ngân hàng.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+**Minh bạch điện nước**<br/>
+Biểu đồ và lịch tiêu thụ theo ngày của chính phòng mình.
+
+</td>
+<td width="50%" valign="top">
+
+**Cá nhân hóa**<br/>
+Giao diện sáng/tối, chọn màu chủ đạo, song ngữ Việt–Anh.
+
+</td>
+</tr>
+</table>
+
+<a id="doi-tuong"></a>
+
+## Đối tượng sử dụng
+
+| Vai trò | Công việc chính trên hệ thống |
+|---|---|
+| **Ban quản lý (BQL)** | Điều hành ký túc xá, mở đợt đăng ký, duyệt hồ sơ, cấu hình giá, theo dõi doanh thu và báo cáo |
+| **Nhân viên** | Xử lý yêu cầu sửa chữa, kiểm tra phòng, xác minh sự cố IoT, hỗ trợ sinh viên |
+| **Sinh viên** | Đăng ký ở, đóng tiền, theo dõi điện nước, gửi yêu cầu, trò chuyện với nhân viên và trợ lý AI |
+
+<a id="chuc-nang"></a>
+
+## Chức năng chính
+
+| Nhóm chức năng | Mô tả |
+|---|---|
+| **Trang chủ** | Tổng quan phòng đang ở, hóa đơn cần đóng, thông báo mới và lối tắt đến chức năng thường dùng |
+| **Đăng ký ký túc xá** | Xem đợt đăng ký đang mở; nộp đơn theo từng bước; giữ chỗ, hủy đơn; thanh toán phí bằng QR |
+| **Nhận phòng & lưu trú** | Nhận phòng và kiểm tra tài sản ngay trên ứng dụng; xem hồ sơ lưu trú |
+| **Điện & nước** | Biểu đồ tiêu thụ; lịch tiêu thụ theo từng ngày giúp phát hiện bất thường |
+| **Công nợ & thanh toán** | Danh sách hóa đơn, chi tiết từng khoản, biên lai; thanh toán bằng mã QR |
+| **Yêu cầu** | Sửa chữa, chuyển phòng, trả phòng; theo dõi tiến độ, tất toán và hoàn tiền |
+| **Hỗ trợ** | Trò chuyện trực tiếp với nhân viên ký túc xá |
+| **Trợ lý AI** | Hỏi đáp nội quy và thông tin cá nhân; lưu lịch sử trò chuyện |
+| **Thông báo** | Nhận thông báo theo thời gian thực |
+| **Cá nhân** | Thông tin, ảnh đại diện, đổi mật khẩu; tùy chỉnh giao diện và ngôn ngữ; tự nhắc cập nhật phiên bản mới |
+
+<a id="kien-truc"></a>
+
+## Kiến trúc tổng thể
+
+Ứng dụng Di động nằm trong hệ sinh thái SDMS như sau *(khối tô đậm là repository này)*:
+
+```mermaid
+flowchart LR
+    SV([Sinh viên])
+    QL([BQL / Nhân viên])
+    WEB[Ứng dụng Web]
+    MOB[Ứng dụng Di động]
+    SRV[Máy chủ nghiệp vụ]
+    IOT[Dịch vụ IoT]
+    AI[Dịch vụ AI]
+    DEV[Thiết bị đo tại phòng]
+
+    QL --> WEB
+    SV --> WEB
+    SV --> MOB
+    WEB --> SRV
+    MOB --> SRV
+    DEV --> SRV
+    SRV <--> IOT
+    IOT --> AI
+    SRV --> AI
+
+    classDef current fill:#0d1e4c,stroke:#0d1e4c,color:#ffffff,font-weight:bold
+    classDef other fill:#eef2fb,stroke:#9aa8c7,color:#0d1e4c
+    class WEB,MOB,SRV,IOT,AI,DEV other
+    class MOB current
 ```
-assets/                 Ảnh dùng trong ứng dụng
-src/app/                Route của Expo Router (chỉ re-export màn hình)
-  (app)/                Nhóm cần đăng nhập
-    (tabs)/             Thanh tab nổi: Trang chủ, Điện nước, [+], Yêu cầu, Cá nhân
-src/features/<feature>/ Màn hình, component và dữ liệu mock của từng tính năng
-src/shared/ui/          Design system: Button, Card, Chip, Field, BottomSheet, Toast…
-src/shared/charts/      Biểu đồ SVG (area, donut, bar), QR minh hoạ
-src/shared/theme.ts     Màu, khoảng cách, bo góc, đổ bóng
-```
 
-Route chỉ nối màn hình với điều hướng. Mã nghiệp vụ đặt trong `features`; phần dùng chung đặt trong `shared`. Khi thêm tính năng, tạo thư mục riêng trong `features`, đặt kiểu dữ liệu, API và UI của tính năng ở đó.
+<a id="he-sinh-thai"></a>
 
-## Chạy ứng dụng
+## Hệ sinh thái SDMS
 
-1. `npm install`
-2. Tạo `.env` theo `.env.example`; `EXPO_PUBLIC_API_URL` mặc định dùng cùng backend với web: `https://sdms-server.duckdns.org/api/sdms/v1`.
-3. `npx expo start --clear`
+| Thành phần | Repository | Vai trò |
+|---|---|---|
+| Ứng dụng Web | [smart-dormitory-management-system](https://github.com/Nhan2kk/smart-dormitory-management-system) | Trang quản trị cho BQL, nhân viên và cổng thông tin sinh viên |
+| Máy chủ nghiệp vụ | [smart-dormitory-management-system-server](https://github.com/Nhan2kk/smart-dormitory-management-system-server) | Xử lý nghiệp vụ, phân quyền và dữ liệu trung tâm |
+| **Ứng dụng Di động** | **smart-dormitory-management-system-mobile** *(repository này)* | Ứng dụng dành cho sinh viên trên Android, iOS |
+| Dịch vụ IoT | [smart-dormitory-management-system-iot](https://github.com/Nhan2kk/smart-dormitory-management-system-iot) | Thiết bị đo tại phòng, xử lý số liệu và đánh giá rủi ro điện nước |
+| Dịch vụ AI | [smart-dormitory-management-system-ai](https://github.com/Nhan2kk/smart-dormitory-management-system-ai) | Trợ lý nội quy, tra cứu theo quyền và phát hiện bất thường |
 
-Với backend đã triển khai trên HTTPS, app có thể gọi cùng URL trên emulator và điện thoại thật khi có Internet. Nếu chuyển sang backend local, Android emulator dùng `http://10.0.2.2:8080/api/sdms/v1`; điện thoại thật dùng IP LAN của máy chạy backend. URL `EXPO_PUBLIC_*` được đóng vào app nên không đặt bí mật ở đây.
+<a id="cong-nghe"></a>
 
-Đăng nhập gửi `username` (MSSV) và `password` đến `POST /auth/login`. App chỉ nhận vai trò `STUDENT`, lưu refresh token trong `expo-secure-store`, làm mới phiên khi mở lại app, và gọi `POST /auth/logout` khi đăng xuất. Màn hình đăng ký tài khoản chưa có vì backend hiện dùng tài khoản sinh viên được cấp sẵn.
+## Công nghệ sử dụng
 
-Xem UI mà không cần tài khoản: đặt `EXPO_PUBLIC_MOCK_AUTH=true` trong `.env` — mọi MSSV/mật khẩu đều đăng nhập được, không gọi backend. Phiên mock chỉ nằm trong bộ nhớ nên tải lại app sẽ quay về màn hình chào.
+| Hạng mục | Công nghệ |
+|---|---|
+| Ngôn ngữ | TypeScript |
+| Framework | React Native · Expo |
+| Điều hướng | Expo Router |
+| Thời gian thực | WebSocket · STOMP |
+| Bảo mật phiên đăng nhập | Expo SecureStore |
+| Đa ngôn ngữ | Tiếng Việt · English |
+| Đóng gói & phát hành | Expo EAS Build |
 
-## Kiểm tra
+---
 
-`npm run typecheck` và `npm run lint`.
+<div align="center">
+
+<img src=".github/assets/sdms-logo.png" alt="SDMS" width="40" />
+
+**Smart Dormitory Management System**<br/>
+<sub>Khóa luận tốt nghiệp · Hệ thống quản lý ký túc xá thông minh · 2026</sub>
+
+</div>
